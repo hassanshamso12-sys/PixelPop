@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // INITIALIZATION & ROUTING
   // ==========================================
-  
+
   function initApp() {
     renderCategoryTabs();
     renderProductsList();
@@ -208,14 +208,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function changePage(page, pushState = true) {
     state.activePage = page;
-    
+
     // Reset active visual states in header links
     if (DOM.navHome) DOM.navHome.classList.remove("active");
     if (DOM.navAbout) DOM.navAbout.classList.remove("active");
     if (DOM.navContact) DOM.navContact.classList.remove("active");
     if (DOM.navDashboard) DOM.navDashboard.classList.remove("active");
     if (DOM.navProductsTrigger) DOM.navProductsTrigger.classList.remove("active");
-    
+
     DOM.storefrontPage.style.display = "none";
     DOM.productDetailPage.style.display = "none";
     DOM.adminDashboardPage.style.display = "none";
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         DOM.detailProductName.textContent = product.name;
         DOM.detailProductDesc.textContent = product.description;
         DOM.detailRatingDisplay.innerHTML = `★ ${product.rating.toFixed(1)} <span class="card-reviews">(${product.reviewsCount} verified reviews)</span>`;
-        
+
         DOM.specPrintTime.textContent = product.specifications.printTime;
         DOM.specFilamentWeight.textContent = product.specifications.filamentUsed;
         DOM.specDifficulty.textContent = product.specifications.difficulty;
@@ -287,11 +287,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderCategoryTabs() {
     const categories = DB.getCategories();
     let html = `<button class="category-tab ${state.currentCategory === 'all' ? 'active' : ''}" data-id="all">All Items</button>`;
-    
+
     categories.forEach(cat => {
       html += `<button class="category-tab ${state.currentCategory === cat.id ? 'active' : ''}" data-id="${cat.id}">${cat.name}</button>`;
     });
-    
+
     DOM.categoryTabs.innerHTML = html;
 
     // Click Handlers
@@ -399,7 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
         openProductDetails(e.target.dataset.id);
       });
     });
-    
+
     document.querySelectorAll(".product-card").forEach(card => {
       card.addEventListener("click", () => {
         openProductDetails(card.dataset.id);
@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!product) return;
 
     state.selectedProduct = product;
-    
+
     // Set default variation selection values
     state.customization.color = product.variations.colors[0];
     state.customization.size = product.variations.sizes[0];
@@ -426,17 +426,17 @@ document.addEventListener("DOMContentLoaded", () => {
     DOM.detailProductName.textContent = product.name;
     DOM.detailProductDesc.textContent = product.description;
     DOM.detailRatingDisplay.innerHTML = `★ ${product.rating.toFixed(1)} <span class="card-reviews">(${product.reviewsCount} verified reviews)</span>`;
-    
+
     DOM.specPrintTime.textContent = product.specifications.printTime;
     DOM.specFilamentWeight.textContent = product.specifications.filamentUsed;
     DOM.specDifficulty.textContent = product.specifications.difficulty;
 
     // Render Selectors
     renderVariationSelectors(product);
-    
+
     // Update Customizer Visuals & Price
     updateCustomizerVisuals();
-    
+
     changePage("detail");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -475,15 +475,15 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="chip-options">
             ${product.variations.sizes.map(sz => {
-              const sign = sz.priceModifier >= 0 ? "+" : "";
-              const modText = sz.priceModifier !== 0 ? ` (${sign}$${sz.priceModifier.toFixed(2)})` : "";
-              return `
+        const sign = sz.priceModifier >= 0 ? "+" : "";
+        const modText = sz.priceModifier !== 0 ? ` (${sign}$${sz.priceModifier.toFixed(2)})` : "";
+        return `
                 <div class="chip-option ${state.customization.size.name === sz.name ? 'active' : ''}" data-type="size" data-name="${sz.name}">
                   <span>${sz.name}</span>
                   <div class="chip-meta">Scale: ${sz.scale}${modText}</div>
                 </div>
               `;
-            }).join("")}
+      }).join("")}
           </div>
         </div>
       `;
@@ -499,15 +499,15 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="chip-options">
             ${product.variations.materials.map(mat => {
-              const sign = mat.priceModifier >= 0 ? "+" : "";
-              const modText = mat.priceModifier !== 0 ? ` (${sign}$${mat.priceModifier.toFixed(2)})` : "";
-              return `
+        const sign = mat.priceModifier >= 0 ? "+" : "";
+        const modText = mat.priceModifier !== 0 ? ` (${sign}$${mat.priceModifier.toFixed(2)})` : "";
+        return `
                 <div class="chip-option ${state.customization.material.name === mat.name ? 'active' : ''}" data-type="material" data-name="${mat.name}">
                   <span>${mat.name}</span>
                   <div class="chip-meta">${mat.description}${modText}</div>
                 </div>
               `;
-            }).join("")}
+      }).join("")}
           </div>
         </div>
       `;
@@ -544,7 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.querySelectorAll('.chip-option[data-type="material"]').forEach(c => c.classList.remove("active"));
           document.getElementById("material-val-label").textContent = name;
         }
-        
+
         target.classList.add("active");
         updateCustomizerVisuals();
       });
@@ -561,7 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sMod = state.customization.size ? state.customization.size.priceModifier : 0;
     const mMod = state.customization.material ? state.customization.material.priceModifier : 0;
     const totalPrice = base + cMod + sMod + mMod;
-    
+
     DOM.detailPriceVal.textContent = `$${totalPrice.toFixed(2)}`;
 
     // Set CSS parameters on preview panel
@@ -579,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const scaleStr = state.customization.size.scale; // e.g. "120%"
       const scaleVal = parseFloat(scaleStr) / 100;
       DOM.modelSvg.style.setProperty("--model-scale", scaleVal);
-      
+
       // Scale weight and time accordingly
       const defaultWeight = parseInt(prod.specifications.filamentUsed) || 50;
       const calculatedWeight = Math.round(defaultWeight * scaleVal * scaleVal * scaleVal); // Cubic scaling
@@ -623,7 +623,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const diffX = currentX - state.startX;
     state.rotation += diffX * 0.5; // Drag sensitivity
     state.startX = currentX;
-    
+
     // Clamp or wrap
     state.rotation = state.rotation % 360;
 
@@ -793,7 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openCheckoutModal() {
     DOM.checkoutModalOverlay.classList.add("open");
-    
+
     // Fill Order summary
     DOM.checkoutItemsList.innerHTML = state.cart.map(item => `
       <div class="summary-item">
@@ -837,7 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
       DOM.paymentDetailsPanel.style.display = "none";
     } else {
       DOM.paymentOptionsContainer.innerHTML = paymentHtml;
-      
+
       // Select default active payment
       const defaultOpt = DOM.paymentOptionsContainer.querySelector(`[data-id="${activePaymentId}"]`);
       if (defaultOpt) {
@@ -884,7 +884,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (paymentId === "cod") {
       const cfg = paymentSettings.cod;
       DOM.paymentDetailsInstructions.textContent = cfg.instructions;
-      
+
       const extraFee = parseFloat(cfg.extraFee) || 0;
       let fieldsHtml = "";
       if (extraFee > 0) {
@@ -895,7 +895,7 @@ document.addEventListener("DOMContentLoaded", () => {
       DOM.paymentDetailsFields.innerHTML = fieldsHtml;
       DOM.paymentDetailsQrContainer.style.display = "none";
       DOM.paymentReferenceGroup.style.display = "none";
-    } 
+    }
     else if (paymentId === "wish") {
       const cfg = paymentSettings.wish;
       DOM.paymentDetailsInstructions.textContent = cfg.instructions;
@@ -903,7 +903,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="margin-bottom: 0.2rem;"><strong>Phone Number:</strong> <span style="color: var(--accent-indigo); font-size: 0.95rem; font-weight: 600;">${cfg.phoneNumber}</span></div>
         <div><strong>Recipient Name:</strong> <span style="font-weight: 600;">${cfg.receiverName}</span></div>
       `;
-      
+
       if (cfg.barcodeUrl) {
         DOM.paymentDetailsQrImg.src = cfg.barcodeUrl;
         DOM.paymentDetailsQrContainer.style.display = "block";
@@ -915,11 +915,11 @@ document.addEventListener("DOMContentLoaded", () => {
       DOM.paymentReferenceLabel.textContent = "Wish Transaction Reference (MTCN)";
       DOM.chkPaymentReference.placeholder = "e.g. 8-digit MTCN code";
       DOM.chkPaymentReference.required = true;
-    } 
+    }
     else if (paymentId === "neo") {
       const cfg = paymentSettings.neo;
       DOM.paymentDetailsInstructions.textContent = cfg.instructions;
-      
+
       DOM.paymentDetailsFields.innerHTML = `
         <div style="margin-bottom: 0.2rem;"><strong>Neo Account ID:</strong> <span style="color: var(--accent-indigo); font-size: 0.95rem; font-weight: 600;">${cfg.accountNumber}</span></div>
         <a href="${cfg.paymentLink}" target="_blank" class="btn btn-secondary" style="margin-top: 0.6rem; padding: 0.4rem 1rem; font-size: 0.8rem; border-radius: 8px; justify-content: center; display: inline-flex; width: fit-content; text-decoration: none;">
@@ -991,7 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const shippingPrice = parseFloat(document.querySelector(".delivery-option.active").dataset.price);
-    
+
     // Surcharge
     let surchargeFee = 0;
     if (paymentOpt === "cod") {
@@ -1034,7 +1034,7 @@ document.addEventListener("DOMContentLoaded", () => {
     state.cart = [];
     localStorage.removeItem("prism_cart");
     updateCartUI();
-    
+
     // Switch to landing
     changePage("store");
 
@@ -1162,7 +1162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentOrder = liveOrders.find(o => o.id === order.id);
       if (currentOrder && currentOrder.status === "Pending") {
         DB.updateOrderStatus(order.id, "Printing");
-        
+
         // Refresh dashboard order list if active
         if (state.activePage === "dashboard") {
           renderDashboardOrders();
@@ -1185,7 +1185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentOrder = liveOrders.find(o => o.id === order.id);
       if (currentOrder && currentOrder.status === "Printing") {
         DB.updateOrderStatus(order.id, "Shipped");
-        
+
         if (state.activePage === "dashboard") {
           renderDashboardOrders();
           updateOverviewStats();
@@ -1221,7 +1221,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function initPaymentsDashboardSettings() {
     const settings = DB.getPaymentSettings();
-    
+
     // COD inputs
     DOM.cfgCodEnabled.checked = settings.cod.enabled;
     DOM.cfgCodInstructions.value = settings.cod.instructions;
@@ -1326,9 +1326,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Attach listeners for live updates
     const inputsToTrigger = [
-      DOM.calcCfgSpoolCost, DOM.calcCfgSpoolWeight, DOM.calcCfgWattage, 
-      DOM.calcCfgElecRate, DOM.calcCfgDepreciation, DOM.calcCfgLaborWage, 
-      DOM.calcCfgProfitMargin, DOM.calcItemName, DOM.calcWeight, 
+      DOM.calcCfgSpoolCost, DOM.calcCfgSpoolWeight, DOM.calcCfgWattage,
+      DOM.calcCfgElecRate, DOM.calcCfgDepreciation, DOM.calcCfgLaborWage,
+      DOM.calcCfgProfitMargin, DOM.calcItemName, DOM.calcWeight,
       DOM.calcPrintTime, DOM.calcPrepTime, DOM.calcPackagingCost
     ];
 
@@ -1390,7 +1390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Formulas
     // Material Cost = (Model Weight in grams * 1.15) * (Spool Cost / Spool Weight in grams)
     const materialCost = (weight * 1.15) * (spoolCost / spoolWeight);
-    
+
     // Power Cost = Print Time (hours) * (Machine Wattage / 1000) * Electricity Rate per kWh
     const powerCost = printTime * (wattage / 1000) * elecRate;
 
@@ -1435,7 +1435,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateOverviewStats() {
     const orders = DB.getOrders();
-    
+
     // Revenue (Sum of all orders)
     const revenue = orders.reduce((sum, o) => sum + o.totals.total, 0);
     DOM.statRevenue.textContent = `$${revenue.toFixed(2)}`;
@@ -1465,7 +1465,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const orders = DB.getOrders();
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const dailyRevenue = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
-    
+
     // Seed default baseline days so graph has columns even with 0 sales
     dailyRevenue.Mon = 120;
     dailyRevenue.Tue = 190;
@@ -1483,7 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const maxVal = Math.max(...Object.values(dailyRevenue), 1);
-    
+
     DOM.revenueGraph.innerHTML = Object.keys(dailyRevenue).map(day => {
       const val = dailyRevenue[day];
       const percent = (val / maxVal) * 100;
@@ -1631,7 +1631,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sel.addEventListener("change", (e) => {
         const id = sel.dataset.id;
         const newStatus = e.target.value;
-        
+
         DB.updateOrderStatus(id, newStatus);
         renderDashboardOrders();
         updateOverviewStats();
@@ -1849,7 +1849,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDashboardInventory();
     renderProductsList();
     updateOverviewStats();
-    
+
     alert(isEdit ? "Product details updated!" : "New product added to store catalog!");
   });
 
@@ -1866,7 +1866,7 @@ document.addEventListener("DOMContentLoaded", () => {
   DOM.navHome.addEventListener("click", () => {
     changePage("store");
     DOM.navHome.classList.add("active");
-    
+
     // Reset filters
     state.currentCategory = "all";
     state.currentSubcategory = "all";
@@ -1895,7 +1895,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const catId = e.target.dataset.cat;
       changePage("store");
       DOM.navProductsTrigger.classList.add("active");
-      
+
       state.currentCategory = catId;
       state.currentSubcategory = "all";
       state.searchQuery = "";
