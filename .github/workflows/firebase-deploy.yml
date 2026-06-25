@@ -10,16 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Swapping 'npm ci' to 'npm install' prevents lockfile exit code crashes
       - name: Install Dependencies
         run: npm install
 
       - name: Build App with Vite
         run: npm run build
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PIXELPOP_CD075 }}'
-          channelId: live
-          projectId: pixelpop-cd075
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --project pixelpop-cd075
+        env:
+          FIREBASE_TOKEN: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PIXELPOP_CD075 }}'
