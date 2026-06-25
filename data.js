@@ -1,0 +1,298 @@
+// 3D Print Shop Seed Data & Database Wrapper
+
+const DEFAULT_CATEGORIES = [
+  {
+    id: "home-decor",
+    name: "Home Decor",
+    subcategories: ["Vases", "Planters", "Sculptures"]
+  },
+  {
+    id: "gadgets-tools",
+    name: "Gadgets & Tools",
+    subcategories: ["Desk Organizers", "Phone Stands", "Cable Management"]
+  },
+  {
+    id: "gaming-toys",
+    name: "Gaming & Toys",
+    subcategories: ["Action Figures", "Dice Towers", "Fidget Toys"]
+  },
+  {
+    id: "cosplay-props",
+    name: "Cosplay & Props",
+    subcategories: ["Helmets", "Wearables", "Replica Props"]
+  }
+];
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: "crystal-dragon",
+    name: "Articulating Crystal Dragon",
+    description: "A gorgeous, fully articulating dragon with sharp crystal-like scales. Fully poseable and incredibly satisfying as a fidget toy or desk companion. Printed using high-precision layers.",
+    basePrice: 19.99,
+    category: "gaming-toys",
+    subcategory: "Fidget Toys",
+    rating: 4.9,
+    reviewsCount: 142,
+    images: {
+      "Silk Gold": "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80", // placeholder colors
+      "Silk Rainbow": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80",
+      "Matte Black": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
+    },
+    defaultImage: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
+    variations: {
+      colors: [
+        { name: "Silk Gold", hex: "#ffd700", priceModifier: 0 },
+        { name: "Silk Rainbow", hex: "linear-gradient(45deg, #ff007f, #7f00ff, #00ffff, #00ff7f, #ffff00)", priceModifier: 3.50 },
+        { name: "Matte Black", hex: "#1a1a1a", priceModifier: 0 },
+        { name: "Glow Green", hex: "#ccff33", priceModifier: 2.00 }
+      ],
+      sizes: [
+        { name: "Small (15cm)", scale: "70%", priceModifier: -5.00 },
+        { name: "Standard (22cm)", scale: "100%", priceModifier: 0 },
+        { name: "Giant (35cm)", scale: "160%", priceModifier: 15.00 }
+      ],
+      materials: [
+        { name: "PLA (Standard)", description: "Environmentally friendly, excellent details.", priceModifier: 0 },
+        { name: "PETG (Durable)", description: "Impact resistant, heat resistant.", priceModifier: 2.50 }
+      ]
+    },
+    specifications: {
+      printTime: "6.5 hours",
+      filamentUsed: "95g",
+      difficulty: "Medium"
+    }
+  },
+  {
+    id: "self-watering-planter",
+    name: "Geometric Self-Watering Planter",
+    description: "Modern, minimalist geometric design features a dual-chamber watering reservoir. Water is wicked up from the bottom reservoir, preventing overwatering and allowing plants to drink at their own pace.",
+    basePrice: 14.99,
+    category: "home-decor",
+    subcategory: "Planters",
+    rating: 4.8,
+    reviewsCount: 89,
+    images: {
+      "Marble White": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80",
+      "Terracotta": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=600&q=80",
+      "Charcoal": "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80"
+    },
+    defaultImage: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80",
+    variations: {
+      colors: [
+        { name: "Marble White", hex: "#e8e8e8", priceModifier: 1.00 },
+        { name: "Terracotta", hex: "#c36a4b", priceModifier: 0 },
+        { name: "Charcoal", hex: "#2b2b2b", priceModifier: 0 }
+      ],
+      sizes: [
+        { name: "Standard (10cm)", scale: "100%", priceModifier: 0 },
+        { name: "Large (15cm)", scale: "150%", priceModifier: 8.00 }
+      ],
+      materials: [
+        { name: "PETG (Waterproof)", description: "Required for water containment.", priceModifier: 0 }
+      ]
+    },
+    specifications: {
+      printTime: "4.2 hours",
+      filamentUsed: "70g",
+      difficulty: "Easy"
+    }
+  },
+  {
+    id: "modular-organizer",
+    name: "HexaNest Modular Desk Organizer",
+    description: "Keep your workspace clean with this magnetic modular organizer. Hexagonal columns nest together. Includes dedicated slots for writing instruments, memory cards, a phone dock, and small office supplies.",
+    basePrice: 24.99,
+    category: "gadgets-tools",
+    subcategory: "Desk Organizers",
+    rating: 4.7,
+    reviewsCount: 56,
+    images: {
+      "Stealth Black": "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80",
+      "Cosmic Blue": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
+      "Slate Grey": "https://images.unsplash.com/photo-1507208773393-40d9fc670acf?auto=format&fit=crop&w=600&q=80"
+    },
+    defaultImage: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80",
+    variations: {
+      colors: [
+        { name: "Stealth Black", hex: "#0f0f0f", priceModifier: 0 },
+        { name: "Cosmic Blue", hex: "#1e3a8a", priceModifier: 1.50 },
+        { name: "Slate Grey", hex: "#64748b", priceModifier: 0 },
+        { name: "Neon Orange", hex: "#f97316", priceModifier: 2.00 }
+      ],
+      sizes: [
+        { name: "Compact (3 Columns)", scale: "100%", priceModifier: 0 },
+        { name: "Master Set (6 Columns)", scale: "150%", priceModifier: 14.00 }
+      ],
+      materials: [
+        { name: "PLA (Standard)", description: "Ideal for indoor desktop use.", priceModifier: 0 },
+        { name: "PETG (Extra Stiff)", description: "Durable and temperature stable.", priceModifier: 3.00 }
+      ]
+    },
+    specifications: {
+      printTime: "8 hours",
+      filamentUsed: "150g",
+      difficulty: "Medium"
+    }
+  },
+  {
+    id: "oni-mask",
+    name: "Cyberpunk Oni Half-Mask",
+    description: "A wearable Japanese demon half-mask with futuristic neon grid aesthetics. Hand-designed cybernetic vents, integrated strap slots, and visual mesh. Perfect for cosplay, display, or futuristic styling.",
+    basePrice: 39.99,
+    category: "cosplay-props",
+    subcategory: "Wearables",
+    rating: 4.95,
+    reviewsCount: 210,
+    images: {
+      "Crimson Red": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
+      "Metallic Purple": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
+      "Carbon Fiber Black": "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&w=600&q=80"
+    },
+    defaultImage: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
+    variations: {
+      colors: [
+        { name: "Crimson Red", hex: "#dc2626", priceModifier: 0 },
+        { name: "Metallic Purple", hex: "#7c3aed", priceModifier: 2.50 },
+        { name: "Carbon Fiber Black", hex: "#111827", priceModifier: 4.00 }
+      ],
+      sizes: [
+        { name: "Teen Size", scale: "90%", priceModifier: -3.00 },
+        { name: "Adult Standard", scale: "100%", priceModifier: 0 },
+        { name: "Adult Oversized", scale: "110%", priceModifier: 4.50 }
+      ],
+      materials: [
+        { name: "PLA (Standard)", description: "Great finish, lightweight.", priceModifier: 0 },
+        { name: "ABS (Tough)", description: "High impact resistance, sandable.", priceModifier: 5.00 }
+      ]
+    },
+    specifications: {
+      printTime: "14 hours",
+      filamentUsed: "220g",
+      difficulty: "Hard"
+    }
+  }
+];
+
+// Helper to interact with LocalStorage
+const DEFAULT_PAYMENT_SETTINGS = {
+  cod: {
+    enabled: true,
+    instructions: "Pay in cash upon receiving your 3D printed items. Please ensure you have the exact amount ready at the delivery address.",
+    extraFee: 0.00
+  },
+  wish: {
+    enabled: true,
+    phoneNumber: "+961 70 123 456",
+    receiverName: "Prism3D Shop",
+    instructions: "Please send the transfer via Wish Money to the phone number and receiver name below. Once sent, type your Transaction Reference Number in the input field.",
+    barcodeUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WishMoneyTransferPrism3D"
+  },
+  neo: {
+    enabled: true,
+    paymentLink: "https://neo.audi/pay/prism3d",
+    accountNumber: "NEO-PRISM3D",
+    instructions: "Tap the link or scan the QR code to complete your payment on the Neo by Audi app. Enter your Neo username/alias in the input field.",
+    qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://neo.audi/pay/prism3d"
+  }
+};
+
+const DB = {
+  init() {
+    if (!localStorage.getItem("categories")) {
+      localStorage.setItem("categories", JSON.stringify(DEFAULT_CATEGORIES));
+    }
+    if (!localStorage.getItem("products")) {
+      localStorage.setItem("products", JSON.stringify(DEFAULT_PRODUCTS));
+    }
+    if (!localStorage.getItem("orders")) {
+      localStorage.setItem("orders", JSON.stringify([]));
+    }
+    if (!localStorage.getItem("payment_settings")) {
+      localStorage.setItem("payment_settings", JSON.stringify(DEFAULT_PAYMENT_SETTINGS));
+    }
+  },
+
+  getCategories() {
+    this.init();
+    return JSON.parse(localStorage.getItem("categories"));
+  },
+
+  saveCategories(categories) {
+    localStorage.setItem("categories", JSON.stringify(categories));
+  },
+
+  getProducts() {
+    this.init();
+    return JSON.parse(localStorage.getItem("products"));
+  },
+
+  getProductById(id) {
+    const products = this.getProducts();
+    return products.find(p => p.id === id);
+  },
+
+  saveProducts(products) {
+    localStorage.setItem("products", JSON.stringify(products));
+  },
+
+  addProduct(product) {
+    const products = this.getProducts();
+    products.push(product);
+    this.saveProducts(products);
+    return product;
+  },
+
+  updateProduct(updatedProduct) {
+    let products = this.getProducts();
+    products = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    this.saveProducts(products);
+    return updatedProduct;
+  },
+
+  deleteProduct(id) {
+    let products = this.getProducts();
+    products = products.filter(p => p.id !== id);
+    this.saveProducts(products);
+  },
+
+  getOrders() {
+    this.init();
+    return JSON.parse(localStorage.getItem("orders"));
+  },
+
+  saveOrders(orders) {
+    localStorage.setItem("orders", JSON.stringify(orders));
+  },
+
+  createOrder(order) {
+    const orders = this.getOrders();
+    orders.unshift(order); // Put new orders at the top
+    this.saveOrders(orders);
+    return order;
+  },
+
+  updateOrderStatus(orderId, status) {
+    const orders = this.getOrders();
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      order.status = status;
+      this.saveOrders(orders);
+    }
+    return order;
+  },
+
+  getPaymentSettings() {
+    this.init();
+    return JSON.parse(localStorage.getItem("payment_settings"));
+  },
+
+  savePaymentSettings(settings) {
+    localStorage.setItem("payment_settings", JSON.stringify(settings));
+  }
+};
+
+// Export to window so other scripts can access
+window.DB = DB;
+window.DEFAULT_CATEGORIES = DEFAULT_CATEGORIES;
+window.DEFAULT_PRODUCTS = DEFAULT_PRODUCTS;
+window.DEFAULT_PAYMENT_SETTINGS = DEFAULT_PAYMENT_SETTINGS;

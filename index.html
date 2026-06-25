@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Premium 3D printing custom e-commerce shop and dashboard. Browse, customize, and order high-precision 3D prints.">
+  <title>Prism3D - Custom 3D Printed Prints & Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="container nav-flex">
+      <div class="logo" id="logo-btn">
+        <div class="logo-icon">P</div>
+        <span>Prism<span class="text-gradient">3D</span></span>
+      </div>
+      <nav class="nav-links">
+        <span class="nav-link active" id="nav-home">Home</span>
+        <div class="nav-dropdown">
+          <span class="nav-link" id="nav-products-trigger" style="user-select: none;">Products <span style="font-size: 0.75rem;">▼</span></span>
+          <div class="dropdown-content" id="products-dropdown-menu">
+            <span class="dropdown-item" data-cat="all">All Products</span>
+            <span class="dropdown-item" data-cat="home-decor">Home Decor</span>
+            <span class="dropdown-item" data-cat="gadgets-tools">Gadgets & Tools</span>
+            <span class="dropdown-item" data-cat="gaming-toys">Gaming & Toys</span>
+            <span class="dropdown-item" data-cat="cosplay-props">Cosplay & Props</span>
+          </div>
+        </div>
+        <span class="nav-link" id="nav-about">About Us</span>
+        <span class="nav-link" id="nav-contact">Contact Us</span>
+      </nav>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="nav-dashboard" style="display: none; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; font-weight: 500; font-family: var(--font-display);">Admin Console ⚙️</button>
+        <button class="cart-icon-btn" id="cart-toggle-btn" aria-label="Open Shopping Cart">
+          🛒
+          <span class="cart-count" id="cart-count-badge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- STOREFRONT SECTION -->
+  <main class="container" id="storefront-page">
+    
+    <!-- Hero Banner -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Bring Your Digital <br><span class="text-gradient">Creations To Life</span></h1>
+        <p>Order high-precision 3D prints made from biodegradable PLA, durable PETG, or ultra-fine resin. Customize colors, sizing, and details instantly in our 3D customizer.</p>
+        <button class="btn btn-primary" id="hero-cta-btn">Browse Shop</button>
+        
+        <div class="hero-stats">
+          <div class="stat-box">
+            <h3 id="stat-printers">12</h3>
+            <p>Active Printers</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="stat-prints">4,500+</h3>
+            <p>Completed Prints</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="stat-rating">4.9★</h3>
+            <p>Customer Rating</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="nozzle-simulator">
+          <div class="nozzle-icon">⚙️</div>
+          <div class="filament-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shop Catalog and Filtering -->
+    <section class="shop-section" id="shop-catalog-anchor">
+      <div class="shop-controls">
+        <div class="category-tabs" id="category-tabs-container">
+          <!-- Dynamically Rendered Category Tabs -->
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="search-input" id="search-bar" placeholder="Search items...">
+          <select class="select-input" id="sort-select">
+            <option value="popular">Popularity</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Subcategories Chips list -->
+      <div class="subcategories-list" id="subcategories-chips-container">
+        <!-- Dynamically Rendered Subcategory Chips -->
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="products-grid-container">
+        <!-- Dynamically Rendered Product Cards -->
+      </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section class="about-section-container" id="about-us-section" style="margin-top: 5rem; padding-top: 4rem; border-top: 1px solid var(--glass-border);">
+      <div class="db-section-header" style="text-align: center; margin-bottom: 3rem;">
+        <h2>About Prism3D</h2>
+        <p class="text-muted" style="font-size: 1.05rem; max-width: 700px; margin: 0.5rem auto 0; line-height: 1.5;">Learn about our high-precision custom fabrication pipeline, active 3D printing farm, and bio-friendly materials.</p>
+      </div>
+
+      <div class="about-grid">
+        <div class="glass-panel about-card">
+          <div class="about-icon">🔬</div>
+          <h3>0.16mm Layer Precision</h3>
+          <p>We configure every print job with ultra-fine layer resolution, ensuring smooth surface finishes and structural stability for Vases, Prop Wearables, and articulating structures.</p>
+        </div>
+        <div class="glass-panel about-card">
+          <div class="about-icon">🏭</div>
+          <h3>Active Printer Array</h3>
+          <p>Our lab hosts over 12 high-speed Cartesian and Delta 3D printers operating on calibrated profiles to deliver short turnaround times with minimized print failure rates.</p>
+        </div>
+        <div class="glass-panel about-card">
+          <div class="about-icon">🌱</div>
+          <h3>Eco-Friendly Materials</h3>
+          <p>We print using non-toxic, biodegradable PLA (Polylactic Acid) derived from renewable organic sources like cornstarch, and durable, waterproof PETG for functional gadgets.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Us Section -->
+    <section class="contact-section-container" id="contact-us-section" style="margin-top: 5rem; margin-bottom: 5rem; padding-top: 4rem; border-top: 1px solid var(--glass-border);">
+      <div class="db-section-header" style="text-align: center; margin-bottom: 3rem;">
+        <h2>Contact Our Team</h2>
+        <p class="text-muted" style="font-size: 1.05rem; max-width: 700px; margin: 0.5rem auto 0; line-height: 1.5;">Have a custom 3D model (STL/OBJ) you need quoted? Drop us a line or visit our Beirut fabrication workshop.</p>
+      </div>
+
+      <div class="contact-grid">
+        <!-- Left Side: Details -->
+        <div class="glass-panel contact-info-card" style="padding: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+          <h3>📍 Fabrication Workshop</h3>
+          
+          <div class="info-item">
+            <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Address:</strong>
+            <p style="font-weight: 500;">Filament Lane, Badaro District, Beirut, Lebanon</p>
+          </div>
+          <div class="info-item">
+            <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Email Support:</strong>
+            <p><a href="mailto:hello@prism3d.com" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600;">hello@prism3d.com</a></p>
+          </div>
+          <div class="info-item">
+            <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Hotline & WhatsApp:</strong>
+            <p style="font-weight: 500;">+961 70 123 456</p>
+          </div>
+          <div class="info-item">
+            <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Operating Hours:</strong>
+            <p style="font-weight: 500;">Monday - Saturday: 9:00 AM - 6:00 PM</p>
+          </div>
+        </div>
+
+        <!-- Right Side: Contact Form -->
+        <div class="glass-panel contact-form-card" style="padding: 2.5rem;">
+          <h3>✉️ Send a Message</h3>
+          
+          <form id="storefront-contact-form" style="margin-top: 1.5rem;">
+            <div class="form-group">
+              <label class="form-label" for="contact-name">Your Full Name</label>
+              <input type="text" class="form-input" id="contact-name" required placeholder="John Doe">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="contact-email">Email Address</label>
+              <input type="email" class="form-input" id="contact-email" required placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contact-message">Message or Custom Quote Request</label>
+              <textarea class="form-input" id="contact-message" rows="4" required placeholder="Detail your print size, material preference, or link to your STL file model..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem;" id="contact-submit-btn">Send Message ✉️</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PRODUCT DETAIL / CUSTOMIZATION PAGE -->
+  <div class="container product-detail-view" id="product-detail-page">
+    <button class="btn btn-secondary back-btn" id="detail-back-btn">← Back to Store</button>
+    
+    <div class="detail-grid">
+      <!-- 3D Customizer Mockup Canvas -->
+      <div class="customizer-visual-container">
+        <div class="glass-panel visual-card">
+          <div class="customizer-canvas-container">
+            <!-- Simulated Print Bed -->
+            <div class="print-bed-grid" id="print-bed-element"></div>
+            
+            <!-- Dynamic SVG Model Display -->
+            <svg class="svg-model-preview" viewBox="0 0 100 100" id="model-svg">
+              <path class="model-path" id="model-svg-path" d="M 50 10 L 90 40 L 90 75 L 50 95 L 10 75 L 10 40 Z" />
+              <!-- Infill pattern node inside details -->
+            </svg>
+            <div class="infill-pattern-layer" id="infill-pattern-layer"></div>
+          </div>
+          
+          <div class="customizer-status">
+            <div class="status-indicator"></div>
+            <span id="customizer-status-text">Interactive Customization Bed</span>
+          </div>
+        </div>
+        <p class="text-muted" style="font-size: 0.85rem; text-align: center;">Rotates 3D models based on selection variables. Scale slider controls the model's overall bounding size.</p>
+      </div>
+
+      <!-- Customization Variations & Purchase Selection Panel -->
+      <div class="detail-info">
+        <h2 id="detail-product-name">Product Name</h2>
+        <div class="detail-rating" id="detail-rating-display">★★★★★ <span class="card-reviews" id="detail-reviews-count">(0 reviews)</span></div>
+        <p class="detail-description" id="detail-product-desc">Full product descriptions.</p>
+        
+        <!-- Variation Options -->
+        <div id="variations-selectors-container">
+          <!-- Dynamic Filament Color Swatches, Size chips, and Material options -->
+        </div>
+
+        <div class="specs-grid">
+          <div class="spec-item">
+            <div class="spec-title">Print Time</div>
+            <div class="spec-val" id="spec-print-time">-</div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-title">Filament Weight</div>
+            <div class="spec-val" id="spec-filament-weight">-</div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-title">Nozzle Level</div>
+            <div class="spec-val" id="spec-difficulty">-</div>
+          </div>
+        </div>
+
+        <div class="purchase-bar">
+          <div class="price-display">
+            <span class="label">Total Price</span>
+            <span class="value" id="detail-price-val">$0.00</span>
+          </div>
+          <button class="btn btn-primary" id="add-to-cart-btn">Add to Cart 🛒</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-OUT SHOPPING CART PANEL -->
+  <div class="cart-drawer" id="cart-drawer-panel">
+    <div class="cart-header">
+      <h2>Shopping Cart</h2>
+      <button class="close-cart-btn" id="close-cart-btn" aria-label="Close Cart">×</button>
+    </div>
+    
+    <div class="cart-items" id="cart-items-list">
+      <!-- Dynamically populated cart items -->
+    </div>
+    
+    <div class="cart-footer">
+      <div class="cart-summary-line">
+        <span>Cart Subtotal</span>
+        <span id="cart-subtotal-val">$0.00</span>
+      </div>
+      <div class="cart-summary-line total">
+        <span>Total</span>
+        <span id="cart-total-val">$0.00</span>
+      </div>
+      <button class="btn btn-primary checkout-btn" id="go-checkout-btn">Proceed to Checkout</button>
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL OVERLAY -->
+  <div class="modal-overlay" id="checkout-modal-overlay">
+    <div class="glass-panel checkout-modal">
+      <div class="checkout-grid">
+        <!-- Shipping & Payment Form -->
+        <div class="checkout-left">
+          <div class="checkout-title">
+            <span>Billing & Delivery</span>
+            <button class="close-modal-btn" id="close-checkout-btn">×</button>
+          </div>
+          
+          <form id="checkout-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="chk-first-name">First Name</label>
+                <input type="text" class="form-input" id="chk-first-name" required placeholder="John">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="chk-last-name">Last Name</label>
+                <input type="text" class="form-input" id="chk-last-name" required placeholder="Doe">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="chk-email">Email Address</label>
+              <input type="email" class="form-input" id="chk-email" required placeholder="john.doe@example.com">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="chk-address">Shipping Address</label>
+              <input type="text" class="form-input" id="chk-address" required placeholder="123 Filament Lane">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="chk-city">City</label>
+                <input type="text" class="form-input" id="chk-city" required placeholder="New York">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="chk-zip">ZIP / Postal Code</label>
+                <input type="text" class="form-input" id="chk-zip" required placeholder="10001">
+              </div>
+            </div>
+
+            <!-- Delivery Speed -->
+            <label class="form-label">Delivery Options</label>
+            <div class="delivery-options" id="delivery-options-container">
+              <div class="delivery-option active" data-id="standard" data-price="4.99">
+                <div class="option-details">
+                  <span class="option-name">Standard Postal</span>
+                  <span class="option-desc">Delivered in 4-6 business days</span>
+                </div>
+                <span class="option-price">$4.99</span>
+              </div>
+              <div class="delivery-option" data-id="express" data-price="12.99">
+                <div class="option-details">
+                  <span class="option-name">Express Filament Courier</span>
+                  <span class="option-desc">Delivered in 1-2 business days</span>
+                </div>
+                <span class="option-price">$12.99</span>
+              </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <label class="form-label">Payment Option</label>
+            <div class="payment-options" id="payment-options-container">
+              <!-- Dynamically populated checkout payment choices (COD, Wish, Neo) -->
+            </div>
+
+            <!-- Dynamic Payment Instructions Panel -->
+            <div class="payment-detail-panel" id="payment-details-panel" style="display: none; margin-top: 1rem; padding: 1.2rem; border-radius: 12px; border: 1px dashed var(--glass-border); background: rgba(0,0,0,0.02);">
+              <p class="option-desc" id="payment-details-instructions" style="white-space: pre-wrap; font-size: 0.85rem; margin-bottom: 1rem; color: var(--text-main); line-height: 1.5;"></p>
+              
+              <!-- Custom Info Fields (e.g. Phone, Link) -->
+              <div id="payment-details-fields" style="margin-bottom: 1rem; font-size: 0.85rem; font-weight: 500; display: flex; flex-direction: column; gap: 0.4rem;"></div>
+              
+              <!-- QR/Barcode Preview Container -->
+              <div id="payment-details-qr-container" style="display: none; text-align: center; margin-bottom: 1.2rem; background: white; border-radius: 12px; padding: 1rem; border: 1px solid var(--glass-border); max-width: 220px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <img id="payment-details-qr-img" src="" alt="Payment QR Code/Barcode" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+                <div style="font-size: 0.75rem; color: var(--text-dark); font-weight: 600; margin-top: 0.5rem; letter-spacing: 0.5px;">SCAN CODE TO PAY</div>
+              </div>
+              
+              <!-- Verification Reference Input -->
+              <div class="form-group" id="payment-reference-group" style="display: none; margin-bottom: 0;">
+                <label class="form-label" id="payment-reference-label" for="chk-payment-reference">Transaction Reference Code</label>
+                <input type="text" class="form-input" id="chk-payment-reference" placeholder="Enter transfer reference text">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="checkout-submit-btn">Place Order 🚀</button>
+          </form>
+        </div>
+
+        <!-- Checkout Summary Info -->
+        <div class="checkout-right">
+          <h3 class="checkout-title" style="margin-bottom: 2rem;">Order Summary</h3>
+          <div class="checkout-summary-items" id="checkout-items-list">
+            <!-- Dynamically populated summary items -->
+          </div>
+          
+          <div class="summary-divider"></div>
+          
+          <div class="cart-summary-line">
+            <span class="text-muted">Items Subtotal</span>
+            <span id="chk-subtotal-val">$0.00</span>
+          </div>
+          <div class="cart-summary-line">
+            <span class="text-muted">Shipping Cost</span>
+            <span id="chk-shipping-val">$4.99</span>
+          </div>
+          <div class="cart-summary-line" id="chk-surcharge-row" style="display: none;">
+            <span class="text-muted" id="chk-surcharge-label">Payment Surcharge</span>
+            <span id="chk-surcharge-val">$0.00</span>
+          </div>
+          
+          <div class="summary-divider"></div>
+          
+          <div class="cart-summary-line total" style="border: none; padding: 0; margin-bottom: 0;">
+            <span>Grand Total</span>
+            <span id="chk-total-val">$0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIVATE ADMIN DASHBOARD SECTION -->
+  <main class="container admin-dashboard-view" id="admin-dashboard-page">
+    <div class="glass-panel dashboard-grid">
+      
+      <!-- Dashboard Sidebar Navigation -->
+      <aside class="db-sidebar">
+        <div class="logo">
+          <div class="logo-icon">D</div>
+          <span>Prism<span class="text-gradient">DB</span></span>
+        </div>
+        
+        <div class="db-menu">
+          <div class="db-menu-item active" data-target="db-overview">📊 Overview</div>
+          <div class="db-menu-item" data-target="db-inventory">📦 Inventory</div>
+          <div class="db-menu-item" data-target="db-orders">📝 Orders</div>
+          <div class="db-menu-item" data-target="db-payments">💳 Payments</div>
+          <div class="db-menu-item" data-target="db-calculator">🧮 Cost Calculator</div>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top: auto;" id="logout-btn">← Back to Store</button>
+      </aside>
+
+      <!-- Dashboard Central Content -->
+      <section class="db-content">
+        
+        <!-- SECTION 1: ANALYTICS OVERVIEW -->
+        <div class="db-section active" id="db-overview">
+          <div class="db-section-header">
+            <h2>System Overview</h2>
+            <span class="text-muted">Live 3D Print Pipelines</span>
+          </div>
+
+          <!-- Numbers Panel -->
+          <div class="analytics-cards">
+            <div class="glass-panel stat-card">
+              <span class="label">Total Revenue</span>
+              <span class="value" id="stat-revenue">$0.00</span>
+              <span class="trend up">▲ +12% this week</span>
+            </div>
+            <div class="glass-panel stat-card">
+              <span class="label">Total Orders</span>
+              <span class="value" id="stat-orders-count">0</span>
+              <span class="trend up">▲ +8% new users</span>
+            </div>
+            <div class="glass-panel stat-card">
+              <span class="label">Filament Consumed</span>
+              <span class="value" id="stat-filament-consumed">0.0 kg</span>
+              <span class="trend text-muted">Remaining stock: 15.5 kg</span>
+            </div>
+            <div class="glass-panel stat-card">
+              <span class="label">Active Print Jobs</span>
+              <span class="value" id="stat-active-prints">0</span>
+              <span class="trend down">▼ 2 printers idle</span>
+            </div>
+          </div>
+
+          <div class="analytics-charts">
+            <!-- Simulated Revenue Trend -->
+            <div class="glass-panel graph-container">
+              <div class="graph-title">Weekly Revenue Trends</div>
+              <div class="css-graph" id="revenue-graph">
+                <!-- Javascript builds these bars -->
+              </div>
+            </div>
+
+            <!-- Material Weight meters -->
+            <div class="glass-panel filament-meter">
+              <div class="graph-title">Stock Allocation & usage</div>
+              <div class="filament-colors-breakdown" id="filament-meters-container">
+                <!-- Progress bars populated by active color selection weight -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: CATALOG INVENTORY MANAGEMENT -->
+        <div class="db-section" id="db-inventory">
+          <div class="db-section-header">
+            <h2>Inventory Catalog</h2>
+            <button class="btn btn-primary" id="inventory-add-item-btn">+ Add Product</button>
+          </div>
+
+          <div class="inventory-grid" id="dashboard-inventory-grid">
+            <!-- Dynamically populated cards -->
+          </div>
+        </div>
+
+        <!-- SECTION 3: INCOMING & PRINTING ORDERS -->
+        <div class="db-section" id="db-orders">
+          <div class="db-section-header">
+            <h2>Order Tracking System</h2>
+            <span class="text-muted">Simulate and edit live orders status</span>
+          </div>
+
+          <div class="db-table-container">
+            <table class="db-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer Name</th>
+                  <th>Print Items</th>
+                  <th>Date Placed</th>
+                  <th>Payment Method</th>
+                  <th>Total Cost</th>
+                  <th>Build Status</th>
+                  <th>System Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-orders-tbody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 4: PAYMENT CONFIGURATION -->
+        <div class="db-section" id="db-payments">
+          <div class="db-section-header">
+            <h2>Payment Settings</h2>
+            <span class="text-muted">Configure billing options for your storefront</span>
+          </div>
+
+          <form id="payments-config-form">
+            <div class="payments-tabs-nav" style="display: flex; gap: 1.5rem; border-bottom: 1px solid var(--glass-border); margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+              <span class="payment-settings-tab active" data-tab="tab-cod" style="cursor: pointer; padding: 0.5rem 1rem; font-weight: 600; transition: var(--transition-smooth);">Cash on Delivery</span>
+              <span class="payment-settings-tab" data-tab="tab-wish" style="cursor: pointer; padding: 0.5rem 1rem; font-weight: 600; transition: var(--transition-smooth);">Wish Money</span>
+              <span class="payment-settings-tab" data-tab="tab-neo" style="cursor: pointer; padding: 0.5rem 1rem; font-weight: 600; transition: var(--transition-smooth);">Neo by Audi</span>
+            </div>
+
+            <!-- Tab 1: COD -->
+            <div class="payment-settings-panel" id="tab-cod">
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+                <input type="checkbox" id="cfg-cod-enabled" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="cfg-cod-enabled" style="font-weight: 600; cursor: pointer; user-select: none;">Enable Cash on Delivery (COD)</label>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-cod-instructions">COD Checkout Instructions</label>
+                <textarea class="form-input" id="cfg-cod-instructions" rows="3" placeholder="Enter instructions shown to customers during checkout..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-cod-fee">Extra COD Surcharge Fee ($)</label>
+                <input type="number" step="0.01" class="form-input" id="cfg-cod-fee" placeholder="0.00">
+              </div>
+            </div>
+
+            <!-- Tab 2: Wish Money -->
+            <div class="payment-settings-panel" id="tab-wish" style="display: none;">
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+                <input type="checkbox" id="cfg-wish-enabled" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="cfg-wish-enabled" style="font-weight: 600; cursor: pointer; user-select: none;">Enable Wish Money Transfer</label>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="cfg-wish-phone">Wish Transfer Phone Number</label>
+                  <input type="text" class="form-input" id="cfg-wish-phone" placeholder="+961 70 123 456">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cfg-wish-name">Receiver Full Name</label>
+                  <input type="text" class="form-input" id="cfg-wish-name" placeholder="John Doe">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-wish-instructions">Wish Transfer Instructions</label>
+                <textarea class="form-input" id="cfg-wish-instructions" rows="3" placeholder="Enter instructions..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-wish-barcode">Custom Barcode / QR Code Image URL</label>
+                <input type="text" class="form-input" id="cfg-wish-barcode" placeholder="https://api.qrserver.com/...">
+              </div>
+            </div>
+
+            <!-- Tab 3: Neo by Audi -->
+            <div class="payment-settings-panel" id="tab-neo" style="display: none;">
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+                <input type="checkbox" id="cfg-neo-enabled" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="cfg-neo-enabled" style="font-weight: 600; cursor: pointer; user-select: none;">Enable Neo by Audi Payment</label>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="cfg-neo-link">Neo Payment Link (URL)</label>
+                  <input type="text" class="form-input" id="cfg-neo-link" placeholder="https://neo.audi/pay/username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cfg-neo-account">Neo Username / Account ID</label>
+                  <input type="text" class="form-input" id="cfg-neo-account" placeholder="NEO-USERNAME">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-neo-instructions">Neo Instructions</label>
+                <textarea class="form-input" id="cfg-neo-instructions" rows="3" placeholder="Enter instructions..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-neo-qr">Neo QR Code Image URL</label>
+                <input type="text" class="form-input" id="cfg-neo-qr" placeholder="https://api.qrserver.com/...">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem;" id="save-payments-btn">Save Payment Settings 💾</button>
+          </form>
+        </div>
+
+        <!-- SECTION 5: PRICING CALCULATOR -->
+        <div class="db-section" id="db-calculator">
+          <div class="db-section-header">
+            <h2>3D Printing Cost & Retail Pricing Calculator</h2>
+            <span class="text-muted">Analyze item manufacturing COGS and project retail margins</span>
+          </div>
+
+          <div class="db-calculator-console">
+            <!-- Left Side: Global Overhead Presets -->
+            <div class="calc-card calc-left">
+              <h3>⚙️ Global Overheads & Defaults</h3>
+              <p class="calc-section-desc">Overhead parameters are saved in local storage to use across calculations.</p>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-spool-cost">Spool Cost ($)</label>
+                  <input type="number" step="0.01" class="form-input calc-input" id="calc-cfg-spool-cost" value="24.99">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-spool-weight">Spool Weight (grams)</label>
+                  <input type="number" class="form-input calc-input" id="calc-cfg-spool-weight" value="1000">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-wattage">Printer Wattage (Watts)</label>
+                  <input type="number" class="form-input calc-input" id="calc-cfg-wattage" value="150">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-elec-rate">Electricity Rate ($/kWh)</label>
+                  <input type="number" step="0.001" class="form-input calc-input" id="calc-cfg-elec-rate" value="0.120">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-depreciation">Depreciation Rate ($/hour)</label>
+                  <input type="number" step="0.01" class="form-input calc-input" id="calc-cfg-depreciation" value="0.25">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="calc-cfg-labor-wage">Hourly Labor Wage ($/hr)</label>
+                  <input type="number" step="0.10" class="form-input calc-input" id="calc-cfg-labor-wage" value="15.00">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-cfg-profit-margin">Target Profit Margin (%)</label>
+                <input type="number" step="1" class="form-input calc-input" id="calc-cfg-profit-margin" value="60">
+              </div>
+
+              <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;" id="calc-save-defaults-btn">Save Defaults 💾</button>
+            </div>
+
+            <!-- Right Side: Specific Print Details & Output Console -->
+            <div class="calc-right">
+              
+              <!-- Inputs Panel -->
+              <div class="calc-card" style="margin-bottom: 1.5rem;">
+                <h3>📦 Specific Print Job Details</h3>
+                
+                <div class="form-group">
+                  <label class="form-label" for="calc-item-name">Print Item Name</label>
+                  <input type="text" class="form-input calc-input" id="calc-item-name" placeholder="e.g. Articulating Dragon (Giant)">
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="calc-weight">Model Weight (grams)</label>
+                    <input type="number" class="form-input calc-input" id="calc-weight" placeholder="e.g. 150">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="calc-print-time">Print Time (hours)</label>
+                    <input type="number" step="0.1" class="form-input calc-input" id="calc-print-time" placeholder="e.g. 6.5">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="calc-prep-time">Prep & Packing Time (minutes)</label>
+                    <input type="number" class="form-input calc-input" id="calc-prep-time" placeholder="e.g. 15">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="calc-packaging-cost">Packaging & Box Cost ($)</label>
+                    <input type="number" step="0.01" class="form-input calc-input" id="calc-packaging-cost" placeholder="e.g. 1.50">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Output Console Panel -->
+              <div class="calc-card console-output">
+                <h3>📊 Calculator Results Summary</h3>
+                
+                <!-- Main Highlight Board -->
+                <div class="retail-price-highlight-card">
+                  <div class="highlight-label">Suggested Retail Price</div>
+                  <div class="highlight-value" id="calc-out-suggested-price">$0.00</div>
+                  <div class="highlight-profit-badge" id="calc-out-profit-percent">Margins: 0.00%</div>
+                </div>
+
+                <!-- Cost Details List -->
+                <div class="cost-details-breakdown">
+                  <div class="cost-breakdown-row">
+                    <span>Material (with 15% Waste Tax)</span>
+                    <span id="calc-out-material-cost">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row">
+                    <span>Power Usage Cost</span>
+                    <span id="calc-out-power-cost">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row">
+                    <span>Machine Depreciation & Wear</span>
+                    <span id="calc-out-wear-cost">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row">
+                    <span>Hands-on Labor Cost</span>
+                    <span id="calc-out-labor-cost">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row" style="border-bottom: 1.5px solid rgba(255,255,255,0.15); padding-bottom: 0.6rem; margin-bottom: 0.6rem;">
+                    <span>Packaging & Supplies Cost</span>
+                    <span id="calc-out-packaging-cost">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row total-cogs-row">
+                    <span>TOTAL PRODUCTION COST (COGS)</span>
+                    <span id="calc-out-total-cogs">$0.00</span>
+                  </div>
+                  <div class="cost-breakdown-row net-profit-row">
+                    <span>NET PROFIT REVENUE</span>
+                    <span id="calc-out-net-profit">$0.00</span>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem; justify-content: center;" id="calc-apply-catalog-btn" disabled>
+                  Apply to New Catalog Product 🚀
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ADD / EDIT PRODUCT MODAL FORM -->
+  <div class="modal-overlay" id="product-form-modal-overlay">
+    <div class="glass-panel checkout-modal product-form-modal">
+      <div class="checkout-left" style="border: none; padding: 2.5rem; width: 100%;">
+        <div class="checkout-title">
+          <span id="product-modal-title">Create New Catalog Product</span>
+          <button class="close-modal-btn" id="close-product-form-btn">×</button>
+        </div>
+
+        <form id="product-crud-form">
+          <input type="hidden" id="crud-product-id">
+          
+          <div class="form-scroll-container">
+            <div class="form-group">
+              <label class="form-label" for="crud-name">Product Name</label>
+              <input type="text" class="form-input" id="crud-name" required placeholder="e.g. Spiral Origami Vase">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="crud-description">Description</label>
+              <textarea class="form-input" id="crud-description" rows="3" required placeholder="Describe the item, printing settings, layout details..."></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="crud-price">Base Price ($)</label>
+                <input type="number" step="0.01" class="form-input" id="crud-price" required placeholder="19.99">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="crud-category">Main Category</label>
+                <select class="form-input" id="crud-category" required>
+                  <option value="home-decor">Home Decor</option>
+                  <option value="gadgets-tools">Gadgets & Tools</option>
+                  <option value="gaming-toys">Gaming & Toys</option>
+                  <option value="cosplay-props">Cosplay & Props</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="crud-subcategory">Subcategory</label>
+                <input type="text" class="form-input" id="crud-subcategory" required placeholder="e.g. Vases">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="crud-print-time">Estimated Build Time</label>
+                <input type="text" class="form-input" id="crud-print-time" placeholder="e.g. 5 hours">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="crud-weight">Weight (g)</label>
+                <input type="text" class="form-input" id="crud-weight" placeholder="e.g. 85g">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="crud-difficulty">Build Level</label>
+                <select class="form-input" id="crud-difficulty">
+                  <option value="Easy">Easy (Low fail rate)</option>
+                  <option value="Medium" selected>Medium</option>
+                  <option value="Hard">Hard (Overhangs / supports)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Configuration Tags/Chips for variations -->
+            <div class="form-group">
+              <label class="form-label">Filament Color Variants (Type name and press Enter)</label>
+              <div class="tags-input-container" id="colors-tags-box">
+                <!-- Tag chips render here -->
+                <input type="text" class="tag-text-input" id="colors-tag-input" placeholder="e.g. Silk Gold">
+              </div>
+              <p class="text-muted" style="font-size: 0.75rem; margin-top: 0.2rem;">Default seeds will assign hex codes automatically based on color names.</p>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Sizes Options (Comma separated, e.g. "Small (10cm):-3.00, Standard (15cm):0.00")</label>
+              <input type="text" class="form-input" id="crud-sizes" placeholder="Small (10cm):-3.00, Standard:0.00, Large:+10.00">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Materials Options (Comma separated, e.g. "PLA:0.00, PETG:+2.50")</label>
+              <input type="text" class="form-input" id="crud-materials" placeholder="PLA (Standard):0.00, PETG (Durable):2.50">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" id="crud-submit-btn">Save Product to Catalog</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULATED EMAIL CLIENT FEED DRAWER -->
+  <div class="glass-panel email-sim-drawer" id="email-simulator-drawer">
+    <div class="email-sim-header" id="email-header-toggle">
+      <h3>📬 Customer Notification Center</h3>
+      <span class="unread-badge" id="email-unread-badge">0</span>
+    </div>
+    <div class="email-sim-content">
+      <div class="email-list" id="email-list-view">
+        <!-- Rendered emails go here -->
+      </div>
+      <div class="email-detail" id="email-detail-view" style="display: none;">
+        <button class="email-detail-back" id="email-detail-back-btn">← Back to Inbox</button>
+        <div class="email-body" id="email-detail-body">
+          <!-- Expanded email letter body -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB Seed & State Application -->
+  <script type="module" src="data.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
