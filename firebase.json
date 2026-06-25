@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "pixelpop-cd075",
     "public": "dist",
     "ignore": [
       "firebase.json",
