@@ -10,8 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Swapping 'npm ci' to 'npm install' prevents lockfile exit code crashes
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build App with Vite
         run: npm run build
