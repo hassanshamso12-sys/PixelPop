@@ -22,4 +22,4 @@ jobs:
       - name: Deploy to Firebase Hosting
         run: firebase deploy --only hosting --site pixelpop-cd075 --project pixelpop-cd075
         env:
-          FIREBASE_TOKEN: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PIXELPOP_CD075 }}'
+          GOOGLE_APPLICATION_CREDENTIALS: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PIXELPOP_CD075 }}'
