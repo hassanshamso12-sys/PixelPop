@@ -19,7 +19,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-     - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting
         run: firebase deploy --only hosting --project pixelpop-cd075
         env:
           GOOGLE_APPLICATION_CREDENTIALS: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PIXELPOP_CD075 }}'
