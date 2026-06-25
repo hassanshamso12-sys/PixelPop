@@ -1,3 +1,4 @@
+# Fix configuration and build target
 name: Deploy to Firebase Hosting on Merge
 on:
   push:
