@@ -183,16 +183,16 @@ const DEFAULT_PAYMENT_SETTINGS = {
   wish: {
     enabled: true,
     phoneNumber: "+961 70 123 456",
-    receiverName: "Prism3D Shop",
+    receiverName: "PixelPop Shop",
     instructions: "Please send the transfer via Wish Money to the phone number and receiver name below. Once sent, type your Transaction Reference Number in the input field.",
-    barcodeUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WishMoneyTransferPrism3D"
+    barcodeUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=WishMoneyTransferPixelPop"
   },
   neo: {
     enabled: true,
-    paymentLink: "https://neo.audi/pay/prism3d",
-    accountNumber: "NEO-PRISM3D",
+    paymentLink: "https://neo.audi/pay/pixelpop",
+    accountNumber: "NEO-PIXELPOP",
     instructions: "Tap the link or scan the QR code to complete your payment on the Neo by Audi app. Enter your Neo username/alias in the input field.",
-    qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://neo.audi/pay/prism3d"
+    qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://neo.audi/pay/pixelpop"
   }
 };
 

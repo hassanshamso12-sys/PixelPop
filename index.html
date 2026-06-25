@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Premium 3D printing custom e-commerce shop and dashboard. Browse, customize, and order high-precision 3D prints.">
-  <title>Prism3D - Custom 3D Printed Prints & Store</title>
+  <title>PixelPop - Custom 3D Printed Prints & Store</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     <div class="container nav-flex">
       <div class="logo" id="logo-btn">
         <div class="logo-icon">P</div>
-        <span>Prism<span class="text-gradient">3D</span></span>
+        <span>Pixel<span class="text-gradient">Pop</span></span>
       </div>
       <nav class="nav-links">
         <span class="nav-link active" id="nav-home">Home</span>
@@ -32,7 +32,7 @@
         <span class="nav-link" id="nav-contact">Contact Us</span>
       </nav>
       <div class="header-actions">
-        <button class="btn btn-secondary" id="nav-dashboard" style="display: none; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; font-weight: 500; font-family: var(--font-display);">Admin Console ⚙️</button>
+        <button class="btn btn-secondary" id="nav-dashboard" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; font-weight: 500; font-family: var(--font-display);">Admin Console ⚙️</button>
         <button class="cart-icon-btn" id="cart-toggle-btn" aria-label="Open Shopping Cart">
           🛒
           <span class="cart-count" id="cart-count-badge">0</span>
@@ -69,7 +69,44 @@
 
       <div class="hero-visual">
         <div class="nozzle-simulator">
-          <div class="nozzle-icon">⚙️</div>
+          <div class="nozzle-icon">
+            <svg class="nozzle-icon-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="prism-grad-1" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="var(--accent-cyan)" />
+                  <stop offset="50%" stop-color="var(--accent-indigo)" />
+                  <stop offset="100%" stop-color="var(--accent-purple)" />
+                </linearGradient>
+                <linearGradient id="prism-grad-2" x1="80" y1="20" x2="20" y2="80" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="var(--accent-pink)" />
+                  <stop offset="100%" stop-color="var(--accent-indigo)" />
+                </linearGradient>
+                <linearGradient id="nozzle-grad" x1="50" y1="5" x2="50" y2="40" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#94a3b8" />
+                  <stop offset="100%" stop-color="#475569" />
+                </linearGradient>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <!-- 3D Cube / Prism Wireframe and Faces -->
+              <polygon points="50,85 80,70 50,55 20,70" fill="url(#prism-grad-1)" opacity="0.3" stroke="var(--accent-cyan)" stroke-width="1.5" stroke-linejoin="round" />
+              <polygon points="20,70 50,85 50,50 20,35" fill="url(#prism-grad-2)" opacity="0.6" stroke="var(--accent-indigo)" stroke-width="1.5" stroke-linejoin="round" />
+              <polygon points="50,85 80,70 80,35 50,50" fill="url(#prism-grad-1)" opacity="0.8" stroke="var(--accent-purple)" stroke-width="1.5" stroke-linejoin="round" />
+              <polygon points="50,50 80,35 50,20 20,35" fill="url(#prism-grad-2)" opacity="0.4" stroke="var(--accent-pink)" stroke-width="1.5" stroke-linejoin="round" />
+              <polygon points="50,20 80,35 80,70 50,85 20,70 20,35" fill="none" stroke="url(#prism-grad-1)" stroke-width="2.5" filter="url(#glow)" stroke-linejoin="round" />
+              <line x1="50" y1="50" x2="50" y2="85" stroke="var(--bg-primary)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7" />
+              <line x1="50" y1="50" x2="20" y2="35" stroke="var(--bg-primary)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7" />
+              <line x1="50" y1="50" x2="80" y2="35" stroke="var(--bg-primary)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7" />
+              <!-- Nozzle Simulator -->
+              <path d="M 50,0 L 50,15" stroke="var(--accent-pink)" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+              <polygon points="44,12 56,12 58,18 42,18" fill="url(#nozzle-grad)" />
+              <polygon points="42,18 58,18 50,26" fill="#f59e0b" />
+              <circle cx="50" cy="26" r="1.5" fill="#d97706" />
+              <circle cx="50" cy="26" r="3" fill="var(--accent-pink)" opacity="0.8" filter="url(#glow)" />
+            </svg>
+          </div>
           <div class="filament-line"></div>
         </div>
       </div>
@@ -107,7 +144,7 @@
     <!-- About Us Section -->
     <section class="about-section-container" id="about-us-section" style="margin-top: 5rem; padding-top: 4rem; border-top: 1px solid var(--glass-border);">
       <div class="db-section-header" style="text-align: center; margin-bottom: 3rem;">
-        <h2>About Prism3D</h2>
+        <h2>About PixelPop</h2>
         <p class="text-muted" style="font-size: 1.05rem; max-width: 700px; margin: 0.5rem auto 0; line-height: 1.5;">Learn about our high-precision custom fabrication pipeline, active 3D printing farm, and bio-friendly materials.</p>
       </div>
 
@@ -148,7 +185,7 @@
           </div>
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Email Support:</strong>
-            <p><a href="mailto:hello@prism3d.com" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600;">hello@prism3d.com</a></p>
+            <p><a href="mailto:hello@pixelpop.com" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600;">hello@pixelpop.com</a></p>
           </div>
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Hotline & WhatsApp:</strong>
@@ -403,6 +440,41 @@
     </div>
   </div>
 
+  <!-- ADMIN LOGIN SECTION -->
+  <main class="container admin-login-view" id="admin-login-page" style="display: none;">
+    <div class="glass-panel login-card">
+      <div class="login-header">
+        <div class="logo">
+          <div class="logo-icon">P</div>
+          <span>Pixel<span class="text-gradient">Pop</span></span>
+        </div>
+        <h2>Admin Console</h2>
+        <p class="text-muted">Log in to manage prints, inventory, and payments.</p>
+      </div>
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label class="form-label" for="admin-email">Email Address</label>
+          <input type="email" id="admin-email" class="form-input" placeholder="admin@pixelpop.com" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="admin-password">Password</label>
+          <input type="password" id="admin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div id="login-error-msg" class="text-danger" style="display: none; font-size: 0.85rem; margin-top: -0.5rem; margin-bottom: 1rem; font-weight: 500;">
+          ❌ Invalid email or password
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+          Log In 🔒
+        </button>
+      </form>
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <button class="btn-link" id="login-back-to-store" style="background: none; border: none; color: var(--text-muted); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; text-decoration: underline; transition: var(--transition-smooth);">
+          ← Return to Store
+        </button>
+      </div>
+    </div>
+  </main>
+
   <!-- PRIVATE ADMIN DASHBOARD SECTION -->
   <main class="container admin-dashboard-view" id="admin-dashboard-page">
     <div class="glass-panel dashboard-grid">
@@ -410,8 +482,8 @@
       <!-- Dashboard Sidebar Navigation -->
       <aside class="db-sidebar">
         <div class="logo">
-          <div class="logo-icon">D</div>
-          <span>Prism<span class="text-gradient">DB</span></span>
+          <div class="logo-icon">P</div>
+          <span>Pixel<span class="text-gradient">DB</span></span>
         </div>
         
         <div class="db-menu">

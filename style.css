@@ -284,9 +284,22 @@ header {
   animation: pulse-glow 4s infinite;
 }
 .nozzle-icon {
-  font-size: 5rem;
-  color: var(--accent-cyan);
   animation: float 4s ease-in-out infinite;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nozzle-icon-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 12px 24px rgba(79, 70, 229, 0.2));
+  transition: var(--transition-bounce);
+}
+.nozzle-icon-svg:hover {
+  transform: scale(1.08) rotate(3deg);
+  filter: drop-shadow(0 16px 32px rgba(8, 145, 178, 0.3));
 }
 .filament-line {
   position: absolute;
@@ -1143,6 +1156,63 @@ header {
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
   color: var(--accent-cyan);
+}
+
+/* Admin Login View */
+.admin-login-view {
+  padding: 6rem 0 10rem;
+  display: none; /* Managed by state routing */
+  align-items: center;
+  justify-content: center;
+}
+.login-card {
+  max-width: 450px;
+  width: 100%;
+  padding: 3rem 2.5rem;
+  margin: 0 auto;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: var(--transition-bounce);
+}
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
+}
+.login-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.login-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.login-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+.login-header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.text-danger {
+  color: var(--accent-red);
+}
+.btn-link:hover {
+  color: var(--accent-indigo) !important;
 }
 
 /* Admin Dashboard View */

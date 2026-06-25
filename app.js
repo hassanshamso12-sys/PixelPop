@@ -1,4 +1,4 @@
-// Prism3D E-Commerce and Admin Dashboard Application Controller
+// PixelPop E-Commerce and Admin Dashboard Application Controller
 
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Database
@@ -17,11 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
       size: null,
       material: null,
     },
-    cart: JSON.parse(localStorage.getItem("prism_cart")) || [],
-    emails: JSON.parse(localStorage.getItem("prism_emails")) || [],
+    cart: JSON.parse(localStorage.getItem("pixelpop_cart")) || [],
+    emails: JSON.parse(localStorage.getItem("pixelpop_emails")) || [],
     rotation: 45,
     isDragging: false,
     startX: 0,
+    isAdminLoggedIn: sessionStorage.getItem("isAdminLoggedIn") === "true",
   };
 
   // DOM CACHE
@@ -180,6 +181,12 @@ document.addEventListener("DOMContentLoaded", () => {
     colorsTagInput: document.getElementById("colors-tag-input"),
     crudSizes: document.getElementById("crud-sizes"),
     crudMaterials: document.getElementById("crud-materials"),
+    adminLoginPage: document.getElementById("admin-login-page"),
+    adminLoginForm: document.getElementById("admin-login-form"),
+    adminEmailInput: document.getElementById("admin-email"),
+    adminPasswordInput: document.getElementById("admin-password"),
+    loginErrorMsg: document.getElementById("login-error-msg"),
+    loginBackToStore: document.getElementById("login-back-to-store"),
   };
 
   // Tag input helper list
@@ -199,9 +206,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Default Email Seed if empty
     if (state.emails.length === 0) {
       addSimulatedEmail(
-        "welcome@prism3d.com",
-        "Prism3D Welcome Package",
-        `Welcome to Prism3D! Check out our new 3D customizer. Rotate models on the print bed in real-time, pick custom filaments, and get automatic printing confirmation emails! Our admin panel tracks all completed print weights and filaments. Happy printing!`
+        "welcome@pixelpop.com",
+        "PixelPop Welcome Package",
+        `Welcome to PixelPop! Check out our new 3D customizer. Rotate models on the print bed in real-time, pick custom filaments, and get automatic printing confirmation emails! Our admin panel tracks all completed print weights and filaments. Happy printing!`
       );
     }
   }
@@ -219,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     DOM.storefrontPage.style.display = "none";
     DOM.productDetailPage.style.display = "none";
     DOM.adminDashboardPage.style.display = "none";
+    if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "none";
 
     if (page === "store") {
       DOM.storefrontPage.style.display = "grid";
@@ -233,11 +241,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     } else if (page === "dashboard") {
+      if (!state.isAdminLoggedIn) {
+        changePage("admin-login", pushState);
+        return;
+      }
       if (DOM.navDashboard) DOM.navDashboard.classList.add("active");
       DOM.adminDashboardPage.style.display = "block";
       initDashboard();
       if (pushState && window.location.pathname !== "/admin") {
         history.pushState({ page: "dashboard" }, "", "/admin");
+      }
+    } else if (page === "admin-login") {
+      if (DOM.navDashboard) DOM.navDashboard.classList.add("active");
+      if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "flex";
+      if (pushState && window.location.pathname !== "/admin") {
+        history.pushState({ page: "admin-login" }, "", "/admin");
       }
     }
   }
@@ -675,7 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Save & Update
-    localStorage.setItem("prism_cart", JSON.stringify(state.cart));
+    localStorage.setItem("pixelpop_cart", JSON.stringify(state.cart));
     updateCartUI();
 
     // Trigger Micro-animation notification
@@ -768,13 +786,13 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    localStorage.setItem("prism_cart", JSON.stringify(state.cart));
+    localStorage.setItem("pixelpop_cart", JSON.stringify(state.cart));
     updateCartUI();
   }
 
   function removeCartItem(itemId) {
     state.cart = state.cart.filter(item => item.id !== itemId);
-    localStorage.setItem("prism_cart", JSON.stringify(state.cart));
+    localStorage.setItem("pixelpop_cart", JSON.stringify(state.cart));
     updateCartUI();
   }
 
@@ -1001,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const total = subtotal + shippingPrice + surchargeFee;
 
     // Build Order Object
-    const orderId = `PRISM-${Math.floor(100000 + Math.random() * 900000)}`;
+    const orderId = `PIXEL-${Math.floor(100000 + Math.random() * 900000)}`;
     const newOrder = {
       id: orderId,
       customer: { firstName, lastName, email, address, city, zip },
@@ -1032,7 +1050,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Clear cart
     state.cart = [];
-    localStorage.removeItem("prism_cart");
+    localStorage.removeItem("pixelpop_cart");
     updateCartUI();
 
     // Switch to landing
@@ -1083,14 +1101,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!email) return;
 
     email.read = true;
-    localStorage.setItem("prism_emails", JSON.stringify(state.emails));
+    localStorage.setItem("pixelpop_emails", JSON.stringify(state.emails));
     renderEmailList();
 
     DOM.emailListView.style.display = "none";
     DOM.emailDetailView.style.display = "flex";
 
     DOM.emailDetailBody.innerHTML = `
-      <div class="email-body-logo">Prism3D Customer Update</div>
+      <div class="email-body-logo">PixelPop Customer Update</div>
       <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">
         <strong>From:</strong> ${email.from}<br>
         <strong>Subject:</strong> ${email.subject}<br>
@@ -1122,7 +1140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     state.emails.unshift(newEmail);
-    localStorage.setItem("prism_emails", JSON.stringify(state.emails));
+    localStorage.setItem("pixelpop_emails", JSON.stringify(state.emails));
     renderEmailList();
 
     // Trigger visual tray highlight if not already open
@@ -1150,9 +1168,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Order Received
     addSimulatedEmail(
-      "billing@prism3d.com",
+      "billing@pixelpop.com",
       `Order Received - Invoice ${order.id}`,
-      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${order.deliveryMethod === 'express' ? 'Express Filament Courier (1-2 days)' : 'Standard Postal (4-6 days)'}\n\n${paymentDetailsText}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPrism3D Billing Team`
+      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${order.deliveryMethod === 'express' ? 'Express Filament Courier (1-2 days)' : 'Standard Postal (4-6 days)'}\n\n${paymentDetailsText}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPixelPop Billing Team`
     );
 
     // 2. Queue printing start email after 15 seconds
@@ -1172,9 +1190,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const totalWeight = order.items.reduce((sum, item) => sum + (parseInt(item.weight) || 0) * item.qty, 0);
 
         addSimulatedEmail(
-          "production@prism3d.com",
+          "production@pixelpop.com",
           `Build Commenced - Printing Order ${order.id}`,
-          `Hi ${address.firstName},\n\nGood news! Your order ${order.id} is now on the print bed. We've assigned the print job to our high-precision Delta printer array (Nozzle #4).\n\nTechnical Build Specs:\n• Build volume allocation: ${totalWeight}g of filament\n• Retraction speed: 45mm/s\n• Temperature: Extruder 210°C / Bed 60°C\n• Layer Resolution: 0.16mm fine details\n\nYou can track updates directly here. Once the build cools down and passes our QC caliper measurements, we'll pack it up!\n\nSincerely,\nPrism3D Fabrication Dept.`
+          `Hi ${address.firstName},\n\nGood news! Your order ${order.id} is now on the print bed. We've assigned the print job to our high-precision Delta printer array (Nozzle #4).\n\nTechnical Build Specs:\n• Build volume allocation: ${totalWeight}g of filament\n• Retraction speed: 45mm/s\n• Temperature: Extruder 210°C / Bed 60°C\n• Layer Resolution: 0.16mm fine details\n\nYou can track updates directly here. Once the build cools down and passes our QC caliper measurements, we'll pack it up!\n\nSincerely,\nPixelPop Fabrication Dept.`
         );
       }
     }, 15000);
@@ -1191,12 +1209,12 @@ document.addEventListener("DOMContentLoaded", () => {
           updateOverviewStats();
         }
 
-        const trackingNumber = `P3D-${Math.floor(10000000 + Math.random() * 90000000)}US`;
+        const trackingNumber = `PXP-${Math.floor(10000000 + Math.random() * 90000000)}US`;
 
         addSimulatedEmail(
-          "shipping@prism3d.com",
+          "shipping@pixelpop.com",
           `Build Dispatched - Order ${order.id} is Shipped`,
-          `Hi ${address.firstName},\n\nYour 3D printed items are finished! The prints cooled down, passed caliper inspection, were packed in bubble wrap, and handed off to our carrier.\n\nCarrier Tracking Number: ${trackingNumber}\nExpected arrival: 3-5 business days.\n\nThank you for choosing Prism3D. Feel free to reply to this email with photos of your prints in action!\n\nCheers,\nPrism3D Logistics`
+          `Hi ${address.firstName},\n\nYour 3D printed items are finished! The prints cooled down, passed caliper inspection, were packed in bubble wrap, and handed off to our carrier.\n\nCarrier Tracking Number: ${trackingNumber}\nExpected arrival: 3-5 business days.\n\nThank you for choosing PixelPop. Feel free to reply to this email with photos of your prints in action!\n\nCheers,\nPixelPop Logistics`
         );
       }
     }, 45000);
@@ -1642,13 +1660,13 @@ document.addEventListener("DOMContentLoaded", () => {
           if (newStatus === "Printing") {
             const totalWeight = order.items.reduce((sum, item) => sum + (parseInt(item.weight) || 0) * item.qty, 0);
             addSimulatedEmail(
-              "production@prism3d.com",
+              "production@pixelpop.com",
               `Build Commenced - Printing Order ${order.id}`,
               `Hi ${order.customer.firstName},\n\nWe have manually started printing your order ${order.id} on our industrial SLA print bed.\n\nDetails:\nBuild capacity: ${totalWeight}g.\n\nKeep an eye on this space for tracking details!`
             );
           } else if (newStatus === "Shipped") {
             addSimulatedEmail(
-              "shipping@prism3d.com",
+              "shipping@pixelpop.com",
               `Build Dispatched - Order ${order.id} is Shipped`,
               `Hi ${order.customer.firstName},\n\nCaliper inspection passes QA! We have shipped your 3D printed items. Safe travels for your package!`
             );
@@ -1880,9 +1898,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   DOM.navDashboard.addEventListener("click", () => changePage("dashboard"));
   DOM.logoutBtn.addEventListener("click", () => {
+    state.isAdminLoggedIn = false;
+    sessionStorage.removeItem("isAdminLoggedIn");
     changePage("store");
     DOM.navHome.classList.add("active");
   });
+
+  if (DOM.adminLoginForm) {
+    DOM.adminLoginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = DOM.adminEmailInput.value.trim();
+      const password = DOM.adminPasswordInput.value;
+
+      if (email === "hassanshamso12@gmail.com" && password === "11223311") {
+        state.isAdminLoggedIn = true;
+        sessionStorage.setItem("isAdminLoggedIn", "true");
+        DOM.loginErrorMsg.style.display = "none";
+        DOM.adminEmailInput.value = "";
+        DOM.adminPasswordInput.value = "";
+        changePage("dashboard");
+      } else {
+        DOM.loginErrorMsg.style.display = "block";
+      }
+    });
+  }
+
+  if (DOM.loginBackToStore) {
+    DOM.loginBackToStore.addEventListener("click", () => {
+      changePage("store");
+      DOM.navHome.classList.add("active");
+    });
+  }
   DOM.detailBackBtn.addEventListener("click", () => {
     changePage("store");
     DOM.navHome.classList.add("active");
@@ -1932,9 +1978,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Simulated auto-response in notification inbox
       addSimulatedEmail(
-        "support@prism3d.com",
-        "Prism3D Message Receipt",
-        `Hi ${name},\n\nWe have received your message regarding custom quote/inquiry. Our fabrication engineers are currently analyzing details.\n\nYour Message Snippet:\n"${message.slice(0, 100)}..."\n\nWe will email you back within 1-2 hours!\n\nBest regards,\nPrism3D Customer Support`
+        "support@pixelpop.com",
+        "PixelPop Message Receipt",
+        `Hi ${name},\n\nWe have received your message regarding custom quote/inquiry. Our fabrication engineers are currently analyzing details.\n\nYour Message Snippet:\n"${message.slice(0, 100)}..."\n\nWe will email you back within 1-2 hours!\n\nBest regards,\nPixelPop Customer Support`
       );
 
       alert(`Thank you, ${name}! Your inquiry has been sent. A confirmation note has been dispatched to your inbox center.`);
