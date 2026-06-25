@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "none";
 
     if (page === "store") {
-      DOM.storefrontPage.style.display = "grid";
+      DOM.storefrontPage.style.display = "block";
       if (pushState && window.location.pathname !== "/") {
         history.pushState({ page: "store" }, "", "/");
       }
@@ -1896,7 +1896,9 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  DOM.navDashboard.addEventListener("click", () => changePage("dashboard"));
+  if (DOM.navDashboard) {
+    DOM.navDashboard.addEventListener("click", () => changePage("dashboard"));
+  }
   DOM.logoutBtn.addEventListener("click", () => {
     state.isAdminLoggedIn = false;
     sessionStorage.removeItem("isAdminLoggedIn");

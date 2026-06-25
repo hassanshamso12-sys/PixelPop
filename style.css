@@ -326,6 +326,7 @@ header {
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1.5rem;
+  max-width: 100%;
 }
 
 .category-tabs {
@@ -333,6 +334,9 @@ header {
   gap: 0.8rem;
   overflow-x: auto;
   padding-bottom: 0.5rem;
+  max-width: 100%;
+  width: 100%;
+  min-width: 0;
 }
 .category-tab {
   background: rgba(255, 255, 255, 0.03);
@@ -1541,7 +1545,7 @@ header {
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
   .hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     text-align: center;
     gap: 2rem;
   }
@@ -1558,30 +1562,92 @@ header {
   }
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   .db-sidebar {
-    flex-direction: row;
-    justify-content: space-between;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row !important;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     padding: 1rem 0;
   }
-  .db-menu {
+  .db-sidebar .logo {
+    order: 1;
+  }
+  .db-sidebar #logout-btn {
+    order: 2;
+    margin-top: 0 !important;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  .db-sidebar .db-menu {
+    order: 3;
+    width: 100%;
     flex-direction: row;
     overflow-x: auto;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
   }
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
   .nav-flex {
-    flex-direction: column;
+    flex-wrap: wrap;
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
   }
   .nav-links {
+    order: 3;
     width: 100%;
     justify-content: center;
+    gap: 1.2rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .header-actions {
+    order: 2;
+  }
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
+  .nozzle-simulator {
+    width: 260px;
+    height: 260px;
+  }
+  .nozzle-icon {
+    width: 130px;
+    height: 130px;
+  }
+  .filament-line {
+    width: 160px;
+    bottom: 60px;
+  }
+  .hero-stats {
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .visual-card {
+    height: 380px;
   }
   .checkout-grid {
     grid-template-columns: 1fr;
+  }
+  .checkout-left, .checkout-right {
+    padding: 1.5rem 1.2rem;
+  }
+  .checkout-title {
+    font-size: 1.3rem;
   }
   .checkout-left {
     border-right: none;
@@ -1596,6 +1662,12 @@ header {
   .cart-drawer {
     width: 100%;
     right: -100%;
+  }
+  .db-content {
+    padding: 1rem;
+  }
+  .db-calculator-console {
+    padding: 1rem;
   }
 }
 
@@ -1927,6 +1999,58 @@ header {
   .contact-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .shop-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-bar {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .search-input, .select-input {
+    width: 100%;
+  }
+  .payments-tabs-nav {
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+  .payment-settings-tab {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.9rem;
+    text-align: center;
+    flex-grow: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-stats {
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .visual-card {
+    height: 330px;
+  }
+  .analytics-cards {
+    grid-template-columns: 1fr;
+  }
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  .purchase-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    text-align: center;
   }
 }
 
