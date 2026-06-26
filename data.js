@@ -43,6 +43,11 @@ const DEFAULT_PRODUCTS = [
       "Matte Black": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
     },
     defaultImage: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
+    ],
     variations: {
       colors: [
         { name: "Silk Gold", hex: "#ffd700", priceModifier: 0 },
@@ -85,6 +90,11 @@ const DEFAULT_PRODUCTS = [
       "Charcoal": "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80"
     },
     defaultImage: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80"
+    ],
     variations: {
       colors: [
         { name: "Marble White", hex: "#e8e8e8", priceModifier: 1.00 },
@@ -124,6 +134,11 @@ const DEFAULT_PRODUCTS = [
       "Slate Grey": "https://images.unsplash.com/photo-1507208773393-40d9fc670acf?auto=format&fit=crop&w=600&q=80"
     },
     defaultImage: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1507208773393-40d9fc670acf?auto=format&fit=crop&w=600&q=80"
+    ],
     variations: {
       colors: [
         { name: "Stealth Black", hex: "#0f0f0f", priceModifier: 0 },
@@ -165,6 +180,11 @@ const DEFAULT_PRODUCTS = [
       "Carbon Fiber Black": "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&w=600&q=80"
     },
     defaultImage: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&w=600&q=80"
+    ],
     variations: {
       colors: [
         { name: "Crimson Red", hex: "#dc2626", priceModifier: 0 },
@@ -309,7 +329,29 @@ const DB = {
 
   getProducts() {
     this.init();
-    return JSON.parse(localStorage.getItem("products"));
+    let products = JSON.parse(localStorage.getItem("products"));
+    let updated = false;
+    products = products.map(p => {
+      if (!p.gallery) {
+        p.gallery = [];
+        if (p.defaultImage) {
+          p.gallery.push(p.defaultImage);
+        }
+        if (p.images) {
+          Object.values(p.images).forEach(imgUrl => {
+            if (imgUrl && !p.gallery.includes(imgUrl)) {
+              p.gallery.push(imgUrl);
+            }
+          });
+        }
+        updated = true;
+      }
+      return p;
+    });
+    if (updated) {
+      localStorage.setItem("products", JSON.stringify(products));
+    }
+    return products;
   },
 
   getProductById(id) {

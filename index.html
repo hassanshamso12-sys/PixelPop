@@ -316,6 +316,16 @@
           </div>
         </div>
         <p class="text-muted" style="font-size: 0.85rem; text-align: center;">Rotates 3D models based on selection variables. Scale slider controls the model's overall bounding size.</p>
+        
+        <!-- Product Photo Gallery -->
+        <div class="glass-panel detail-gallery-card">
+          <div class="detail-main-image-container">
+            <img id="detail-main-image" src="" alt="Product Photo">
+          </div>
+          <div class="detail-thumbnails-container" id="detail-thumbnails-container">
+            <!-- Dynamically populated thumbnails -->
+          </div>
+        </div>
       </div>
 
       <!-- Customization Variations & Purchase Selection Panel -->
@@ -1308,12 +1318,15 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="crud-image-upload">Product Image File (Upload to Storage)</label>
+              <label class="form-label" for="crud-image-upload">Product Images (Upload one or more to Storage)</label>
               <div style="display: flex; gap: 1rem; align-items: center;">
-                <input type="file" id="crud-image-upload" accept="image/*" class="form-input" style="padding: 0.4rem 0.8rem;">
+                <input type="file" id="crud-image-upload" accept="image/*" class="form-input" style="padding: 0.4rem 0.8rem;" multiple>
                 <div id="image-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>
               </div>
-              <input type="text" class="form-input" id="crud-image-url" readonly placeholder="Uploaded image URL will appear here..." style="margin-top: 0.5rem; background: var(--bg-secondary);">
+              <input type="hidden" id="crud-image-url">
+              <div id="crud-gallery-container" class="crud-gallery-grid">
+                <!-- Dynamically populated thumbnails with delete buttons -->
+              </div>
             </div>
 
             <!-- Configuration Tags/Chips for variations -->

@@ -35,6 +35,7 @@ DB.init();
     isAdminLoggedIn: sessionStorage.getItem("isAdminLoggedIn") === "true",
     appliedCoupon: null,
     productsFilterCategory: "all",
+    crudGalleryUrls: [],
     productsFilterSubcategory: "all",
     productsFilterPrice: 150,
     productsFilterSearch: "",
@@ -76,6 +77,9 @@ DB.init();
     detailProductName: document.getElementById("detail-product-name"),
     detailRatingDisplay: document.getElementById("detail-rating-display"),
     detailProductDesc: document.getElementById("detail-product-desc"),
+    detailMainImage: document.getElementById("detail-main-image"),
+    detailThumbnailsContainer: document.getElementById("detail-thumbnails-container"),
+    crudGalleryContainer: document.getElementById("crud-gallery-container"),
     variationsSelectors: document.getElementById("variations-selectors-container"),
     specPrintTime: document.getElementById("spec-print-time"),
     specFilamentWeight: document.getElementById("spec-filament-weight"),
@@ -804,10 +808,31 @@ DB.init();
     DOM.detailProductName.textContent = product.name;
     DOM.detailProductDesc.textContent = product.description;
     DOM.detailRatingDisplay.innerHTML = `★ ${product.rating.toFixed(1)} <span class="card-reviews">(${product.reviewsCount} verified reviews)</span>`;
-
     DOM.specPrintTime.textContent = product.specifications.printTime;
     DOM.specFilamentWeight.textContent = product.specifications.filamentUsed;
     DOM.specDifficulty.textContent = product.specifications.difficulty;
+
+    // Set default main image and load thumbnails list
+    if (product.gallery && product.gallery.length > 0) {
+      DOM.detailMainImage.src = product.gallery[0];
+      DOM.detailThumbnailsContainer.innerHTML = product.gallery.map((imgUrl, index) => `
+        <img class="detail-thumb ${index === 0 ? 'active' : ''}" src="${imgUrl}" alt="Thumbnail ${index + 1}" data-index="${index}">
+      `).join("");
+      DOM.detailThumbnailsContainer.style.display = "flex";
+      
+      // Bind click handlers to thumbnails
+      DOM.detailThumbnailsContainer.querySelectorAll(".detail-thumb").forEach(thumb => {
+        thumb.addEventListener("click", (e) => {
+          DOM.detailThumbnailsContainer.querySelectorAll(".detail-thumb").forEach(t => t.classList.remove("active"));
+          e.currentTarget.classList.add("active");
+          DOM.detailMainImage.src = e.currentTarget.src;
+        });
+      });
+    } else {
+      DOM.detailMainImage.src = product.defaultImage || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80";
+      DOM.detailThumbnailsContainer.innerHTML = "";
+      DOM.detailThumbnailsContainer.style.display = "none";
+    }
 
     // Render Selectors
     renderVariationSelectors(product);
@@ -969,8 +994,19 @@ DB.init();
     }
 
     // Set image display fallback if exists
-    if (state.customization.color && prod.images[state.customization.color.name]) {
-      // Optionally we can crossfade or display the matching photo background
+    if (state.customization.color && prod.images && prod.images[state.customization.color.name]) {
+      const colorImgUrl = prod.images[state.customization.color.name];
+      DOM.detailMainImage.src = colorImgUrl;
+      // Mark matching thumbnail as active
+      if (DOM.detailThumbnailsContainer) {
+        DOM.detailThumbnailsContainer.querySelectorAll(".detail-thumb").forEach(thumb => {
+          if (thumb.src === colorImgUrl) {
+            thumb.classList.add("active");
+          } else {
+            thumb.classList.remove("active");
+          }
+        });
+      }
     }
 
     // Update infill representation based on material
@@ -2142,6 +2178,10 @@ DB.init();
     document.getElementById("crud-image-url").value = "";
     document.getElementById("crud-image-upload").value = "";
     document.getElementById("image-upload-status").textContent = "";
+    state.crudGalleryUrls = [];
+    if (DOM.crudGalleryContainer) {
+      DOM.crudGalleryContainer.innerHTML = "";
+    }
 
     if (productId) {
       // Edit mode
@@ -2156,6 +2196,8 @@ DB.init();
       
       syncProductModalCategories(prod.category, prod.subcategory);
       document.getElementById("crud-image-url").value = prod.defaultImage || "";
+      state.crudGalleryUrls = prod.gallery ? [...prod.gallery] : (prod.defaultImage ? [prod.defaultImage] : []);
+      renderCrudGalleryList();
 
       DOM.crudPrintTime.value = prod.specifications.printTime;
       DOM.crudWeight.value = prod.specifications.filamentUsed;
@@ -2185,6 +2227,8 @@ DB.init();
       DOM.crudProductId.value = "";
       
       syncProductModalCategories();
+      state.crudGalleryUrls = [];
+      renderCrudGalleryList();
 
       currentColorsTags = ["Silk Gold", "Matte Black", "Cosmic Blue"];
       renderColorsTags();
@@ -2239,47 +2283,88 @@ DB.init();
     }
   });
 
-  // Handle product image upload to Firebase Storage
+  // Render the list of images in the product CRUD modal
+  function renderCrudGalleryList() {
+    if (!DOM.crudGalleryContainer) return;
+    if (state.crudGalleryUrls.length === 0) {
+      DOM.crudGalleryContainer.innerHTML = `<p class="text-muted" style="grid-column: 1/-1; font-size: 0.85rem; margin: 0;">No images uploaded yet.</p>`;
+      return;
+    }
+    DOM.crudGalleryContainer.innerHTML = state.crudGalleryUrls.map((url, idx) => `
+      <div class="crud-gallery-item" data-index="${idx}">
+        <img src="${url}" alt="Product Image Preview">
+        <button type="button" class="crud-gallery-remove" data-index="${idx}" title="Remove Image">&times;</button>
+      </div>
+    `).join("");
+
+    // Bind remove button handlers
+    DOM.crudGalleryContainer.querySelectorAll(".crud-gallery-remove").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const idx = parseInt(e.currentTarget.dataset.index);
+        state.crudGalleryUrls.splice(idx, 1);
+        // Sync first image to legacy field
+        document.getElementById("crud-image-url").value = state.crudGalleryUrls[0] || "";
+        renderCrudGalleryList();
+      });
+    });
+  }
+
+  // Handle multiple product images upload to Firebase Storage
   const imageUploadInput = document.getElementById("crud-image-upload");
   const imageUrlInput = document.getElementById("crud-image-url");
   const uploadStatus = document.getElementById("image-upload-status");
 
-  if (imageUploadInput) {
+  if (imageUploadInput && uploadStatus) {
     imageUploadInput.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
 
-      uploadStatus.textContent = "⏳ Uploading image...";
+      uploadStatus.textContent = `⏳ Uploading ${files.length} image(s)...`;
       uploadStatus.style.color = "var(--accent-indigo)";
 
-      // Generate local fallback URL immediately
-      const localUrl = URL.createObjectURL(file);
+      let loadedCount = 0;
+      let offlineWarning = false;
 
-      // Create a promise wrapper for uploading
-      const uploadPromise = async () => {
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `products/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-        const storageRef = ref(storage, fileName);
-        const snapshot = await uploadBytes(storageRef, file);
-        return await getDownloadURL(snapshot.ref);
-      };
-
-      const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-      try {
-        // Try uploading with an 8-second timeout
-        const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+      for (const file of files) {
+        const localUrl = URL.createObjectURL(file);
         
-        imageUrlInput.value = downloadUrl;
-        uploadStatus.textContent = "✅ Success!";
-        uploadStatus.style.color = "var(--accent-green)";
-      } catch (err) {
-        console.warn("Firebase Storage upload failed or timed out. Falling back to local Blob URL:", err);
-        
-        imageUrlInput.value = localUrl;
-        uploadStatus.textContent = "⚠️ Firebase offline (Using Local Preview)";
-        uploadStatus.style.color = "var(--accent-gold)";
+        const uploadPromise = async () => {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `products/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+          const storageRef = ref(storage, fileName);
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        };
+
+        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+        try {
+          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+          state.crudGalleryUrls.push(downloadUrl);
+          loadedCount++;
+        } catch (err) {
+          console.warn("Firebase Storage upload failed or timed out. Falling back to local Blob URL:", err);
+          state.crudGalleryUrls.push(localUrl);
+          loadedCount++;
+          offlineWarning = true;
+        }
       }
+
+      if (imageUrlInput) {
+        imageUrlInput.value = state.crudGalleryUrls[0] || "";
+      }
+
+      if (offlineWarning) {
+        uploadStatus.textContent = "⚠️ Uploaded (Firebase offline preview)";
+        uploadStatus.style.color = "var(--accent-gold)";
+      } else {
+        uploadStatus.textContent = `✅ Successfully uploaded ${loadedCount} images!`;
+        uploadStatus.style.color = "var(--accent-green)";
+      }
+
+      renderCrudGalleryList();
+      imageUploadInput.value = "";
     });
   }
 
@@ -2367,9 +2452,10 @@ DB.init();
       isPriceDrop,
       originalPrice,
       images: {
-        [currentColorsTags[0] || "Default"]: imageUrl
+        [currentColorsTags[0] || "Default"]: state.crudGalleryUrls[0] || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80"
       },
-      defaultImage: imageUrl,
+      defaultImage: state.crudGalleryUrls[0] || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
+      gallery: state.crudGalleryUrls,
       variations: { colors, sizes, materials },
       specifications: { printTime, filamentUsed: weight, difficulty }
     };
