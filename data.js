@@ -33,6 +33,10 @@ const DEFAULT_PRODUCTS = [
     subcategory: "Fidget Toys",
     rating: 4.9,
     reviewsCount: 142,
+    isFeatured: true,
+    isNewArrival: false,
+    isPriceDrop: true,
+    originalPrice: 24.99,
     images: {
       "Silk Gold": "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80", // placeholder colors
       "Silk Rainbow": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80",
@@ -71,6 +75,10 @@ const DEFAULT_PRODUCTS = [
     subcategory: "Planters",
     rating: 4.8,
     reviewsCount: 89,
+    isFeatured: false,
+    isNewArrival: true,
+    isPriceDrop: false,
+    originalPrice: null,
     images: {
       "Marble White": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80",
       "Terracotta": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=600&q=80",
@@ -106,6 +114,10 @@ const DEFAULT_PRODUCTS = [
     subcategory: "Desk Organizers",
     rating: 4.7,
     reviewsCount: 56,
+    isFeatured: true,
+    isNewArrival: false,
+    isPriceDrop: false,
+    originalPrice: null,
     images: {
       "Stealth Black": "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=600&q=80",
       "Cosmic Blue": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
@@ -143,6 +155,10 @@ const DEFAULT_PRODUCTS = [
     subcategory: "Wearables",
     rating: 4.95,
     reviewsCount: 210,
+    isFeatured: false,
+    isNewArrival: true,
+    isPriceDrop: true,
+    originalPrice: 49.99,
     images: {
       "Crimson Red": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
       "Metallic Purple": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
@@ -202,7 +218,13 @@ const DEFAULT_HERO_CONTENT = {
   ctaText: "Browse Shop",
   activePrinters: "12",
   completedPrints: "4,500+",
-  customerRating: "4.9★"
+  customerRating: "4.9★",
+  featuredTitle: "⭐ Featured Prints",
+  featuredSubtitle: "Hand-picked premium models from our designer collection",
+  priceDropTitle: "🔥 Price Drops",
+  priceDropSubtitle: "Special discounts and limited-time filament deals",
+  newArrivalTitle: "✨ New Arrivals",
+  newArrivalSubtitle: "Freshly sliced models and newly calibrated designs"
 };
 
 const DEFAULT_DELIVERY_OPTIONS = [
@@ -216,10 +238,33 @@ const DEFAULT_SOCIAL_SETTINGS = {
   whatsappMessage: "Hello! I have a question about my 3D print order.",
   instagramUrl: "https://instagram.com/pixelpop",
   facebookUrl: "https://facebook.com/pixelpop",
+  tiktokUrl: "https://tiktok.com/@pixelpop",
   address: "Filament Lane, Badaro District, Beirut, Lebanon",
   email: "hello@pixelpop.com",
   phone: "+961 70 123 456",
   hours: "Monday - Saturday: 9:00 AM - 6:00 PM"
+};
+
+const DEFAULT_COUPONS = [
+  { code: "PIXEL10", type: "percent", value: 10 },
+  { code: "SAVE5", type: "fixed", value: 5 },
+  { code: "WELCOME20", type: "percent", value: 20 }
+];
+
+const DEFAULT_THEME_SETTINGS = {
+  logoLetter: "P",
+  logoText1: "Pixel",
+  logoText2: "Pop",
+  themeMode: "light",
+  colors: {
+    "accent-indigo": "#4f46e5",
+    "accent-cyan": "#0891b2",
+    "accent-purple": "#7c3aed",
+    "accent-pink": "#db2777",
+    "accent-gold": "#d97706",
+    "accent-green": "#059669",
+    "accent-red": "#dc2626"
+  }
 };
 
 const DB = {
@@ -244,6 +289,12 @@ const DB = {
     }
     if (!localStorage.getItem("social_settings")) {
       localStorage.setItem("social_settings", JSON.stringify(DEFAULT_SOCIAL_SETTINGS));
+    }
+    if (!localStorage.getItem("theme_settings")) {
+      localStorage.setItem("theme_settings", JSON.stringify(DEFAULT_THEME_SETTINGS));
+    }
+    if (!localStorage.getItem("coupons")) {
+      localStorage.setItem("coupons", JSON.stringify(DEFAULT_COUPONS));
     }
   },
 
@@ -352,6 +403,37 @@ const DB = {
 
   saveSocialSettings(settings) {
     localStorage.setItem("social_settings", JSON.stringify(settings));
+  },
+
+  getThemeSettings() {
+    this.init();
+    return JSON.parse(localStorage.getItem("theme_settings"));
+  },
+
+  saveThemeSettings(settings) {
+    localStorage.setItem("theme_settings", JSON.stringify(settings));
+  },
+
+  getCoupons() {
+    this.init();
+    return JSON.parse(localStorage.getItem("coupons"));
+  },
+
+  saveCoupons(coupons) {
+    localStorage.setItem("coupons", JSON.stringify(coupons));
+  },
+
+  addCoupon(coupon) {
+    const coupons = this.getCoupons();
+    coupons.push(coupon);
+    this.saveCoupons(coupons);
+    return coupon;
+  },
+
+  deleteCoupon(code) {
+    let coupons = this.getCoupons();
+    coupons = coupons.filter(c => c.code !== code);
+    this.saveCoupons(coupons);
   }
 };
 
@@ -363,3 +445,5 @@ window.DEFAULT_PAYMENT_SETTINGS = DEFAULT_PAYMENT_SETTINGS;
 window.DEFAULT_HERO_CONTENT = DEFAULT_HERO_CONTENT;
 window.DEFAULT_DELIVERY_OPTIONS = DEFAULT_DELIVERY_OPTIONS;
 window.DEFAULT_SOCIAL_SETTINGS = DEFAULT_SOCIAL_SETTINGS;
+window.DEFAULT_THEME_SETTINGS = DEFAULT_THEME_SETTINGS;
+window.DEFAULT_COUPONS = DEFAULT_COUPONS;

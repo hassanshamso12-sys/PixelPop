@@ -21,11 +21,7 @@
         <div class="nav-dropdown">
           <span class="nav-link" id="nav-products-trigger" style="user-select: none;">Products <span style="font-size: 0.75rem;">▼</span></span>
           <div class="dropdown-content" id="products-dropdown-menu">
-            <span class="dropdown-item" data-cat="all">All Products</span>
-            <span class="dropdown-item" data-cat="home-decor">Home Decor</span>
-            <span class="dropdown-item" data-cat="gadgets-tools">Gadgets & Tools</span>
-            <span class="dropdown-item" data-cat="gaming-toys">Gaming & Toys</span>
-            <span class="dropdown-item" data-cat="cosplay-props">Cosplay & Props</span>
+            <!-- Dynamically populated by app.js -->
           </div>
         </div>
         <span class="nav-link" id="nav-about">About Us</span>
@@ -111,32 +107,39 @@
       </div>
     </section>
 
-    <!-- Shop Catalog and Filtering -->
+    <!-- Curated Home Sections -->
     <section class="shop-section" id="shop-catalog-anchor">
-      <div class="shop-controls">
-        <div class="category-tabs" id="category-tabs-container">
-          <!-- Dynamically Rendered Category Tabs -->
+      <!-- Featured Prints -->
+      <div class="curated-section" id="section-featured" style="margin-bottom: 4rem;">
+        <div class="db-section-header" style="margin-bottom: 2rem;">
+          <h2 id="home-featured-title">⭐ Featured Prints</h2>
+          <p class="text-muted" id="home-featured-desc">Hand-picked premium models from our designer collection</p>
         </div>
-
-        <div class="filter-bar">
-          <input type="text" class="search-input" id="search-bar" placeholder="Search items...">
-          <select class="select-input" id="sort-select">
-            <option value="popular">Popularity</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="rating">Top Rated</option>
-          </select>
+        <div class="products-grid" id="featured-products-grid">
+          <!-- Dynamically Rendered Curated Products -->
         </div>
       </div>
 
-      <!-- Subcategories Chips list -->
-      <div class="subcategories-list" id="subcategories-chips-container">
-        <!-- Dynamically Rendered Subcategory Chips -->
+      <!-- Price Drops -->
+      <div class="curated-section" id="section-price-drops" style="margin-bottom: 4rem;">
+        <div class="db-section-header" style="margin-bottom: 2rem;">
+          <h2 id="home-pricedrops-title">🔥 Price Drops</h2>
+          <p class="text-muted" id="home-pricedrops-desc">Special discounts and limited-time filament deals</p>
+        </div>
+        <div class="products-grid" id="price-drops-products-grid">
+          <!-- Dynamically Rendered Curated Products -->
+        </div>
       </div>
 
-      <!-- Products Grid -->
-      <div class="products-grid" id="products-grid-container">
-        <!-- Dynamically Rendered Product Cards -->
+      <!-- New Arrivals -->
+      <div class="curated-section" id="section-new-arrivals" style="margin-bottom: 4rem;">
+        <div class="db-section-header" style="margin-bottom: 2rem;">
+          <h2 id="home-newarrivals-title">✨ New Arrivals</h2>
+          <p class="text-muted" id="home-newarrivals-desc">Freshly sliced models and newly calibrated designs</p>
+        </div>
+        <div class="products-grid" id="new-arrivals-products-grid">
+          <!-- Dynamically Rendered Curated Products -->
+        </div>
       </div>
     </section>
 
@@ -224,6 +227,69 @@
 
   </main>
 
+  <!-- DEDICATED PRODUCTS LISTING PAGE -->
+  <main class="container" id="products-page" style="display: none; padding-top: 2rem;">
+    <div class="products-layout-grid">
+      <!-- Left Sidebar Filters -->
+      <aside class="products-sidebar">
+        <!-- Categories Filter -->
+        <div class="filter-group">
+          <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; font-weight: 600;">Categories</h3>
+          <div class="sidebar-categories" id="sidebar-categories-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Subcategories Filter -->
+        <div class="filter-group" id="sidebar-subcategories-group" style="display: none;">
+          <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; font-weight: 600;">Subcategories</h3>
+          <div class="sidebar-subcategories" id="sidebar-subcategories-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Price Range Filter -->
+        <div class="filter-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 0; font-weight: 600;">Max Price</h3>
+            <span id="price-limit-label" style="font-weight: 600; color: var(--accent-indigo);">$150.00</span>
+          </div>
+          <input type="range" class="form-input" id="filter-price-range" min="0" max="150" step="5" value="150" style="padding: 0; cursor: pointer;">
+        </div>
+
+        <!-- Search Bar -->
+        <div class="filter-group">
+          <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; font-weight: 600;">Search</h3>
+          <input type="text" class="form-input" id="filter-search-input" placeholder="Search products...">
+        </div>
+
+        <!-- Sort Select -->
+        <div class="filter-group" style="border-bottom: none; padding-bottom: 0;">
+          <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; font-weight: 600;">Sort By</h3>
+          <select class="form-input" id="filter-sort-select">
+            <option value="popular">Popularity</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+          </select>
+        </div>
+      </aside>
+
+      <!-- Right Main Content -->
+      <div class="products-main">
+        <div class="products-main-header">
+          <h2 id="products-page-title" style="font-family: var(--font-display); font-size: 1.8rem; margin: 0;">All Products</h2>
+          <span class="text-muted" id="products-count-label" style="font-weight: 500;">0 items found</span>
+        </div>
+        
+        <div class="products-grid" id="products-page-grid-container">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+
   <!-- PRODUCT DETAIL / CUSTOMIZATION PAGE -->
   <div class="container product-detail-view" id="product-detail-page">
     <button class="btn btn-secondary back-btn" id="detail-back-btn">← Back to Store</button>
@@ -300,10 +366,24 @@
       <!-- Dynamically populated cart items -->
     </div>
     
+    <!-- Coupon Application Section -->
+    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-secondary);">
+      <label class="form-label" style="margin-bottom: 0;" for="cart-coupon-input">Promo Code / Coupon</label>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" id="cart-coupon-input" class="form-input" placeholder="e.g. PIXEL10" style="padding: 0.5rem 0.8rem; font-size: 0.9rem; text-transform: uppercase; background: var(--bg-primary);">
+        <button class="btn btn-secondary" id="apply-coupon-btn" style="padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 0.9rem; white-space: nowrap;">Apply</button>
+      </div>
+      <div id="cart-coupon-status" style="font-size: 0.8rem; font-weight: 500;"></div>
+    </div>
+    
     <div class="cart-footer">
       <div class="cart-summary-line">
         <span>Cart Subtotal</span>
         <span id="cart-subtotal-val">$0.00</span>
+      </div>
+      <div class="cart-summary-line" id="cart-discount-row" style="display: none; color: var(--accent-green); font-weight: 500;">
+        <span>Discount (<span id="cart-discount-label">0%</span>)</span>
+        <span id="cart-discount-val">-$0.00</span>
       </div>
       <div class="cart-summary-line total">
         <span>Total</span>
@@ -419,6 +499,10 @@
             <span class="text-muted">Items Subtotal</span>
             <span id="chk-subtotal-val">$0.00</span>
           </div>
+          <div class="cart-summary-line" id="chk-discount-row" style="display: none; color: var(--accent-green); font-weight: 500;">
+            <span id="chk-discount-label">Discount</span>
+            <span id="chk-discount-val">-$0.00</span>
+          </div>
           <div class="cart-summary-line">
             <span class="text-muted">Shipping Cost</span>
             <span id="chk-shipping-val">$4.99</span>
@@ -488,12 +572,15 @@
         <div class="db-menu">
           <div class="db-menu-item active" data-target="db-overview">📊 Overview</div>
           <div class="db-menu-item" data-target="db-inventory">📦 Inventory</div>
+          <div class="db-menu-item" data-target="db-categories">📁 Categories</div>
+          <div class="db-menu-item" data-target="db-coupons">🏷️ Coupons</div>
           <div class="db-menu-item" data-target="db-orders">📝 Orders</div>
           <div class="db-menu-item" data-target="db-payments">💳 Payments</div>
           <div class="db-menu-item" data-target="db-calculator">🧮 Cost Calculator</div>
           <div class="db-menu-item" data-target="db-hero">🏠 Hero Section</div>
           <div class="db-menu-item" data-target="db-delivery">🚚 Delivery Options</div>
           <div class="db-menu-item" data-target="db-social">🌐 Social & Support</div>
+          <div class="db-menu-item" data-target="db-theme-settings">🎨 Theme Settings</div>
         </div>
 
         <button class="btn btn-secondary" style="margin-top: auto;" id="logout-btn">← Back to Store</button>
@@ -859,6 +946,42 @@
               </div>
             </div>
 
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1rem 0;">
+            <h3>Curated Home Page Sections</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-featured-title">Featured Section Title</label>
+                <input type="text" class="form-input" id="cfg-featured-title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-featured-desc">Featured Section Subtitle</label>
+                <input type="text" class="form-input" id="cfg-featured-desc" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-pricedrop-title">Price Drops Section Title</label>
+                <input type="text" class="form-input" id="cfg-pricedrop-title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-pricedrop-desc">Price Drops Section Subtitle</label>
+                <input type="text" class="form-input" id="cfg-pricedrop-desc" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-newarrival-title">New Arrivals Section Title</label>
+                <input type="text" class="form-input" id="cfg-newarrival-title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-newarrival-desc">New Arrivals Section Subtitle</label>
+                <input type="text" class="form-input" id="cfg-newarrival-desc" required>
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: fit-content;" id="save-hero-btn">Save Hero Content 💾</button>
           </form>
         </div>
@@ -928,6 +1051,11 @@
               <input type="text" class="form-input" id="cfg-facebook-url" placeholder="https://facebook.com/yourpage">
             </div>
 
+            <div class="form-group">
+              <label class="form-label" for="cfg-tiktok-url">TikTok Page Link</label>
+              <input type="text" class="form-input" id="cfg-tiktok-url" placeholder="https://tiktok.com/@yourpage">
+            </div>
+
             <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1rem 0;">
 
             <h3>📍 Contact Information</h3>
@@ -955,6 +1083,160 @@
 
             <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: fit-content;" id="save-social-btn">Save Social Settings 💾</button>
           </form>
+        </div>
+
+        <!-- SECTION 9: CATEGORIES & SUBCATEGORIES MANAGEMENT -->
+        <div class="db-section" id="db-categories">
+          <div class="db-section-header">
+            <h2>Categories & Subcategories</h2>
+            <button class="btn btn-primary" id="add-category-btn">+ Add Category</button>
+          </div>
+
+          <div class="db-table-container">
+            <table class="db-table">
+              <thead>
+                <tr>
+                  <th>Category Name</th>
+                  <th>Category ID</th>
+                  <th>Subcategories</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="db-categories-tbody">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 10: THEME & COLOR PALETTE SETTINGS -->
+        <div class="db-section" id="db-theme-settings">
+          <div class="db-section-header">
+            <h2>Theme & Brand Customization</h2>
+            <span class="text-muted">Customize website accent colors, logo, and light/dark styling</span>
+          </div>
+
+          <form id="theme-config-form" class="glass-panel" style="padding: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <h3>🎨 Color Theme Mode & Presets</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-theme-mode">Theme Background Mode</label>
+                <select class="form-input" id="cfg-theme-mode">
+                  <option value="light">Glassmorphism Light (Default)</option>
+                  <option value="dark">Sleek Cyberpunk Dark</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-theme-preset">Apply Color Preset</label>
+                <select class="form-input" id="cfg-theme-preset">
+                  <option value="custom">Custom Colors (Use Pickers below)</option>
+                  <option value="default">Indigo Cyan (Original)</option>
+                  <option value="emerald-gold">Emerald Gold</option>
+                  <option value="rose-purple">Rose Purple</option>
+                  <option value="cyberpunk">Neon Amber</option>
+                  <option value="ocean-breeze">Ocean Breeze</option>
+                </select>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 0.5rem 0;">
+
+            <h3>🌈 Custom Color Palette Pickers</h3>
+            <div class="form-row" style="grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+              <div class="form-group">
+                <label class="form-label" for="cfg-color-indigo">Primary Accent (Indigo)</label>
+                <input type="color" class="form-input" id="cfg-color-indigo" style="height: 45px; padding: 0.2rem; cursor: pointer;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-color-cyan">Secondary Accent (Cyan)</label>
+                <input type="color" class="form-input" id="cfg-color-cyan" style="height: 45px; padding: 0.2rem; cursor: pointer;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-color-purple">Highlight Purple</label>
+                <input type="color" class="form-input" id="cfg-color-purple" style="height: 45px; padding: 0.2rem; cursor: pointer;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-color-pink">Highlight Pink</label>
+                <input type="color" class="form-input" id="cfg-color-pink" style="height: 45px; padding: 0.2rem; cursor: pointer;">
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 0.5rem 0;">
+
+            <h3>🏷️ Brand Identity & Logo Customization</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-logo-letter">Logo Icon Letter</label>
+                <input type="text" class="form-input" id="cfg-logo-letter" required placeholder="P" maxlength="2">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-logo-text1">Brand First Word</label>
+                <input type="text" class="form-input" id="cfg-logo-text1" required placeholder="Pixel">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-logo-text2">Brand Second Word (Gradient)</label>
+                <input type="text" class="form-input" id="cfg-logo-text2" required placeholder="Pop">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: fit-content;" id="save-theme-btn">Apply Brand Theme 💾</button>
+          </form>
+        </div>
+
+        <!-- SECTION 11: COUPONS MANAGEMENT -->
+        <div class="db-section" id="db-coupons">
+          <div class="db-section-header">
+            <h2>Discount Coupons</h2>
+            <span class="text-muted">Create and manage storefront promo codes</span>
+          </div>
+
+          <div class="checkout-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Left Side: Coupon list -->
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Active Coupons</h3>
+              <div class="db-table-container">
+                <table class="db-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Type</th>
+                      <th>Value</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-coupons-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right Side: Create Coupon Form -->
+            <div class="glass-panel" style="padding: 2rem;">
+              <h3 style="font-family: var(--font-display); margin-bottom: 1rem;">Create Coupon Code</h3>
+              <form id="coupon-crud-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="crud-coupon-code">Coupon Code (Uppercase)</label>
+                  <input type="text" class="form-input" id="crud-coupon-code" required placeholder="e.g. SUMMER15" style="text-transform: uppercase;">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="crud-coupon-type">Discount Type</label>
+                    <select class="form-input" id="crud-coupon-type" required>
+                      <option value="percent">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount ($)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="crud-coupon-value">Value</label>
+                    <input type="number" step="0.01" class="form-input" id="crud-coupon-value" required placeholder="e.g. 10">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="justify-content: center; width: 100%; margin-top: 1rem;">Create Coupon 🚀</button>
+              </form>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -992,10 +1274,7 @@
               <div class="form-group">
                 <label class="form-label" for="crud-category">Main Category</label>
                 <select class="form-input" id="crud-category" required>
-                  <option value="home-decor">Home Decor</option>
-                  <option value="gadgets-tools">Gadgets & Tools</option>
-                  <option value="gaming-toys">Gaming & Toys</option>
-                  <option value="cosplay-props">Cosplay & Props</option>
+                  <!-- Dynamically populated -->
                 </select>
               </div>
             </div>
@@ -1003,7 +1282,9 @@
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="crud-subcategory">Subcategory</label>
-                <input type="text" class="form-input" id="crud-subcategory" required placeholder="e.g. Vases">
+                <select class="form-input" id="crud-subcategory" required>
+                  <!-- Dynamically populated -->
+                </select>
               </div>
               <div class="form-group">
                 <label class="form-label" for="crud-print-time">Estimated Build Time</label>
@@ -1026,6 +1307,15 @@
               </div>
             </div>
 
+            <div class="form-group">
+              <label class="form-label" for="crud-image-upload">Product Image File (Upload to Storage)</label>
+              <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="file" id="crud-image-upload" accept="image/*" class="form-input" style="padding: 0.4rem 0.8rem;">
+                <div id="image-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>
+              </div>
+              <input type="text" class="form-input" id="crud-image-url" readonly placeholder="Uploaded image URL will appear here..." style="margin-top: 0.5rem; background: var(--bg-secondary);">
+            </div>
+
             <!-- Configuration Tags/Chips for variations -->
             <div class="form-group">
               <label class="form-label">Filament Color Variants (Type name and press Enter)</label>
@@ -1044,6 +1334,29 @@
             <div class="form-group">
               <label class="form-label">Materials Options (Comma separated, e.g. "PLA:0.00, PETG:+2.50")</label>
               <input type="text" class="form-input" id="crud-materials" placeholder="PLA (Standard):0.00, PETG (Durable):2.50">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
+            <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.8rem;">Homepage & Curated Sections</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.2rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <input type="checkbox" id="crud-is-featured" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="crud-is-featured" style="font-weight: 500; cursor: pointer; user-select: none;">Show in "Featured Prints" Section</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <input type="checkbox" id="crud-is-new-arrival" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="crud-is-new-arrival" style="font-weight: 500; cursor: pointer; user-select: none;">Show in "New Arrivals" Section</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <input type="checkbox" id="crud-is-price-drop" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="crud-is-price-drop" style="font-weight: 500; cursor: pointer; user-select: none;">Show in "Price Drops" Section</label>
+              </div>
+            </div>
+
+            <div class="form-group" id="crud-original-price-group" style="display: none;">
+              <label class="form-label" for="crud-original-price">Original Base Price ($) - crossed out</label>
+              <input type="number" step="0.01" class="form-input" id="crud-original-price" placeholder="e.g. 24.99">
             </div>
           </div>
 
@@ -1120,6 +1433,43 @@
           <!-- Expanded email letter body -->
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT CATEGORY MODAL -->
+  <div class="modal-overlay" id="category-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 500px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <span id="category-modal-title" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">Create Category</span>
+        <button class="close-modal-btn" id="close-category-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <form id="category-crud-form">
+        <div class="form-group">
+          <label class="form-label" for="crud-category-name">Category Name</label>
+          <input type="text" class="form-input" id="crud-category-name" required placeholder="e.g. Mechanical Tools">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem;" id="category-submit-btn">Save Category</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD SUBCATEGORY MODAL -->
+  <div class="modal-overlay" id="subcategory-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 500px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <span id="subcategory-modal-title" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">Add Subcategory</span>
+        <button class="close-modal-btn" id="close-subcategory-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <form id="subcategory-crud-form">
+        <input type="hidden" id="crud-subcategory-cat-id">
+        <div class="form-group">
+          <label class="form-label" for="crud-subcategory-name">Subcategory Name</label>
+          <input type="text" class="form-input" id="crud-subcategory-name" required placeholder="e.g. Gears">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem;" id="subcategory-submit-btn">Add Subcategory</button>
+      </form>
     </div>
   </div>
 

@@ -1,4 +1,15 @@
 // PixelPop E-Commerce and Admin Dashboard Application Controller
+import { initializeApp } from "firebase/app";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+const firebaseConfig = {
+  projectId: "pixelpop-cd075",
+  storageBucket: "pixelpop-cd075.firebasestorage.app",
+};
+
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const storage = getStorage(firebaseApp);
 
 // Initialize Database
 DB.init();
@@ -22,6 +33,12 @@ DB.init();
     isDragging: false,
     startX: 0,
     isAdminLoggedIn: sessionStorage.getItem("isAdminLoggedIn") === "true",
+    appliedCoupon: null,
+    productsFilterCategory: "all",
+    productsFilterSubcategory: "all",
+    productsFilterPrice: 150,
+    productsFilterSearch: "",
+    productsFilterSort: "popular",
   };
 
   // DOM CACHE
@@ -199,6 +216,81 @@ DB.init();
     deliveryModalOverlay: document.getElementById("delivery-modal-overlay"),
     closeDeliveryModalBtn: document.getElementById("close-delivery-modal-btn"),
     deliveryCrudForm: document.getElementById("delivery-crud-form"),
+
+    // Theme Config
+    themeConfigForm: document.getElementById("theme-config-form"),
+    cfgThemeMode: document.getElementById("cfg-theme-mode"),
+    cfgThemePreset: document.getElementById("cfg-theme-preset"),
+    cfgColorIndigo: document.getElementById("cfg-color-indigo"),
+    cfgColorCyan: document.getElementById("cfg-color-cyan"),
+    cfgColorPurple: document.getElementById("cfg-color-purple"),
+    cfgColorPink: document.getElementById("cfg-color-pink"),
+    cfgLogoLetter: document.getElementById("cfg-logo-letter"),
+    cfgLogoText1: document.getElementById("cfg-logo-text1"),
+    cfgLogoText2: document.getElementById("cfg-logo-text2"),
+
+    // Categories Config
+    dbCategoriesTbody: document.getElementById("db-categories-tbody"),
+    addCategoryBtn: document.getElementById("add-category-btn"),
+    categoryModalOverlay: document.getElementById("category-modal-overlay"),
+    closeCategoryModalBtn: document.getElementById("close-category-modal-btn"),
+    categoryCrudForm: document.getElementById("category-crud-form"),
+    crudCategoryName: document.getElementById("crud-category-name"),
+    subcategoryModalOverlay: document.getElementById("subcategory-modal-overlay"),
+    closeSubcategoryModalBtn: document.getElementById("close-subcategory-modal-btn"),
+    subcategoryCrudForm: document.getElementById("subcategory-crud-form"),
+    crudSubcategoryName: document.getElementById("crud-subcategory-name"),
+    crudSubcategoryCatId: document.getElementById("crud-subcategory-cat-id"),
+
+    // Coupons Dashboard CRUD
+    dbCouponsTbody: document.getElementById("db-coupons-tbody"),
+    couponCrudForm: document.getElementById("coupon-crud-form"),
+
+    // Cart Drawer Coupon inputs
+    cartCouponInput: document.getElementById("cart-coupon-input"),
+    applyCouponBtn: document.getElementById("apply-coupon-btn"),
+    cartCouponStatus: document.getElementById("cart-coupon-status"),
+    cartDiscountRow: document.getElementById("cart-discount-row"),
+    cartDiscountLabel: document.getElementById("cart-discount-label"),
+    cartDiscountVal: document.getElementById("cart-discount-val"),
+
+    // Checkout Modal Coupon display
+    chkDiscountRow: document.getElementById("chk-discount-row"),
+    chkDiscountLabel: document.getElementById("chk-discount-label"),
+    chkDiscountVal: document.getElementById("chk-discount-val"),
+
+    // Products Page Views
+    productsPage: document.getElementById("products-page"),
+    productsPageGrid: document.getElementById("products-page-grid-container"),
+    productsPageTitle: document.getElementById("products-page-title"),
+    productsCountLabel: document.getElementById("products-count-label"),
+    sidebarCategoriesList: document.getElementById("sidebar-categories-list"),
+    sidebarSubcategoriesGroup: document.getElementById("sidebar-subcategories-group"),
+    sidebarSubcategoriesList: document.getElementById("sidebar-subcategories-list"),
+    filterPriceRange: document.getElementById("filter-price-range"),
+    priceLimitLabel: document.getElementById("price-limit-label"),
+    filterSearchInput: document.getElementById("filter-search-input"),
+    filterSortSelect: document.getElementById("filter-sort-select"),
+
+    // Curated Home Grids
+    featuredProductsGrid: document.getElementById("featured-products-grid"),
+    priceDropsProductsGrid: document.getElementById("price-drops-products-grid"),
+    newArrivalsProductsGrid: document.getElementById("new-arrivals-products-grid"),
+
+    // Admin Hero Home config inputs
+    cfgFeaturedTitle: document.getElementById("cfg-featured-title"),
+    cfgFeaturedDesc: document.getElementById("cfg-featured-desc"),
+    cfgPricedropTitle: document.getElementById("cfg-pricedrop-title"),
+    cfgPricedropDesc: document.getElementById("cfg-pricedrop-desc"),
+    cfgNewarrivalTitle: document.getElementById("cfg-newarrival-title"),
+    cfgNewarrivalDesc: document.getElementById("cfg-newarrival-desc"),
+
+    // Admin Product CRUD checkboxes
+    crudIsFeatured: document.getElementById("crud-is-featured"),
+    crudIsNewArrival: document.getElementById("crud-is-new-arrival"),
+    crudIsPriceDrop: document.getElementById("crud-is-price-drop"),
+    crudOriginalPrice: document.getElementById("crud-original-price"),
+    crudOriginalPriceGroup: document.getElementById("crud-original-price-group"),
   };
 
   // Tag input helper list
@@ -209,8 +301,9 @@ DB.init();
   // ==========================================
 
   function initApp() {
-    renderCategoryTabs();
-    renderProductsList();
+    applyTheme();
+    renderHeaderProductsDropdown();
+    renderCuratedHomeSections();
     updateCartUI();
     renderEmailList();
     setupEmailAutoChecks();
@@ -243,6 +336,7 @@ DB.init();
     DOM.productDetailPage.style.display = "none";
     DOM.adminDashboardPage.style.display = "none";
     if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "none";
+    if (DOM.productsPage) DOM.productsPage.style.display = "none";
 
     const footer = document.getElementById("store-footer");
     const waWidget = document.getElementById("whatsapp-widget");
@@ -261,6 +355,13 @@ DB.init();
       DOM.storefrontPage.style.display = "block";
       if (pushState && window.location.pathname !== "/") {
         history.pushState({ page: "store" }, "", "/");
+      }
+    } else if (page === "products") {
+      if (DOM.navProductsTrigger) DOM.navProductsTrigger.classList.add("active");
+      if (DOM.productsPage) DOM.productsPage.style.display = "block";
+      renderProductsPage();
+      if (pushState && window.location.pathname !== "/products") {
+        history.pushState({ page: "products" }, "", "/products");
       }
     } else if (page === "detail") {
       DOM.productDetailPage.style.display = "block";
@@ -295,6 +396,8 @@ DB.init();
 
     if (path === "/admin" || hash === "#admin") {
       changePage("dashboard", false);
+    } else if (path === "/products" || hash === "#products") {
+      changePage("products", false);
     } else if (path.startsWith("/product/")) {
       const prodId = path.split("/").pop();
       const product = DB.getProductById(prodId);
@@ -327,11 +430,93 @@ DB.init();
     handleUrlRouting();
   });
 
+  function renderHeaderProductsDropdown() {
+    const dropdown = document.getElementById("products-dropdown-menu");
+    if (!dropdown) return;
+
+    const categories = DB.getCategories();
+    let html = `<span class="dropdown-item" data-cat="all">All Products</span>`;
+    categories.forEach(cat => {
+      html += `<span class="dropdown-item" data-cat="${cat.id}">${cat.name}</span>`;
+    });
+    dropdown.innerHTML = html;
+
+    // Rebind dropdown click events
+    dropdown.querySelectorAll(".dropdown-item").forEach(item => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const catId = e.target.dataset.cat;
+        
+        state.productsFilterCategory = catId;
+        state.productsFilterSubcategory = "all";
+        state.productsFilterSearch = "";
+        if (DOM.filterSearchInput) DOM.filterSearchInput.value = "";
+        state.productsFilterPrice = 150;
+        if (DOM.filterPriceRange) DOM.filterPriceRange.value = 150;
+        if (DOM.priceLimitLabel) DOM.priceLimitLabel.textContent = "$150.00";
+        
+        changePage("products");
+      });
+    });
+  }
+
   // ==========================================
-  // CATALOG RENDERING & FILTERING
+  // CATALOG RENDERING & FILTERING HELPERS
   // ==========================================
 
+  function renderProductsGrid(products, containerElement) {
+    if (!containerElement) return;
+    if (products.length === 0) {
+      containerElement.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem 0;">No items found.</div>`;
+      return;
+    }
+    
+    containerElement.innerHTML = products.map(p => {
+      const displayPrice = p.basePrice.toFixed(2);
+      const priceHtml = (p.isPriceDrop && p.originalPrice)
+        ? `<div class="card-price-container">
+             <span class="card-original-price">$${parseFloat(p.originalPrice).toFixed(2)}</span>
+             <span class="card-price">$${displayPrice}</span>
+           </div>`
+        : `<span class="card-price">$${displayPrice}</span>`;
+        
+      return `
+        <div class="glass-panel product-card" data-id="${p.id}">
+          <div class="card-media">
+            <img class="card-image" src="${p.defaultImage}" alt="${p.name}">
+            <div class="card-tag">${p.subcategory}</div>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">${p.name}</h3>
+            <div class="card-rating">
+              ★ ${p.rating.toFixed(1)} <span class="card-reviews">(${p.reviewsCount})</span>
+            </div>
+            <div class="card-footer">
+              ${priceHtml}
+              <button class="btn btn-secondary btn-sm browse-item-btn" data-id="${p.id}">Configure</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Add click handlers for buttons and cards within this container
+    containerElement.querySelectorAll(".browse-item-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openProductDetails(e.target.dataset.id);
+      });
+    });
+
+    containerElement.querySelectorAll(".product-card").forEach(card => {
+      card.addEventListener("click", () => {
+        openProductDetails(card.dataset.id);
+      });
+    });
+  }
+
   function renderCategoryTabs() {
+    if (!DOM.categoryTabs) return;
     const categories = DB.getCategories();
     let html = `<button class="category-tab ${state.currentCategory === 'all' ? 'active' : ''}" data-id="all">All Items</button>`;
 
@@ -342,11 +527,11 @@ DB.init();
     DOM.categoryTabs.innerHTML = html;
 
     // Click Handlers
-    document.querySelectorAll(".category-tab").forEach(tab => {
+    DOM.categoryTabs.querySelectorAll(".category-tab").forEach(tab => {
       tab.addEventListener("click", (e) => {
         state.currentCategory = e.target.dataset.id;
         state.currentSubcategory = "all"; // Reset subcat
-        document.querySelectorAll(".category-tab").forEach(t => t.classList.remove("active"));
+        DOM.categoryTabs.querySelectorAll(".category-tab").forEach(t => t.classList.remove("active"));
         e.target.classList.add("active");
         renderSubcategoryChips();
         renderProductsList();
@@ -357,6 +542,7 @@ DB.init();
   }
 
   function renderSubcategoryChips() {
+    if (!DOM.subcategoriesChips) return;
     if (state.currentCategory === "all") {
       DOM.subcategoriesChips.innerHTML = "";
       return;
@@ -374,10 +560,10 @@ DB.init();
     DOM.subcategoriesChips.innerHTML = html;
 
     // Click Handlers
-    document.querySelectorAll(".subcategory-chip").forEach(chip => {
+    DOM.subcategoriesChips.querySelectorAll(".subcategory-chip").forEach(chip => {
       chip.addEventListener("click", (e) => {
         state.currentSubcategory = e.target.dataset.sub;
-        document.querySelectorAll(".subcategory-chip").forEach(c => c.classList.remove("active"));
+        DOM.subcategoriesChips.querySelectorAll(".subcategory-chip").forEach(c => c.classList.remove("active"));
         e.target.classList.add("active");
         renderProductsList();
       });
@@ -385,6 +571,7 @@ DB.init();
   }
 
   function renderProductsList() {
+    if (!DOM.productsGrid) return;
     let products = DB.getProducts();
 
     // Filters
@@ -411,47 +598,191 @@ DB.init();
       products.sort((a, b) => b.reviewsCount - a.reviewsCount);
     }
 
-    // Render HTML
-    if (products.length === 0) {
-      DOM.productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem 0;">No 3D items found matching your filters.</div>`;
-      return;
+    // Render using grid helper
+    renderProductsGrid(products, DOM.productsGrid);
+  }
+
+  // ==========================================
+  // CURATED HOME SECTIONS RENDERING
+  // ==========================================
+
+  function renderCuratedHomeSections() {
+    const products = DB.getProducts();
+    const hero = DB.getHeroContent();
+    
+    // Update section headings and subheadings
+    const featuredTitleEl = document.getElementById("home-featured-title");
+    const featuredDescEl = document.getElementById("home-featured-desc");
+    const pricedropsTitleEl = document.getElementById("home-pricedrops-title");
+    const pricedropsDescEl = document.getElementById("home-pricedrops-desc");
+    const newarrivalsTitleEl = document.getElementById("home-newarrivals-title");
+    const newarrivalsDescEl = document.getElementById("home-newarrivals-desc");
+
+    if (featuredTitleEl) featuredTitleEl.textContent = hero.featuredTitle || "⭐ Featured Prints";
+    if (featuredDescEl) featuredDescEl.textContent = hero.featuredSubtitle || "Hand-picked premium models from our designer collection";
+    if (pricedropsTitleEl) pricedropsTitleEl.textContent = hero.priceDropTitle || "🔥 Price Drops";
+    if (pricedropsDescEl) pricedropsDescEl.textContent = hero.priceDropSubtitle || "Special discounts and limited-time filament deals";
+    if (newarrivalsTitleEl) newarrivalsTitleEl.textContent = hero.newArrivalTitle || "✨ New Arrivals";
+    if (newarrivalsDescEl) newarrivalsDescEl.textContent = hero.newArrivalSubtitle || "Freshly sliced models and newly calibrated designs";
+
+    // Filter lists
+    const featuredProds = products.filter(p => p.isFeatured);
+    const priceDropProds = products.filter(p => p.isPriceDrop);
+    const newArrivalProds = products.filter(p => p.isNewArrival);
+
+    // Render grids
+    renderProductsGrid(featuredProds, DOM.featuredProductsGrid);
+    renderProductsGrid(priceDropProds, DOM.priceDropsProductsGrid);
+    renderProductsGrid(newArrivalProds, DOM.newArrivalsProductsGrid);
+  }
+
+  // ==========================================
+  // DEDICATED PRODUCTS LISTING PAGE VIEW
+  // ==========================================
+
+  function renderProductsPageGrid() {
+    if (!DOM.productsPageGrid) return;
+    let products = DB.getProducts();
+
+    // Apply Category filter
+    if (state.productsFilterCategory !== "all") {
+      products = products.filter(p => p.category === state.productsFilterCategory);
     }
 
-    DOM.productsGrid.innerHTML = products.map(p => {
-      const displayPrice = p.basePrice.toFixed(2);
-      return `
-        <div class="glass-panel product-card" data-id="${p.id}">
-          <div class="card-media">
-            <img class="card-image" src="${p.defaultImage}" alt="${p.name}">
-            <div class="card-tag">${p.subcategory}</div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">${p.name}</h3>
-            <div class="card-rating">
-              ★ ${p.rating.toFixed(1)} <span class="card-reviews">(${p.reviewsCount})</span>
-            </div>
-            <div class="card-footer">
-              <span class="card-price">$${displayPrice}</span>
-              <button class="btn btn-secondary btn-sm browse-item-btn" data-id="${p.id}">Configure</button>
-            </div>
-          </div>
+    // Apply Subcategory filter
+    if (state.productsFilterSubcategory !== "all") {
+      products = products.filter(p => p.subcategory === state.productsFilterSubcategory);
+    }
+
+    // Apply Max Price filter
+    products = products.filter(p => p.basePrice <= state.productsFilterPrice);
+
+    // Apply Search filter
+    if (state.productsFilterSearch.trim() !== "") {
+      const q = state.productsFilterSearch.toLowerCase();
+      products = products.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    }
+
+    // Apply Sorting
+    const sortVal = state.productsFilterSort;
+    if (sortVal === "price-low") {
+      products.sort((a, b) => a.basePrice - b.basePrice);
+    } else if (sortVal === "price-high") {
+      products.sort((a, b) => b.basePrice - a.basePrice);
+    } else if (sortVal === "rating") {
+      products.sort((a, b) => b.rating - a.rating);
+    } else {
+      // popular
+      products.sort((a, b) => b.reviewsCount - a.reviewsCount);
+    }
+
+    // Render using our helper
+    renderProductsGrid(products, DOM.productsPageGrid);
+
+    // Update Count label
+    if (DOM.productsCountLabel) {
+      DOM.productsCountLabel.textContent = `${products.length} items found`;
+    }
+  }
+
+  function renderProductsPage() {
+    // Render categories in sidebar
+    const categories = DB.getCategories();
+    const products = DB.getProducts();
+    
+    let catHtml = `
+      <div class="sidebar-cat-item ${state.productsFilterCategory === 'all' ? 'active' : ''}" data-id="all">
+        All Products (${products.length})
+      </div>
+    `;
+    
+    categories.forEach(cat => {
+      const count = products.filter(p => p.category === cat.id).length;
+      catHtml += `
+        <div class="sidebar-cat-item ${state.productsFilterCategory === cat.id ? 'active' : ''}" data-id="${cat.id}">
+          ${cat.name} (${count})
         </div>
       `;
-    }).join("");
-
-    // Add Config listeners
-    document.querySelectorAll(".browse-item-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openProductDetails(e.target.dataset.id);
-      });
     });
+    
+    if (DOM.sidebarCategoriesList) {
+      DOM.sidebarCategoriesList.innerHTML = catHtml;
 
-    document.querySelectorAll(".product-card").forEach(card => {
-      card.addEventListener("click", () => {
-        openProductDetails(card.dataset.id);
+      // Bind category click events
+      DOM.sidebarCategoriesList.querySelectorAll(".sidebar-cat-item").forEach(item => {
+        item.addEventListener("click", (e) => {
+          state.productsFilterCategory = e.currentTarget.dataset.id;
+          state.productsFilterSubcategory = "all"; // Reset subcategory
+          renderProductsPage();
+        });
       });
-    });
+    }
+
+    // Render subcategories in sidebar
+    if (state.productsFilterCategory === "all") {
+      if (DOM.sidebarSubcategoriesGroup) DOM.sidebarSubcategoriesGroup.style.display = "none";
+    } else {
+      const activeCat = categories.find(c => c.id === state.productsFilterCategory);
+      if (activeCat && activeCat.subcategories && activeCat.subcategories.length > 0) {
+        if (DOM.sidebarSubcategoriesGroup) DOM.sidebarSubcategoriesGroup.style.display = "block";
+        
+        const subCountAll = products.filter(p => p.category === activeCat.id).length;
+        let subHtml = `
+          <div class="sidebar-sub-item ${state.productsFilterSubcategory === 'all' ? 'active' : ''}" data-sub="all">
+            All ${activeCat.name} (${subCountAll})
+          </div>
+        `;
+        
+        activeCat.subcategories.forEach(sub => {
+          const count = products.filter(p => p.category === activeCat.id && p.subcategory === sub).length;
+          subHtml += `
+            <div class="sidebar-sub-item ${state.productsFilterSubcategory === sub ? 'active' : ''}" data-sub="${sub}">
+              ${sub} (${count})
+            </div>
+          `;
+        });
+        
+        if (DOM.sidebarSubcategoriesList) {
+          DOM.sidebarSubcategoriesList.innerHTML = subHtml;
+
+          // Bind subcategory click events
+          DOM.sidebarSubcategoriesList.querySelectorAll(".sidebar-sub-item").forEach(item => {
+            item.addEventListener("click", (e) => {
+              state.productsFilterSubcategory = e.currentTarget.dataset.sub;
+              
+              // Set active class
+              DOM.sidebarSubcategoriesList.querySelectorAll(".sidebar-sub-item").forEach(el => el.classList.remove("active"));
+              e.currentTarget.classList.add("active");
+              
+              renderProductsPageGrid();
+            });
+          });
+        }
+      } else {
+        if (DOM.sidebarSubcategoriesGroup) DOM.sidebarSubcategoriesGroup.style.display = "none";
+      }
+    }
+
+    // Sync price range input
+    if (DOM.filterPriceRange) {
+      DOM.filterPriceRange.value = state.productsFilterPrice;
+    }
+    if (DOM.priceLimitLabel) {
+      DOM.priceLimitLabel.textContent = `$${parseFloat(state.productsFilterPrice).toFixed(2)}`;
+    }
+
+    // Sync search input
+    if (DOM.filterSearchInput) {
+      DOM.filterSearchInput.value = state.productsFilterSearch;
+    }
+
+    // Sync sort dropdown
+    if (DOM.filterSortSelect) {
+      DOM.filterSortSelect.value = state.productsFilterSort;
+    }
+
+    // Render products grid
+    renderProductsPageGrid();
   }
 
   // ==========================================
@@ -765,6 +1096,10 @@ DB.init();
       DOM.cartSubtotalVal.textContent = "$0.00";
       DOM.cartTotalVal.textContent = "$0.00";
       DOM.goCheckoutBtn.disabled = true;
+      if (DOM.cartDiscountRow) DOM.cartDiscountRow.style.display = "none";
+      if (DOM.cartCouponStatus) DOM.cartCouponStatus.textContent = "";
+      if (DOM.cartCouponInput) DOM.cartCouponInput.value = "";
+      state.appliedCoupon = null;
       return;
     }
 
@@ -791,7 +1126,25 @@ DB.init();
     // Calculate Subtotals
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     DOM.cartSubtotalVal.textContent = `$${subtotal.toFixed(2)}`;
-    DOM.cartTotalVal.textContent = `$${subtotal.toFixed(2)}`;
+
+    let discountAmt = 0;
+    if (state.appliedCoupon) {
+      if (state.appliedCoupon.type === "percent") {
+        discountAmt = subtotal * (state.appliedCoupon.value / 100);
+      } else if (state.appliedCoupon.type === "fixed") {
+        discountAmt = state.appliedCoupon.value;
+      }
+      discountAmt = Math.min(discountAmt, subtotal);
+
+      DOM.cartDiscountLabel.textContent = state.appliedCoupon.type === "percent" ? `${state.appliedCoupon.value}%` : `$${state.appliedCoupon.value}`;
+      DOM.cartDiscountVal.textContent = `-$${discountAmt.toFixed(2)}`;
+      DOM.cartDiscountRow.style.display = "flex";
+    } else {
+      DOM.cartDiscountRow.style.display = "none";
+    }
+
+    const finalTotal = subtotal - discountAmt;
+    DOM.cartTotalVal.textContent = `$${finalTotal.toFixed(2)}`;
 
     // Handlers
     document.querySelectorAll(".dec-qty").forEach(btn => {
@@ -977,6 +1330,25 @@ DB.init();
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     DOM.chkSubtotalVal.textContent = `$${subtotal.toFixed(2)}`;
 
+    // Discount
+    let discountAmt = 0;
+    if (state.appliedCoupon) {
+      if (state.appliedCoupon.type === "percent") {
+        discountAmt = subtotal * (state.appliedCoupon.value / 100);
+      } else if (state.appliedCoupon.type === "fixed") {
+        discountAmt = state.appliedCoupon.value;
+      }
+      discountAmt = Math.min(discountAmt, subtotal);
+    }
+
+    if (discountAmt > 0) {
+      DOM.chkDiscountLabel.textContent = `Discount (${state.appliedCoupon.code})`;
+      DOM.chkDiscountVal.textContent = `-$${discountAmt.toFixed(2)}`;
+      DOM.chkDiscountRow.style.display = "flex";
+    } else {
+      DOM.chkDiscountRow.style.display = "none";
+    }
+
     // Shipping fee
     const activeDelivery = document.querySelector(".delivery-option.active");
     const shippingPrice = activeDelivery ? parseFloat(activeDelivery.dataset.price) : 0;
@@ -997,7 +1369,7 @@ DB.init();
       DOM.chkSurchargeRow.style.display = "none";
     }
 
-    const total = subtotal + shippingPrice + surchargeFee;
+    const total = subtotal - discountAmt + shippingPrice + surchargeFee;
     DOM.chkTotalVal.textContent = `$${total.toFixed(2)}`;
   }
 
@@ -1024,13 +1396,24 @@ DB.init();
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const shippingPrice = parseFloat(document.querySelector(".delivery-option.active").dataset.price);
 
+    // Discount
+    let discountAmt = 0;
+    if (state.appliedCoupon) {
+      if (state.appliedCoupon.type === "percent") {
+        discountAmt = subtotal * (state.appliedCoupon.value / 100);
+      } else if (state.appliedCoupon.type === "fixed") {
+        discountAmt = state.appliedCoupon.value;
+      }
+      discountAmt = Math.min(discountAmt, subtotal);
+    }
+
     // Surcharge
     let surchargeFee = 0;
     if (paymentOpt === "cod") {
       const settings = DB.getPaymentSettings();
       surchargeFee = parseFloat(settings.cod.extraFee) || 0;
     }
-    const total = subtotal + shippingPrice + surchargeFee;
+    const total = subtotal - discountAmt + shippingPrice + surchargeFee;
 
     // Build Order Object
     const orderId = `PIXEL-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1047,7 +1430,14 @@ DB.init();
         material: item.material,
         weight: item.weight
       })),
-      totals: { subtotal, shipping: shippingPrice, surcharge: surchargeFee, total },
+      totals: {
+        subtotal,
+        discount: discountAmt,
+        couponCode: state.appliedCoupon ? state.appliedCoupon.code : null,
+        shipping: shippingPrice,
+        surcharge: surchargeFee,
+        total
+      },
       deliveryMethod: deliveryOpt,
       paymentMethod: paymentOpt,
       paymentReference: paymentRef || null,
@@ -1062,9 +1452,12 @@ DB.init();
     DOM.checkoutModalOverlay.classList.remove("open");
     alert(`Order Placed Successfully! Your Order ID is ${orderId}. Track build pipeline in the simulated inbox drawer.`);
 
-    // Clear cart
+    // Clear cart & coupon
     state.cart = [];
+    state.appliedCoupon = null;
     localStorage.removeItem("pixelpop_cart");
+    if (DOM.cartCouponInput) DOM.cartCouponInput.value = "";
+    if (DOM.cartCouponStatus) DOM.cartCouponStatus.textContent = "";
     updateCartUI();
 
     // Switch to landing
@@ -1180,6 +1573,11 @@ DB.init();
       paymentDetailsText = `Payment Method: Neo by Audi\nNeo Account Username: ${order.paymentReference || "N/A"}\nStatus: We are verifying your Neo mobile transfer.`;
     }
 
+    let discountLine = "";
+    if (order.totals.discount && order.totals.discount > 0) {
+      discountLine = `\nDiscount Applied (${order.totals.couponCode}): -$${order.totals.discount.toFixed(2)}`;
+    }
+
     // 1. Order Received
     const deliveryOptions = DB.getDeliveryOptions();
     const matchedOpt = deliveryOptions.find(o => o.id === order.deliveryMethod);
@@ -1188,7 +1586,7 @@ DB.init();
     addSimulatedEmail(
       "billing@pixelpop.com",
       `Order Received - Invoice ${order.id}`,
-      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${deliveryText}\n\n${paymentDetailsText}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPixelPop Billing Team`
+      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${deliveryText}\n\n${paymentDetailsText}${discountLine}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPixelPop Billing Team`
     );
 
     // 2. Queue printing start email after 15 seconds
@@ -1250,12 +1648,15 @@ DB.init();
     updateOverviewStats();
     renderOverviewCharts();
     renderDashboardInventory();
+    renderDashboardCategories();
+    renderDashboardCoupons();
     renderDashboardOrders();
     initPaymentsDashboardSettings();
     initCalculator();
     initHeroDashboardSettings();
     renderDashboardDeliveryOptions();
     initSocialDashboardSettings();
+    initThemeDashboardSettings();
   }
 
   function initPaymentsDashboardSettings() {
@@ -1720,11 +2121,27 @@ DB.init();
     DOM.productFormModalOverlay.classList.remove("open");
   });
 
+  if (DOM.crudIsPriceDrop) {
+    DOM.crudIsPriceDrop.addEventListener("change", (e) => {
+      if (DOM.crudOriginalPriceGroup) {
+        DOM.crudOriginalPriceGroup.style.display = e.target.checked ? "block" : "none";
+      }
+      if (!e.target.checked && DOM.crudOriginalPrice) {
+        DOM.crudOriginalPrice.value = "";
+      }
+    });
+  }
+
   function openProductCrudModal(productId = null) {
     DOM.productFormModalOverlay.classList.add("open");
     DOM.productCrudForm.reset();
     currentColorsTags = [];
     renderColorsTags();
+
+    // Clear image status and preview URL
+    document.getElementById("crud-image-url").value = "";
+    document.getElementById("crud-image-upload").value = "";
+    document.getElementById("image-upload-status").textContent = "";
 
     if (productId) {
       // Edit mode
@@ -1736,8 +2153,10 @@ DB.init();
       DOM.crudName.value = prod.name;
       DOM.crudDescription.value = prod.description;
       DOM.crudPrice.value = prod.basePrice;
-      DOM.crudCategory.value = prod.category;
-      DOM.crudSubcategory.value = prod.subcategory;
+      
+      syncProductModalCategories(prod.category, prod.subcategory);
+      document.getElementById("crud-image-url").value = prod.defaultImage || "";
+
       DOM.crudPrintTime.value = prod.specifications.printTime;
       DOM.crudWeight.value = prod.specifications.filamentUsed;
       DOM.crudDifficulty.value = prod.specifications.difficulty;
@@ -1751,14 +2170,33 @@ DB.init();
 
       const matStr = prod.variations.materials.map(m => `${m.name}:${m.priceModifier.toFixed(2)}`).join(", ");
       DOM.crudMaterials.value = matStr;
+
+      // Curation checkboxes & original price
+      if (DOM.crudIsFeatured) DOM.crudIsFeatured.checked = prod.isFeatured || false;
+      if (DOM.crudIsNewArrival) DOM.crudIsNewArrival.checked = prod.isNewArrival || false;
+      if (DOM.crudIsPriceDrop) DOM.crudIsPriceDrop.checked = prod.isPriceDrop || false;
+      if (DOM.crudOriginalPrice) DOM.crudOriginalPrice.value = prod.originalPrice || "";
+      if (DOM.crudOriginalPriceGroup) {
+        DOM.crudOriginalPriceGroup.style.display = prod.isPriceDrop ? "block" : "none";
+      }
     } else {
       // Add Mode
       DOM.productModalTitle.textContent = "Create New Catalog Product";
       DOM.crudProductId.value = "";
+      
+      syncProductModalCategories();
+
       currentColorsTags = ["Silk Gold", "Matte Black", "Cosmic Blue"];
       renderColorsTags();
       DOM.crudSizes.value = "Small (10cm):-3.00, Standard:0.00, Large:+8.00";
       DOM.crudMaterials.value = "PLA (Standard):0.00, PETG (Durable):2.50";
+
+      // Curation checkboxes & original price
+      if (DOM.crudIsFeatured) DOM.crudIsFeatured.checked = false;
+      if (DOM.crudIsNewArrival) DOM.crudIsNewArrival.checked = false;
+      if (DOM.crudIsPriceDrop) DOM.crudIsPriceDrop.checked = false;
+      if (DOM.crudOriginalPrice) DOM.crudOriginalPrice.value = "";
+      if (DOM.crudOriginalPriceGroup) DOM.crudOriginalPriceGroup.style.display = "none";
     }
   }
 
@@ -1801,6 +2239,50 @@ DB.init();
     }
   });
 
+  // Handle product image upload to Firebase Storage
+  const imageUploadInput = document.getElementById("crud-image-upload");
+  const imageUrlInput = document.getElementById("crud-image-url");
+  const uploadStatus = document.getElementById("image-upload-status");
+
+  if (imageUploadInput) {
+    imageUploadInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      uploadStatus.textContent = "⏳ Uploading image...";
+      uploadStatus.style.color = "var(--accent-indigo)";
+
+      // Generate local fallback URL immediately
+      const localUrl = URL.createObjectURL(file);
+
+      // Create a promise wrapper for uploading
+      const uploadPromise = async () => {
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `products/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+        const storageRef = ref(storage, fileName);
+        const snapshot = await uploadBytes(storageRef, file);
+        return await getDownloadURL(snapshot.ref);
+      };
+
+      const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+      try {
+        // Try uploading with an 8-second timeout
+        const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+        
+        imageUrlInput.value = downloadUrl;
+        uploadStatus.textContent = "✅ Success!";
+        uploadStatus.style.color = "var(--accent-green)";
+      } catch (err) {
+        console.warn("Firebase Storage upload failed or timed out. Falling back to local Blob URL:", err);
+        
+        imageUrlInput.value = localUrl;
+        uploadStatus.textContent = "⚠️ Firebase offline (Using Local Preview)";
+        uploadStatus.style.color = "var(--accent-gold)";
+      }
+    });
+  }
+
   // Submit Inventory Form (Create & Update)
   DOM.productCrudForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1814,6 +2296,14 @@ DB.init();
     const printTime = DOM.crudPrintTime.value || "4 hours";
     const weight = DOM.crudWeight.value || "80g";
     const difficulty = DOM.crudDifficulty.value;
+
+    // Read promotion flags & original price
+    const isFeatured = DOM.crudIsFeatured ? DOM.crudIsFeatured.checked : false;
+    const isNewArrival = DOM.crudIsNewArrival ? DOM.crudIsNewArrival.checked : false;
+    const isPriceDrop = DOM.crudIsPriceDrop ? DOM.crudIsPriceDrop.checked : false;
+    const originalPrice = (isPriceDrop && DOM.crudOriginalPrice && DOM.crudOriginalPrice.value)
+      ? parseFloat(DOM.crudOriginalPrice.value)
+      : null;
 
     // Helper map of hexes
     const swatchHexMap = {
@@ -1861,6 +2351,8 @@ DB.init();
     const isEdit = pid !== "";
     const productSlug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
+    const imageUrl = document.getElementById("crud-image-url").value || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80";
+
     const finalProduct = {
       id: isEdit ? pid : productSlug,
       name,
@@ -1870,10 +2362,14 @@ DB.init();
       subcategory,
       rating: isEdit ? DB.getProductById(pid).rating : 5.0,
       reviewsCount: isEdit ? DB.getProductById(pid).reviewsCount : 1,
+      isFeatured,
+      isNewArrival,
+      isPriceDrop,
+      originalPrice,
       images: {
-        [currentColorsTags[0] || "Default"]: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80"
+        [currentColorsTags[0] || "Default"]: imageUrl
       },
-      defaultImage: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
+      defaultImage: imageUrl,
       variations: { colors, sizes, materials },
       specifications: { printTime, filamentUsed: weight, difficulty }
     };
@@ -1887,6 +2383,10 @@ DB.init();
     DOM.productFormModalOverlay.classList.remove("open");
     renderDashboardInventory();
     renderProductsList();
+    renderCuratedHomeSections();
+    if (state.activePage === "products") {
+      renderProductsPage();
+    }
     updateOverviewStats();
 
     alert(isEdit ? "Product details updated!" : "New product added to store catalog!");
@@ -1910,7 +2410,15 @@ DB.init();
     state.currentCategory = "all";
     state.currentSubcategory = "all";
     state.searchQuery = "";
-    DOM.searchBar.value = "";
+    if (DOM.searchBar) DOM.searchBar.value = "";
+    
+    // Reset products page filters
+    state.productsFilterCategory = "all";
+    state.productsFilterSubcategory = "all";
+    state.productsFilterSearch = "";
+    state.productsFilterPrice = 150;
+    state.productsFilterSort = "popular";
+    
     renderCategoryTabs();
     renderProductsList();
 
@@ -1957,25 +2465,7 @@ DB.init();
     DOM.navHome.classList.add("active");
   });
 
-  // Products Category Dropdown Trigger
-  document.querySelectorAll(".dropdown-item").forEach(item => {
-    item.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const catId = e.target.dataset.cat;
-      changePage("store");
-      DOM.navProductsTrigger.classList.add("active");
-
-      state.currentCategory = catId;
-      state.currentSubcategory = "all";
-      state.searchQuery = "";
-      DOM.searchBar.value = "";
-
-      renderCategoryTabs();
-      renderProductsList();
-
-      document.getElementById("shop-catalog-anchor").scrollIntoView({ behavior: 'smooth' });
-    });
-  });
+  // Static dropdown bindings removed in favor of dynamic renderHeaderProductsDropdown bindings
 
   // About and Contact scroll routing
   DOM.navAbout.addEventListener("click", () => {
@@ -2013,18 +2503,49 @@ DB.init();
 
   // Landing Page CTA
   DOM.heroCtaBtn.addEventListener("click", () => {
-    document.getElementById("shop-catalog-anchor").scrollIntoView({ behavior: 'smooth' });
+    changePage("products");
   });
 
   // Search & sorting
-  DOM.searchBar.addEventListener("input", (e) => {
-    state.searchQuery = e.target.value;
-    renderProductsList();
-  });
-  DOM.sortSelect.addEventListener("change", (e) => {
-    state.sortBy = e.target.value;
-    renderProductsList();
-  });
+  if (DOM.searchBar) {
+    DOM.searchBar.addEventListener("input", (e) => {
+      state.productsFilterSearch = e.target.value;
+      if (DOM.filterSearchInput) DOM.filterSearchInput.value = e.target.value;
+      changePage("products");
+    });
+  }
+  if (DOM.sortSelect) {
+    DOM.sortSelect.addEventListener("change", (e) => {
+      state.productsFilterSort = e.target.value;
+      if (DOM.filterSortSelect) DOM.filterSortSelect.value = e.target.value;
+      changePage("products");
+    });
+  }
+
+  // Products Page Sidebar Filter Listeners
+  if (DOM.filterPriceRange) {
+    DOM.filterPriceRange.addEventListener("input", (e) => {
+      state.productsFilterPrice = parseFloat(e.target.value);
+      if (DOM.priceLimitLabel) {
+        DOM.priceLimitLabel.textContent = `$${state.productsFilterPrice.toFixed(2)}`;
+      }
+      renderProductsPageGrid();
+    });
+  }
+
+  if (DOM.filterSearchInput) {
+    DOM.filterSearchInput.addEventListener("input", (e) => {
+      state.productsFilterSearch = e.target.value;
+      renderProductsPageGrid();
+    });
+  }
+
+  if (DOM.filterSortSelect) {
+    DOM.filterSortSelect.addEventListener("change", (e) => {
+      state.productsFilterSort = e.target.value;
+      renderProductsPageGrid();
+    });
+  }
 
   // ==========================================
   // DYNAMIC HERO, DELIVERY, AND SOCIAL CONTROLS
@@ -2120,6 +2641,15 @@ DB.init();
           </a>
         `;
       }
+      if (settings.tiktokUrl) {
+        html += `
+          <a href="${settings.tiktokUrl}" target="_blank" class="social-link" aria-label="TikTok">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.99-1.72-.08-.07-.17-.14-.24-.21V14c0 3.32-2.12 6.44-5.33 7.37-3.21.93-6.84-.4-8.37-3.42-1.53-3.01-.7-6.95 1.95-8.98 1.42-1.09 3.21-1.6 4.98-1.41V11.7c-.82-.25-1.74-.1-2.45.39-.71.49-1.12 1.35-1.07 2.21.05.86.63 1.65 1.44 1.93.81.28 1.77.06 2.37-.53.48-.47.72-1.15.72-1.83V.02z"/>
+            </svg>
+          </a>
+        `;
+      }
       footerSocial.innerHTML = html;
     }
 
@@ -2149,6 +2679,14 @@ DB.init();
     document.getElementById("cfg-hero-printers").value = content.activePrinters;
     document.getElementById("cfg-hero-prints").value = content.completedPrints;
     document.getElementById("cfg-hero-rating").value = content.customerRating;
+
+    // Load curated sections configuration fields
+    if (DOM.cfgFeaturedTitle) DOM.cfgFeaturedTitle.value = content.featuredTitle || "";
+    if (DOM.cfgFeaturedDesc) DOM.cfgFeaturedDesc.value = content.featuredSubtitle || "";
+    if (DOM.cfgPricedropTitle) DOM.cfgPricedropTitle.value = content.priceDropTitle || "";
+    if (DOM.cfgPricedropDesc) DOM.cfgPricedropDesc.value = content.priceDropSubtitle || "";
+    if (DOM.cfgNewarrivalTitle) DOM.cfgNewarrivalTitle.value = content.newArrivalTitle || "";
+    if (DOM.cfgNewarrivalDesc) DOM.cfgNewarrivalDesc.value = content.newArrivalSubtitle || "";
   }
 
   function initSocialDashboardSettings() {
@@ -2160,11 +2698,160 @@ DB.init();
     document.getElementById("cfg-wa-msg").value = settings.whatsappMessage;
     document.getElementById("cfg-instagram-url").value = settings.instagramUrl;
     document.getElementById("cfg-facebook-url").value = settings.facebookUrl;
+    if (document.getElementById("cfg-tiktok-url")) document.getElementById("cfg-tiktok-url").value = settings.tiktokUrl || "";
 
     if (document.getElementById("cfg-contact-address")) document.getElementById("cfg-contact-address").value = settings.address || "";
     if (document.getElementById("cfg-contact-email")) document.getElementById("cfg-contact-email").value = settings.email || "";
     if (document.getElementById("cfg-contact-phone")) document.getElementById("cfg-contact-phone").value = settings.phone || "";
     if (document.getElementById("cfg-contact-hours")) document.getElementById("cfg-contact-hours").value = settings.hours || "";
+  }
+
+  function applyTheme() {
+    const theme = DB.getThemeSettings();
+    if (!theme) return;
+
+    // Apply Logo
+    document.querySelectorAll(".logo").forEach(logoEl => {
+      const iconEl = logoEl.querySelector(".logo-icon");
+      if (iconEl) iconEl.textContent = theme.logoLetter;
+      
+      const spanEl = logoEl.querySelector("span");
+      if (spanEl) {
+        if (logoEl.parentNode.classList.contains("db-sidebar")) {
+          spanEl.innerHTML = `${theme.logoText1}<span class="text-gradient">DB</span>`;
+        } else {
+          spanEl.innerHTML = `${theme.logoText1}<span class="text-gradient">${theme.logoText2}</span>`;
+        }
+      }
+    });
+
+    // Apply Colors
+    const root = document.documentElement;
+    for (const [key, val] of Object.entries(theme.colors)) {
+      root.style.setProperty(`--${key}`, val);
+    }
+
+    // Set Theme Mode Colors
+    if (theme.themeMode === "dark") {
+      root.style.setProperty("--bg-primary", "#0b0c10");
+      root.style.setProperty("--bg-secondary", "#1a1c23");
+      root.style.setProperty("--bg-card", "rgba(26, 28, 35, 0.75)");
+      root.style.setProperty("--bg-card-hover", "rgba(35, 38, 48, 0.9)");
+      root.style.setProperty("--glass-border", "rgba(255, 255, 255, 0.08)");
+      root.style.setProperty("--glass-shadow", "rgba(0, 0, 0, 0.3)");
+      root.style.setProperty("--text-main", "#f1f5f9");
+      root.style.setProperty("--text-muted", "#94a3b8");
+      
+      document.body.style.backgroundImage = `
+        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(8, 145, 178, 0.1) 0%, transparent 40%)
+      `;
+    } else {
+      root.style.setProperty("--bg-primary", "#ffffff");
+      root.style.setProperty("--bg-secondary", "#f8fafc");
+      root.style.setProperty("--bg-card", "rgba(255, 255, 255, 0.75)");
+      root.style.setProperty("--bg-card-hover", "rgba(241, 245, 249, 0.9)");
+      root.style.setProperty("--glass-border", "rgba(15, 23, 42, 0.08)");
+      root.style.setProperty("--glass-shadow", "rgba(15, 23, 42, 0.04)");
+      root.style.setProperty("--text-main", "#0f172a");
+      root.style.setProperty("--text-muted", "#64748b");
+      
+      document.body.style.backgroundImage = `
+        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(8, 145, 178, 0.03) 0%, transparent 40%)
+      `;
+    }
+  }
+
+  function initThemeDashboardSettings() {
+    const theme = DB.getThemeSettings();
+    if (!theme) return;
+
+    DOM.cfgThemeMode.value = theme.themeMode;
+    DOM.cfgThemePreset.value = "custom";
+    
+    DOM.cfgColorIndigo.value = theme.colors["accent-indigo"];
+    DOM.cfgColorCyan.value = theme.colors["accent-cyan"];
+    DOM.cfgColorPurple.value = theme.colors["accent-purple"];
+    DOM.cfgColorPink.value = theme.colors["accent-pink"];
+    
+    DOM.cfgLogoLetter.value = theme.logoLetter;
+    DOM.cfgLogoText1.value = theme.logoText1;
+    DOM.cfgLogoText2.value = theme.logoText2;
+
+    // Reset old listeners if any by replacing element or just binding directly
+    // Preset change handler
+    DOM.cfgThemePreset.removeEventListener("change", handlePresetChange);
+    DOM.cfgThemePreset.addEventListener("change", handlePresetChange);
+  }
+
+  function handlePresetChange(e) {
+    const preset = e.target.value;
+    const presets = {
+      "default": {
+        "accent-indigo": "#4f46e5",
+        "accent-cyan": "#0891b2",
+        "accent-purple": "#7c3aed",
+        "accent-pink": "#db2777"
+      },
+      "emerald-gold": {
+        "accent-indigo": "#059669",
+        "accent-cyan": "#d97706",
+        "accent-purple": "#10b981",
+        "accent-pink": "#f59e0b"
+      },
+      "rose-purple": {
+        "accent-indigo": "#db2777",
+        "accent-cyan": "#7c3aed",
+        "accent-purple": "#ec4899",
+        "accent-pink": "#a855f7"
+      },
+      "cyberpunk": {
+        "accent-indigo": "#ea580c",
+        "accent-cyan": "#e11d48",
+        "accent-purple": "#f97316",
+        "accent-pink": "#f43f5e"
+      },
+      "ocean-breeze": {
+        "accent-indigo": "#0284c7",
+        "accent-cyan": "#0d9488",
+        "accent-purple": "#0ea5e9",
+        "accent-pink": "#14b8a6"
+      }
+    };
+
+    if (presets[preset]) {
+      DOM.cfgColorIndigo.value = presets[preset]["accent-indigo"];
+      DOM.cfgColorCyan.value = presets[preset]["accent-cyan"];
+      DOM.cfgColorPurple.value = presets[preset]["accent-purple"];
+      DOM.cfgColorPink.value = presets[preset]["accent-pink"];
+    }
+  }
+
+  if (DOM.themeConfigForm) {
+    DOM.themeConfigForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      const updatedTheme = {
+        logoLetter: DOM.cfgLogoLetter.value.trim(),
+        logoText1: DOM.cfgLogoText1.value.trim(),
+        logoText2: DOM.cfgLogoText2.value.trim(),
+        themeMode: DOM.cfgThemeMode.value,
+        colors: {
+          "accent-indigo": DOM.cfgColorIndigo.value,
+          "accent-cyan": DOM.cfgColorCyan.value,
+          "accent-purple": DOM.cfgColorPurple.value,
+          "accent-pink": DOM.cfgColorPink.value,
+          "accent-gold": "#d97706",
+          "accent-green": "#059669",
+          "accent-red": "#dc2626"
+        }
+      };
+
+      DB.saveThemeSettings(updatedTheme);
+      applyTheme();
+      alert("Website branding and color theme saved successfully! 💾");
+    });
   }
 
   function renderDashboardDeliveryOptions() {
@@ -2240,9 +2927,17 @@ DB.init();
         activePrinters: document.getElementById("cfg-hero-printers").value.trim(),
         completedPrints: document.getElementById("cfg-hero-prints").value.trim(),
         customerRating: document.getElementById("cfg-hero-rating").value.trim(),
+        // Save curated section values
+        featuredTitle: DOM.cfgFeaturedTitle ? DOM.cfgFeaturedTitle.value.trim() : "",
+        featuredSubtitle: DOM.cfgFeaturedDesc ? DOM.cfgFeaturedDesc.value.trim() : "",
+        priceDropTitle: DOM.cfgPricedropTitle ? DOM.cfgPricedropTitle.value.trim() : "",
+        priceDropSubtitle: DOM.cfgPricedropDesc ? DOM.cfgPricedropDesc.value.trim() : "",
+        newArrivalTitle: DOM.cfgNewarrivalTitle ? DOM.cfgNewarrivalTitle.value.trim() : "",
+        newArrivalSubtitle: DOM.cfgNewarrivalDesc ? DOM.cfgNewarrivalDesc.value.trim() : "",
       };
       DB.saveHeroContent(updated);
       renderHeroContent();
+      renderCuratedHomeSections();
       alert("Hero section content saved successfully! 💾");
     });
   }
@@ -2256,6 +2951,7 @@ DB.init();
         whatsappMessage: document.getElementById("cfg-wa-msg").value.trim(),
         instagramUrl: document.getElementById("cfg-instagram-url").value.trim(),
         facebookUrl: document.getElementById("cfg-facebook-url").value.trim(),
+        tiktokUrl: document.getElementById("cfg-tiktok-url") ? document.getElementById("cfg-tiktok-url").value.trim() : "",
         address: document.getElementById("cfg-contact-address").value.trim(),
         email: document.getElementById("cfg-contact-email").value.trim(),
         phone: document.getElementById("cfg-contact-phone").value.trim(),
@@ -2406,6 +3102,284 @@ DB.init();
     setTimeout(() => {
       el.remove();
     }, duration * 1000);
+  }
+
+  function syncProductModalCategories(selectedCatId = null, selectedSubName = null) {
+    const categories = DB.getCategories();
+    if (categories.length === 0) {
+      DOM.crudCategory.innerHTML = `<option value="">No categories available</option>`;
+      DOM.crudSubcategory.innerHTML = `<option value="">No subcategories available</option>`;
+      return;
+    }
+
+    // Populate category select
+    DOM.crudCategory.innerHTML = categories.map(cat => `
+      <option value="${cat.id}">${cat.name}</option>
+    `).join("");
+
+    if (selectedCatId) {
+      DOM.crudCategory.value = selectedCatId;
+    }
+
+    const updateSubcategories = () => {
+      const activeCatId = DOM.crudCategory.value;
+      const activeCat = categories.find(c => c.id === activeCatId);
+      if (activeCat && activeCat.subcategories && activeCat.subcategories.length > 0) {
+        DOM.crudSubcategory.innerHTML = activeCat.subcategories.map(sub => `
+          <option value="${sub}">${sub}</option>
+        `).join("");
+        if (selectedSubName && activeCat.subcategories.includes(selectedSubName)) {
+          DOM.crudSubcategory.value = selectedSubName;
+        }
+      } else {
+        DOM.crudSubcategory.innerHTML = `<option value="">None</option>`;
+      }
+    };
+
+    updateSubcategories();
+
+    DOM.crudCategory.removeEventListener("change", updateSubcategories);
+    DOM.crudCategory.addEventListener("change", updateSubcategories);
+  }
+
+  function renderDashboardCategories() {
+    const categories = DB.getCategories();
+    if (!DOM.dbCategoriesTbody) return;
+
+    if (categories.length === 0) {
+      DOM.dbCategoriesTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">No categories registered yet. Click "+ Add Category" to create one!</td></tr>`;
+      return;
+    }
+
+    DOM.dbCategoriesTbody.innerHTML = categories.map(cat => {
+      const subList = cat.subcategories.map(sub => `
+        <span class="tag-chip" style="margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-flex; align-items: center; background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 6px;">
+          ${sub}
+          <span class="remove-subcategory-btn" data-cat-id="${cat.id}" data-sub-name="${sub}" style="cursor: pointer; color: var(--accent-red); margin-left: 0.4rem; font-weight: bold;">×</span>
+        </span>
+      `).join("") || `<span class="text-muted" style="font-size: 0.85rem;">None</span>`;
+
+      return `
+        <tr>
+          <td><strong>${cat.name}</strong></td>
+          <td><code>${cat.id}</code></td>
+          <td style="max-width: 400px; white-space: normal;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center;">
+              ${subList}
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm add-sub-btn" data-id="${cat.id}">+ Add Sub</button>
+            <button class="action-icon-btn delete delete-cat" data-id="${cat.id}" title="Delete Category" style="margin-left: 0.8rem;">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Bind Add Subcategory
+    DOM.dbCategoriesTbody.querySelectorAll(".add-sub-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        openSubcategoryModal(btn.dataset.id);
+      });
+    });
+
+    // Bind Delete Category
+    DOM.dbCategoriesTbody.querySelectorAll(".delete-cat").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        if (confirm("Are you sure you want to delete this category? This will not delete products in this category, but they may become uncategorized.")) {
+          let current = DB.getCategories();
+          current = current.filter(item => item.id !== id);
+          DB.saveCategories(current);
+          renderDashboardCategories();
+          renderCategoryTabs();
+          renderProductsList();
+          renderHeaderProductsDropdown();
+        }
+      });
+    });
+
+    // Bind Remove Subcategory
+    DOM.dbCategoriesTbody.querySelectorAll(".remove-subcategory-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const catId = btn.dataset.catId;
+        const subName = btn.dataset.subName;
+        if (confirm(`Remove subcategory "${subName}" from this category?`)) {
+          let current = DB.getCategories();
+          const cat = current.find(c => c.id === catId);
+          if (cat) {
+            cat.subcategories = cat.subcategories.filter(s => s !== subName);
+            DB.saveCategories(current);
+            renderDashboardCategories();
+            renderCategoryTabs();
+            renderProductsList();
+            renderHeaderProductsDropdown();
+          }
+        }
+      });
+    });
+  }
+
+  function openCategoryModal() {
+    DOM.categoryModalOverlay.classList.add("open");
+    DOM.categoryCrudForm.reset();
+  }
+
+  function openSubcategoryModal(catId) {
+    DOM.subcategoryModalOverlay.classList.add("open");
+    DOM.subcategoryCrudForm.reset();
+    document.getElementById("crud-subcategory-cat-id").value = catId;
+  }
+
+  if (DOM.addCategoryBtn) {
+    DOM.addCategoryBtn.addEventListener("click", openCategoryModal);
+  }
+  if (DOM.closeCategoryModalBtn) {
+    DOM.closeCategoryModalBtn.addEventListener("click", () => {
+      DOM.categoryModalOverlay.classList.remove("open");
+    });
+  }
+  if (DOM.closeSubcategoryModalBtn) {
+    DOM.closeSubcategoryModalBtn.addEventListener("click", () => {
+      DOM.subcategoryModalOverlay.classList.remove("open");
+    });
+  }
+
+  if (DOM.categoryCrudForm) {
+    DOM.categoryCrudForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("crud-category-name").value.trim();
+      const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+      let current = DB.getCategories();
+      if (current.some(c => c.id === id)) {
+        alert("A category with this name or ID already exists!");
+        return;
+      }
+
+      current.push({ id, name, subcategories: [] });
+      DB.saveCategories(current);
+      DOM.categoryModalOverlay.classList.remove("open");
+      renderDashboardCategories();
+      renderCategoryTabs();
+      renderProductsList();
+      renderHeaderProductsDropdown();
+    });
+  }
+
+  if (DOM.subcategoryCrudForm) {
+    DOM.subcategoryCrudForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const catId = document.getElementById("crud-subcategory-cat-id").value;
+      const subName = document.getElementById("crud-subcategory-name").value.trim();
+
+      let current = DB.getCategories();
+      const cat = current.find(c => c.id === catId);
+      if (cat) {
+        if (cat.subcategories.includes(subName)) {
+          alert("This subcategory already exists under this category!");
+          return;
+        }
+        cat.subcategories.push(subName);
+        DB.saveCategories(current);
+      }
+
+      DOM.subcategoryModalOverlay.classList.remove("open");
+      renderDashboardCategories();
+      renderCategoryTabs();
+      renderProductsList();
+      renderHeaderProductsDropdown();
+    });
+  }
+
+  function renderDashboardCoupons() {
+    const coupons = DB.getCoupons();
+    if (!DOM.dbCouponsTbody) return;
+
+    if (coupons.length === 0) {
+      DOM.dbCouponsTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">No coupons registered yet. Create one!</td></tr>`;
+      return;
+    }
+
+    DOM.dbCouponsTbody.innerHTML = coupons.map(c => `
+      <tr>
+        <td><strong>${c.code}</strong></td>
+        <td>${c.type === 'percent' ? 'Percentage (%)' : 'Fixed Amount ($)'}</td>
+        <td>${c.type === 'percent' ? `${c.value}%` : `$${c.value.toFixed(2)}`}</td>
+        <td>
+          <button class="action-icon-btn delete delete-coupon" data-code="${c.code}" title="Delete Coupon">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+
+    // Bind Delete Coupon Actions
+    DOM.dbCouponsTbody.querySelectorAll(".delete-coupon").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const code = btn.dataset.code;
+        if (confirm(`Are you sure you want to delete coupon code "${code}"?`)) {
+          DB.deleteCoupon(code);
+          renderDashboardCoupons();
+          
+          // Clear active coupon if deleted
+          if (state.appliedCoupon && state.appliedCoupon.code === code) {
+            state.appliedCoupon = null;
+            if (DOM.cartCouponInput) DOM.cartCouponInput.value = "";
+            if (DOM.cartCouponStatus) DOM.cartCouponStatus.textContent = "";
+            updateCartUI();
+          }
+        }
+      });
+    });
+  }
+
+  // Coupon Apply Event Listener (Cart Drawer)
+  if (DOM.applyCouponBtn) {
+    DOM.applyCouponBtn.addEventListener("click", () => {
+      const inputVal = DOM.cartCouponInput.value.trim().toUpperCase();
+      if (!inputVal) {
+        state.appliedCoupon = null;
+        DOM.cartCouponStatus.textContent = "";
+        updateCartUI();
+        return;
+      }
+
+      const coupons = DB.getCoupons();
+      const matched = coupons.find(c => c.code.toUpperCase() === inputVal);
+
+      if (matched) {
+        state.appliedCoupon = matched;
+        DOM.cartCouponStatus.textContent = `✅ Coupon "${matched.code}" applied!`;
+        DOM.cartCouponStatus.style.color = "var(--accent-green)";
+        updateCartUI();
+      } else {
+        state.appliedCoupon = null;
+        DOM.cartCouponStatus.textContent = "❌ Invalid coupon code.";
+        DOM.cartCouponStatus.style.color = "var(--accent-red)";
+        updateCartUI();
+      }
+    });
+  }
+
+  // Coupon Dashboard Form Submit
+  if (DOM.couponCrudForm) {
+    DOM.couponCrudForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const code = document.getElementById("crud-coupon-code").value.trim().toUpperCase();
+      const type = document.getElementById("crud-coupon-type").value;
+      const value = parseFloat(document.getElementById("crud-coupon-value").value);
+
+      const coupons = DB.getCoupons();
+      if (coupons.some(c => c.code.toUpperCase() === code)) {
+        alert("A coupon with this code already exists!");
+        return;
+      }
+
+      const newCoupon = { code, type, value };
+      DB.addCoupon(newCoupon);
+      DOM.couponCrudForm.reset();
+      renderDashboardCoupons();
+      alert(`Coupon "${code}" created successfully! 🏷️`);
+    });
   }
 
   // INITIALIZE ON RUN
