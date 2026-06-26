@@ -1,8 +1,7 @@
 // PixelPop E-Commerce and Admin Dashboard Application Controller
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Database
-  DB.init();
+// Initialize Database
+DB.init();
 
   // APP STATE
   const state = {
@@ -187,6 +186,19 @@ document.addEventListener("DOMContentLoaded", () => {
     adminPasswordInput: document.getElementById("admin-password"),
     loginErrorMsg: document.getElementById("login-error-msg"),
     loginBackToStore: document.getElementById("login-back-to-store"),
+
+    // Hero config
+    heroConfigForm: document.getElementById("hero-config-form"),
+    
+    // Social & support config
+    socialConfigForm: document.getElementById("social-config-form"),
+
+    // Delivery Options CRUD
+    addDeliveryOptionBtn: document.getElementById("add-delivery-option-btn"),
+    dbDeliveryOptionsTbody: document.getElementById("db-delivery-options-tbody"),
+    deliveryModalOverlay: document.getElementById("delivery-modal-overlay"),
+    closeDeliveryModalBtn: document.getElementById("close-delivery-modal-btn"),
+    deliveryCrudForm: document.getElementById("delivery-crud-form"),
   };
 
   // Tag input helper list
@@ -202,6 +214,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCartUI();
     renderEmailList();
     setupEmailAutoChecks();
+    renderHeroContent();
+    renderDeliveryOptions();
+    renderSocialSettings();
+    initSuperheroSpawner();
 
     // Default Email Seed if empty
     if (state.emails.length === 0) {
@@ -227,6 +243,19 @@ document.addEventListener("DOMContentLoaded", () => {
     DOM.productDetailPage.style.display = "none";
     DOM.adminDashboardPage.style.display = "none";
     if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "none";
+
+    const footer = document.getElementById("store-footer");
+    const waWidget = document.getElementById("whatsapp-widget");
+    if (page === "dashboard" || page === "admin-login") {
+      if (footer) footer.style.display = "none";
+      if (waWidget) waWidget.style.display = "none";
+    } else {
+      if (footer) footer.style.display = "block";
+      const settings = DB.getSocialSettings();
+      if (waWidget) {
+        waWidget.style.display = settings.whatsappEnabled ? "block" : "none";
+      }
+    }
 
     if (page === "store") {
       DOM.storefrontPage.style.display = "block";
@@ -876,22 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Attach click events to delivery options once just in case
-    document.querySelectorAll(".delivery-option").forEach(opt => {
-      // remove old listeners
-      const newOpt = opt.cloneNode(true);
-      opt.parentNode.replaceChild(newOpt, opt);
-    });
-
-    document.querySelectorAll(".delivery-option").forEach(opt => {
-      opt.addEventListener("click", (e) => {
-        document.querySelectorAll(".delivery-option").forEach(d => d.classList.remove("active"));
-        e.currentTarget.classList.add("active");
-        updateCheckoutSummaryTotals();
-      });
-    });
-
-    updateCheckoutSummaryTotals();
+    renderDeliveryOptions();
   }
 
   function selectCheckoutPaymentMethod(paymentId, paymentSettings) {
@@ -1167,10 +1181,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 1. Order Received
+    const deliveryOptions = DB.getDeliveryOptions();
+    const matchedOpt = deliveryOptions.find(o => o.id === order.deliveryMethod);
+    const deliveryText = matchedOpt ? `${matchedOpt.name} (${matchedOpt.desc})` : order.deliveryMethod;
+
     addSimulatedEmail(
       "billing@pixelpop.com",
       `Order Received - Invoice ${order.id}`,
-      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${order.deliveryMethod === 'express' ? 'Express Filament Courier (1-2 days)' : 'Standard Postal (4-6 days)'}\n\n${paymentDetailsText}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPixelPop Billing Team`
+      `Hi ${address.firstName},\n\nWe have registered your order ${order.id} and added it to our print bed pipeline queue!\n\nOrder Details:\n${itemsText}\n\nShipping To:\n${address.firstName} ${address.lastName}\n${address.address}, ${address.city}, ${address.zip}\n\nDelivery Method: ${deliveryText}\n\n${paymentDetailsText}\n\nGrand Total: $${order.totals.total.toFixed(2)}\n\nWe will update you as soon as our nozzles heat up and printing begins!\n\nBest,\nPixelPop Billing Team`
     );
 
     // 2. Queue printing start email after 15 seconds
@@ -1235,6 +1253,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDashboardOrders();
     initPaymentsDashboardSettings();
     initCalculator();
+    initHeroDashboardSettings();
+    renderDashboardDeliveryOptions();
+    initSocialDashboardSettings();
   }
 
   function initPaymentsDashboardSettings() {
@@ -2005,7 +2026,390 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProductsList();
   });
 
+  // ==========================================
+  // DYNAMIC HERO, DELIVERY, AND SOCIAL CONTROLS
+  // ==========================================
+
+  // --- Front-end Renderers ---
+  function renderHeroContent() {
+    const content = DB.getHeroContent();
+    if (!content) return;
+
+    const titleEl = document.querySelector(".hero-content h1");
+    const subtitleEl = document.querySelector(".hero-content p");
+    
+    if (titleEl) titleEl.innerHTML = content.title;
+    if (subtitleEl) subtitleEl.textContent = content.subtitle;
+    if (DOM.heroCtaBtn) DOM.heroCtaBtn.textContent = content.ctaText;
+    
+    const printersEl = document.getElementById("stat-printers");
+    const printsEl = document.getElementById("stat-prints");
+    const ratingEl = document.getElementById("stat-rating");
+    if (printersEl) printersEl.textContent = content.activePrinters;
+    if (printsEl) printsEl.textContent = content.completedPrints;
+    if (ratingEl) ratingEl.textContent = content.customerRating;
+  }
+
+  function renderDeliveryOptions() {
+    const options = DB.getDeliveryOptions();
+    if (!DOM.deliveryOptionsContainer) return;
+
+    if (options.length === 0) {
+      DOM.deliveryOptionsContainer.innerHTML = `<p class="text-danger" style="font-size:0.85rem; font-weight:600; grid-column: 1/-1;">No delivery options available.</p>`;
+      return;
+    }
+
+    DOM.deliveryOptionsContainer.innerHTML = options.map((opt, idx) => `
+      <div class="delivery-option ${idx === 0 ? 'active' : ''}" data-id="${opt.id}" data-price="${opt.price}">
+        <div class="option-details">
+          <span class="option-name">${opt.name}</span>
+          <span class="option-desc">${opt.desc}</span>
+        </div>
+        <span class="option-price">$${opt.price.toFixed(2)}</span>
+      </div>
+    `).join("");
+
+    // Rebind click events
+    DOM.deliveryOptionsContainer.querySelectorAll(".delivery-option").forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        DOM.deliveryOptionsContainer.querySelectorAll(".delivery-option").forEach(d => d.classList.remove("active"));
+        e.currentTarget.classList.add("active");
+        updateCheckoutSummaryTotals();
+      });
+    });
+
+    updateCheckoutSummaryTotals();
+  }
+
+  function renderSocialSettings() {
+    const settings = DB.getSocialSettings();
+    if (!settings) return;
+
+    const waWidget = document.getElementById("whatsapp-widget");
+    const waLink = document.getElementById("whatsapp-link");
+    if (waWidget && waLink) {
+      if (settings.whatsappEnabled && state.activePage !== "dashboard" && state.activePage !== "admin-login") {
+        waWidget.style.display = "block";
+        const encodedMsg = encodeURIComponent(settings.whatsappMessage);
+        const cleanPhone = settings.whatsappNumber.replace(/[^0-9]/g, "");
+        waLink.href = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
+      } else {
+        waWidget.style.display = "none";
+      }
+    }
+
+    // Render footer social links
+    const footerSocial = document.getElementById("social-links-footer");
+    if (footerSocial) {
+      let html = "";
+      if (settings.instagramUrl) {
+        html += `
+          <a href="${settings.instagramUrl}" target="_blank" class="social-link" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+            </svg>
+          </a>
+        `;
+      }
+      if (settings.facebookUrl) {
+        html += `
+          <a href="${settings.facebookUrl}" target="_blank" class="social-link" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+        `;
+      }
+      footerSocial.innerHTML = html;
+    }
+
+    // Render Contact page display elements
+    const addressEl = document.getElementById("contact-address-display");
+    const emailEl = document.getElementById("contact-email-display");
+    const phoneEl = document.getElementById("contact-phone-display");
+    const hoursEl = document.getElementById("contact-hours-display");
+
+    if (addressEl && settings.address) addressEl.textContent = settings.address;
+    if (emailEl && settings.email) {
+      emailEl.textContent = settings.email;
+      emailEl.href = `mailto:${settings.email}`;
+    }
+    if (phoneEl && settings.phone) phoneEl.textContent = settings.phone;
+    if (hoursEl && settings.hours) hoursEl.textContent = settings.hours;
+  }
+
+  // --- Dashboard Initializers & CRUD ---
+  function initHeroDashboardSettings() {
+    const content = DB.getHeroContent();
+    if (!content) return;
+    
+    document.getElementById("cfg-hero-title").value = content.title;
+    document.getElementById("cfg-hero-subtitle").value = content.subtitle;
+    document.getElementById("cfg-hero-cta").value = content.ctaText;
+    document.getElementById("cfg-hero-printers").value = content.activePrinters;
+    document.getElementById("cfg-hero-prints").value = content.completedPrints;
+    document.getElementById("cfg-hero-rating").value = content.customerRating;
+  }
+
+  function initSocialDashboardSettings() {
+    const settings = DB.getSocialSettings();
+    if (!settings) return;
+
+    document.getElementById("cfg-wa-enabled").checked = settings.whatsappEnabled;
+    document.getElementById("cfg-wa-phone").value = settings.whatsappNumber;
+    document.getElementById("cfg-wa-msg").value = settings.whatsappMessage;
+    document.getElementById("cfg-instagram-url").value = settings.instagramUrl;
+    document.getElementById("cfg-facebook-url").value = settings.facebookUrl;
+
+    if (document.getElementById("cfg-contact-address")) document.getElementById("cfg-contact-address").value = settings.address || "";
+    if (document.getElementById("cfg-contact-email")) document.getElementById("cfg-contact-email").value = settings.email || "";
+    if (document.getElementById("cfg-contact-phone")) document.getElementById("cfg-contact-phone").value = settings.phone || "";
+    if (document.getElementById("cfg-contact-hours")) document.getElementById("cfg-contact-hours").value = settings.hours || "";
+  }
+
+  function renderDashboardDeliveryOptions() {
+    const options = DB.getDeliveryOptions();
+    if (!DOM.dbDeliveryOptionsTbody) return;
+
+    if (options.length === 0) {
+      DOM.dbDeliveryOptionsTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">No delivery options registered. Add one!</td></tr>`;
+      return;
+    }
+
+    DOM.dbDeliveryOptionsTbody.innerHTML = options.map(o => `
+      <tr>
+        <td><strong>${o.name}</strong></td>
+        <td>${o.desc}</td>
+        <td><strong>$${o.price.toFixed(2)}</strong></td>
+        <td>
+          <button class="action-icon-btn edit-delivery" data-id="${o.id}" title="Edit Option">✏️</button>
+          <button class="action-icon-btn delete delete-delivery" data-id="${o.id}" title="Delete Option" style="margin-left: 0.5rem;">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+
+    // Bind actions
+    DOM.dbDeliveryOptionsTbody.querySelectorAll(".delete-delivery").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        if (confirm("Are you sure you want to delete this delivery option?")) {
+          let current = DB.getDeliveryOptions();
+          current = current.filter(item => item.id !== id);
+          DB.saveDeliveryOptions(current);
+          renderDashboardDeliveryOptions();
+          renderDeliveryOptions();
+        }
+      });
+    });
+
+    DOM.dbDeliveryOptionsTbody.querySelectorAll(".edit-delivery").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        openDeliveryModal(id);
+      });
+    });
+  }
+
+  function openDeliveryModal(optionId = null) {
+    DOM.deliveryModalOverlay.classList.add("open");
+    DOM.deliveryCrudForm.reset();
+    document.getElementById("crud-delivery-id").value = "";
+    document.getElementById("delivery-modal-title").textContent = "Create Delivery Option";
+
+    if (optionId) {
+      const options = DB.getDeliveryOptions();
+      const opt = options.find(o => o.id === optionId);
+      if (opt) {
+        document.getElementById("delivery-modal-title").textContent = "Edit Delivery Option";
+        document.getElementById("crud-delivery-id").value = opt.id;
+        document.getElementById("crud-delivery-name").value = opt.name;
+        document.getElementById("crud-delivery-desc").value = opt.desc;
+        document.getElementById("crud-delivery-price").value = opt.price;
+      }
+    }
+  }
+
+  // --- Form submission event bindings ---
+  if (DOM.heroConfigForm) {
+    DOM.heroConfigForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const updated = {
+        title: document.getElementById("cfg-hero-title").value.trim(),
+        subtitle: document.getElementById("cfg-hero-subtitle").value.trim(),
+        ctaText: document.getElementById("cfg-hero-cta").value.trim(),
+        activePrinters: document.getElementById("cfg-hero-printers").value.trim(),
+        completedPrints: document.getElementById("cfg-hero-prints").value.trim(),
+        customerRating: document.getElementById("cfg-hero-rating").value.trim(),
+      };
+      DB.saveHeroContent(updated);
+      renderHeroContent();
+      alert("Hero section content saved successfully! 💾");
+    });
+  }
+
+  if (DOM.socialConfigForm) {
+    DOM.socialConfigForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const updated = {
+        whatsappEnabled: document.getElementById("cfg-wa-enabled").checked,
+        whatsappNumber: document.getElementById("cfg-wa-phone").value.trim(),
+        whatsappMessage: document.getElementById("cfg-wa-msg").value.trim(),
+        instagramUrl: document.getElementById("cfg-instagram-url").value.trim(),
+        facebookUrl: document.getElementById("cfg-facebook-url").value.trim(),
+        address: document.getElementById("cfg-contact-address").value.trim(),
+        email: document.getElementById("cfg-contact-email").value.trim(),
+        phone: document.getElementById("cfg-contact-phone").value.trim(),
+        hours: document.getElementById("cfg-contact-hours").value.trim(),
+      };
+      DB.saveSocialSettings(updated);
+      renderSocialSettings();
+      alert("Social, support & contact settings saved successfully! 💾");
+    });
+  }
+
+  if (DOM.addDeliveryOptionBtn) {
+    DOM.addDeliveryOptionBtn.addEventListener("click", () => openDeliveryModal());
+  }
+
+  if (DOM.closeDeliveryModalBtn) {
+    DOM.closeDeliveryModalBtn.addEventListener("click", () => {
+      DOM.deliveryModalOverlay.classList.remove("open");
+    });
+  }
+
+  if (DOM.deliveryCrudForm) {
+    DOM.deliveryCrudForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = document.getElementById("crud-delivery-id").value;
+      const name = document.getElementById("crud-delivery-name").value.trim();
+      const desc = document.getElementById("crud-delivery-desc").value.trim();
+      const price = parseFloat(document.getElementById("crud-delivery-price").value);
+
+      let options = DB.getDeliveryOptions();
+      if (id) {
+        options = options.map(o => o.id === id ? { id, name, desc, price } : o);
+      } else {
+        const newId = name.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now();
+        options.push({ id: newId, name, desc, price });
+      }
+
+      DB.saveDeliveryOptions(options);
+      DOM.deliveryModalOverlay.classList.remove("open");
+      renderDashboardDeliveryOptions();
+      renderDeliveryOptions();
+    });
+  }
+
+  // --- Superhero Spawner Effect ---
+  function initSuperheroSpawner() {
+    const container = document.querySelector(".nozzle-simulator");
+    if (!container) return;
+
+    // Ambient spawning
+    let ambientTimer = null;
+    function startAmbientSpawning() {
+      const delay = 800 + Math.random() * 800;
+      ambientTimer = setTimeout(() => {
+        if (state.activePage === "store") {
+          spawnSuperheroParticle(container, false);
+        }
+        startAmbientSpawning();
+      }, delay);
+    }
+
+    startAmbientSpawning();
+
+    // Click handler for bursts
+    container.addEventListener("click", (e) => {
+      e.stopPropagation();
+      
+      const burstCount = 18 + Math.floor(Math.random() * 8); // 18 - 25 particles
+      for (let i = 0; i < burstCount; i++) {
+        setTimeout(() => {
+          spawnSuperheroParticle(container, true);
+        }, i * 35); // stagger for premium burst feel
+      }
+      
+      // Pulse/scale animation to nozzle icon itself
+      const nozzleIcon = container.querySelector(".nozzle-icon");
+      if (nozzleIcon) {
+        nozzleIcon.style.transition = "transform 0.1s ease";
+        nozzleIcon.style.transform = "scale(0.82)";
+        setTimeout(() => {
+          nozzleIcon.style.transform = "";
+        }, 120);
+      }
+    });
+  }
+
+  function spawnSuperheroParticle(container, isBurst = false) {
+    const HEROES = [
+      {
+        name: "batman",
+        glow: "0 0 15px rgba(250, 204, 21, 0.45)",
+        svgGlow: "#facc15",
+        html: `<svg viewBox="0 0 24 24"><path fill="#facc15" d="M12 6.5c-.5 0-1 1.8-1.2 2.6-1.2-.2-2.4-1.8-4.4-1.8-2.8 0-5.2 2.6-5.2 5.6 0 4.6 5.8 9.4 10.8 12.4 5-3 10.8-7.8 10.8-12.4 0-3-2.4-5.6-5.2-5.6-2 0-3.2 1.6-4.4 1.8-.2-.8-.7-2.6-1.2-2.6z"/></svg>`
+      },
+      {
+        name: "superman",
+        glow: "0 0 15px rgba(239, 68, 68, 0.45)",
+        svgGlow: "#ef4444",
+        html: `<svg viewBox="0 0 24 24"><path fill="#ef4444" stroke="#facc15" stroke-width="1.2" d="M12 2 L21.5 5 L19 14 L12 22 L5 14 L2.5 5 Z"/><path fill="#facc15" d="M12.5 6.5 C10.8 6.5 10 7.5 10 8.5 L11.2 8.5 C11.2 8 11.8 7.4 12.5 7.4 C13.2 7.4 13.5 7.8 13.5 8.2 C13.5 8.8 12.8 9.2 12.2 9.6 C11.2 10.1 10.8 10.8 10.8 11.5 L10.8 12.5 L14.2 12.5 L14.2 11.5 C14.2 11 14.8 10.6 15.2 10.2 C15.8 9.8 16 9.2 16 8.5 C16 7.2 14.5 6.5 12.5 6.5 Z"/></svg>`
+      },
+      {
+        name: "flash",
+        glow: "0 0 15px rgba(250, 204, 21, 0.55)",
+        svgGlow: "#facc15",
+        html: `<svg viewBox="0 0 24 24"><path fill="#facc15" d="M15 2L6 13h5l-3 9 10-11h-5l3-8z"/></svg>`
+      },
+      {
+        name: "captain-america",
+        glow: "0 0 15px rgba(59, 130, 246, 0.45)",
+        svgGlow: "#3b82f6",
+        html: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#ef4444"/><circle cx="12" cy="12" r="8.5" fill="#ffffff"/><circle cx="12" cy="12" r="6" fill="#3b82f6"/><polygon points="12,7 13.5,10.5 17,10.5 14.2,12.5 15.3,16 12,14 8.7,16 9.8,12.5 7,10.5 10.5,10.5" fill="#ffffff"/></svg>`
+      },
+      {
+        name: "ironman",
+        glow: "0 0 15px rgba(239, 68, 68, 0.45)",
+        svgGlow: "#ef4444",
+        html: `<svg viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2c-4.4 0-8 3.6-8 8v4c0 3.3 2.7 6 6 6h4c3.3 0 6-2.7 6-6v-4c0-4.4-3.6-8-8-8zm-4 7h8v1H8V9zm1 3h6v2.5l-1 1h-4l-1-1V12z"/><path fill="#facc15" d="M7 8h10v1H7V8zm1.5 3h7v1.5l-.8.8h-5.4l-.8-.8V11z"/></svg>`
+      },
+      {
+        name: "spiderman",
+        glow: "0 0 15px rgba(239, 68, 68, 0.55)",
+        svgGlow: "#ef4444",
+        html: `<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="2.5" fill="#ef4444"/><circle cx="12" cy="14" r="3.5" fill="#ef4444"/><path stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" d="M12 9 C8 7, 7 4, 7 4 M12 9 C16 7, 17 4, 17 4 M12 11 C8 11, 6 9, 6 9 M12 11 C16 11, 18 9, 18 9 M12 13 C8 15, 6 18, 6 18 M12 13 C16 15, 18 18, 18 18 M12 15 C8 18, 7 21, 7 21 M12 15 C16 18, 17 21, 17 21"/></svg>`
+      }
+    ];
+
+    const hero = HEROES[Math.floor(Math.random() * HEROES.length)];
+    const el = document.createElement("div");
+    el.className = "hero-superhero-particle";
+    el.innerHTML = hero.html;
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = isBurst ? (120 + Math.random() * 150) : (80 + Math.random() * 90);
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    const rot = -360 + Math.random() * 720;
+    const duration = isBurst ? (0.8 + Math.random() * 0.7) : (1.4 + Math.random() * 0.8);
+
+    el.style.setProperty("--particle-glow", hero.glow);
+    el.style.setProperty("--particle-svg-glow", hero.svgGlow);
+    el.style.setProperty("--particle-tx", `${tx}px`);
+    el.style.setProperty("--particle-ty", `${ty}px`);
+    el.style.setProperty("--particle-rot", `${rot}deg`);
+    el.style.setProperty("--particle-duration", `${duration}s`);
+
+    container.appendChild(el);
+
+    setTimeout(() => {
+      el.remove();
+    }, duration * 1000);
+  }
+
   // INITIALIZE ON RUN
   initApp();
   handleUrlRouting();
-});
+
+

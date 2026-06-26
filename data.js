@@ -196,6 +196,32 @@ const DEFAULT_PAYMENT_SETTINGS = {
   }
 };
 
+const DEFAULT_HERO_CONTENT = {
+  title: "Bring Your Digital Creations To Life",
+  subtitle: "Order high-precision 3D prints made from biodegradable PLA, durable PETG, or ultra-fine resin. Customize colors, sizing, and details instantly in our 3D customizer.",
+  ctaText: "Browse Shop",
+  activePrinters: "12",
+  completedPrints: "4,500+",
+  customerRating: "4.9★"
+};
+
+const DEFAULT_DELIVERY_OPTIONS = [
+  { id: "standard", name: "Standard Postal", desc: "Delivered in 4-6 business days", price: 4.99 },
+  { id: "express", name: "Express Filament Courier", desc: "Delivered in 1-2 business days", price: 12.99 }
+];
+
+const DEFAULT_SOCIAL_SETTINGS = {
+  whatsappEnabled: true,
+  whatsappNumber: "+961 70 123 456",
+  whatsappMessage: "Hello! I have a question about my 3D print order.",
+  instagramUrl: "https://instagram.com/pixelpop",
+  facebookUrl: "https://facebook.com/pixelpop",
+  address: "Filament Lane, Badaro District, Beirut, Lebanon",
+  email: "hello@pixelpop.com",
+  phone: "+961 70 123 456",
+  hours: "Monday - Saturday: 9:00 AM - 6:00 PM"
+};
+
 const DB = {
   init() {
     if (!localStorage.getItem("categories")) {
@@ -209,6 +235,15 @@ const DB = {
     }
     if (!localStorage.getItem("payment_settings")) {
       localStorage.setItem("payment_settings", JSON.stringify(DEFAULT_PAYMENT_SETTINGS));
+    }
+    if (!localStorage.getItem("hero_content")) {
+      localStorage.setItem("hero_content", JSON.stringify(DEFAULT_HERO_CONTENT));
+    }
+    if (!localStorage.getItem("delivery_options")) {
+      localStorage.setItem("delivery_options", JSON.stringify(DEFAULT_DELIVERY_OPTIONS));
+    }
+    if (!localStorage.getItem("social_settings")) {
+      localStorage.setItem("social_settings", JSON.stringify(DEFAULT_SOCIAL_SETTINGS));
     }
   },
 
@@ -288,6 +323,35 @@ const DB = {
 
   savePaymentSettings(settings) {
     localStorage.setItem("payment_settings", JSON.stringify(settings));
+  },
+
+  getHeroContent() {
+    this.init();
+    const saved = JSON.parse(localStorage.getItem("hero_content"));
+    return { ...DEFAULT_HERO_CONTENT, ...saved };
+  },
+
+  saveHeroContent(content) {
+    localStorage.setItem("hero_content", JSON.stringify(content));
+  },
+
+  getDeliveryOptions() {
+    this.init();
+    return JSON.parse(localStorage.getItem("delivery_options"));
+  },
+
+  saveDeliveryOptions(options) {
+    localStorage.setItem("delivery_options", JSON.stringify(options));
+  },
+
+  getSocialSettings() {
+    this.init();
+    const saved = JSON.parse(localStorage.getItem("social_settings"));
+    return { ...DEFAULT_SOCIAL_SETTINGS, ...saved };
+  },
+
+  saveSocialSettings(settings) {
+    localStorage.setItem("social_settings", JSON.stringify(settings));
   }
 };
 
@@ -296,3 +360,6 @@ window.DB = DB;
 window.DEFAULT_CATEGORIES = DEFAULT_CATEGORIES;
 window.DEFAULT_PRODUCTS = DEFAULT_PRODUCTS;
 window.DEFAULT_PAYMENT_SETTINGS = DEFAULT_PAYMENT_SETTINGS;
+window.DEFAULT_HERO_CONTENT = DEFAULT_HERO_CONTENT;
+window.DEFAULT_DELIVERY_OPTIONS = DEFAULT_DELIVERY_OPTIONS;
+window.DEFAULT_SOCIAL_SETTINGS = DEFAULT_SOCIAL_SETTINGS;

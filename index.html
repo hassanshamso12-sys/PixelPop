@@ -180,19 +180,19 @@
           
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Address:</strong>
-            <p style="font-weight: 500;">Filament Lane, Badaro District, Beirut, Lebanon</p>
+            <p style="font-weight: 500;" id="contact-address-display">Filament Lane, Badaro District, Beirut, Lebanon</p>
           </div>
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Email Support:</strong>
-            <p><a href="mailto:hello@pixelpop.com" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600;">hello@pixelpop.com</a></p>
+            <p><a href="mailto:hello@pixelpop.com" style="color: var(--accent-indigo); text-decoration: none; font-weight: 600;" id="contact-email-display">hello@pixelpop.com</a></p>
           </div>
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Hotline & WhatsApp:</strong>
-            <p style="font-weight: 500;">+961 70 123 456</p>
+            <p style="font-weight: 500;" id="contact-phone-display">+961 70 123 456</p>
           </div>
           <div class="info-item">
             <strong style="display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.2rem;">Operating Hours:</strong>
-            <p style="font-weight: 500;">Monday - Saturday: 9:00 AM - 6:00 PM</p>
+            <p style="font-weight: 500;" id="contact-hours-display">Monday - Saturday: 9:00 AM - 6:00 PM</p>
           </div>
         </div>
 
@@ -491,6 +491,9 @@
           <div class="db-menu-item" data-target="db-orders">📝 Orders</div>
           <div class="db-menu-item" data-target="db-payments">💳 Payments</div>
           <div class="db-menu-item" data-target="db-calculator">🧮 Cost Calculator</div>
+          <div class="db-menu-item" data-target="db-hero">🏠 Hero Section</div>
+          <div class="db-menu-item" data-target="db-delivery">🚚 Delivery Options</div>
+          <div class="db-menu-item" data-target="db-social">🌐 Social & Support</div>
         </div>
 
         <button class="btn btn-secondary" style="margin-top: auto;" id="logout-btn">← Back to Store</button>
@@ -816,6 +819,144 @@
           </div>
         </div>
 
+        <!-- SECTION 6: HERO SECTION SETTINGS -->
+        <div class="db-section" id="db-hero">
+          <div class="db-section-header">
+            <h2>Hero Section Content</h2>
+            <span class="text-muted">Modify homepage introduction text and live counters</span>
+          </div>
+
+          <form id="hero-config-form" class="glass-panel" style="padding: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="form-group">
+              <label class="form-label" for="cfg-hero-title">Main Hero Title</label>
+              <input type="text" class="form-input" id="cfg-hero-title" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="cfg-hero-subtitle">Hero Subtitle Text</label>
+              <textarea class="form-input" id="cfg-hero-subtitle" rows="3" required></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-hero-cta">CTA Button Text</label>
+                <input type="text" class="form-input" id="cfg-hero-cta" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-hero-printers">Active Printers Stat</label>
+                <input type="text" class="form-input" id="cfg-hero-printers" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-hero-prints">Completed Prints Stat</label>
+                <input type="text" class="form-input" id="cfg-hero-prints" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-hero-rating">Customer Rating Stat</label>
+                <input type="text" class="form-input" id="cfg-hero-rating" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: fit-content;" id="save-hero-btn">Save Hero Content 💾</button>
+          </form>
+        </div>
+
+        <!-- SECTION 7: DELIVERY OPTIONS SETTINGS -->
+        <div class="db-section" id="db-delivery">
+          <div class="db-section-header">
+            <h2>Delivery Options</h2>
+            <button class="btn btn-primary" id="add-delivery-option-btn">+ Add Option</button>
+          </div>
+
+          <div class="db-table-container">
+            <table class="db-table">
+              <thead>
+                <tr>
+                  <th>Option Name</th>
+                  <th>Description</th>
+                  <th>Price ($)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="db-delivery-options-tbody">
+                <!-- Dynamically rendered rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 8: SOCIAL & SUPPORT SETTINGS -->
+        <div class="db-section" id="db-social">
+          <div class="db-section-header">
+            <h2>Social Links & WhatsApp Support</h2>
+            <span class="text-muted">Configure support options and footer social platforms</span>
+          </div>
+
+          <form id="social-config-form" class="glass-panel" style="padding: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <h3>💬 WhatsApp Support Floating Button</h3>
+            
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.8rem;">
+              <input type="checkbox" id="cfg-wa-enabled" style="width: 18px; height: 18px; cursor: pointer;">
+              <label for="cfg-wa-enabled" style="font-weight: 600; cursor: pointer; user-select: none;">Enable Floating WhatsApp Support Button</label>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-wa-phone">WhatsApp Phone Number</label>
+                <input type="text" class="form-input" id="cfg-wa-phone" placeholder="e.g. +961 70 123 456">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-wa-msg">Default Pre-filled Message</label>
+                <input type="text" class="form-input" id="cfg-wa-msg" placeholder="e.g. Hello! I need help with my order.">
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1rem 0;">
+
+            <h3>🌐 Social Channels</h3>
+            
+            <div class="form-group">
+              <label class="form-label" for="cfg-instagram-url">Instagram Page Link</label>
+              <input type="text" class="form-input" id="cfg-instagram-url" placeholder="https://instagram.com/yourpage">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cfg-facebook-url">Facebook Page Link</label>
+              <input type="text" class="form-input" id="cfg-facebook-url" placeholder="https://facebook.com/yourpage">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1rem 0;">
+
+            <h3>📍 Contact Information</h3>
+            
+            <div class="form-group">
+              <label class="form-label" for="cfg-contact-address">Workshop Address</label>
+              <input type="text" class="form-input" id="cfg-contact-address" placeholder="e.g. Filament Lane, Badaro District, Beirut, Lebanon">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cfg-contact-email">Support Email</label>
+                <input type="email" class="form-input" id="cfg-contact-email" placeholder="e.g. hello@pixelpop.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-contact-phone">Store Hotline Phone</label>
+                <input type="text" class="form-input" id="cfg-contact-phone" placeholder="e.g. +961 70 123 456">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cfg-contact-hours">Operating Hours</label>
+              <input type="text" class="form-input" id="cfg-contact-hours" placeholder="e.g. Monday - Saturday: 9:00 AM - 6:00 PM">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: fit-content;" id="save-social-btn">Save Social Settings 💾</button>
+          </form>
+        </div>
+
       </section>
     </div>
   </main>
@@ -909,6 +1050,57 @@
           <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" id="crud-submit-btn">Save Product to Catalog</button>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- Floating WhatsApp Support Button -->
+  <div class="whatsapp-support-widget" id="whatsapp-widget" style="display: none;">
+    <a href="#" target="_blank" class="whatsapp-btn" id="whatsapp-link" aria-label="Chat on WhatsApp">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.725 1.451 5.46.002 9.9-4.437 9.902-9.899.002-2.646-1.02-5.133-2.877-6.99C16.49 1.856 14.005.83 11.36.83c-5.46 0-9.9 4.438-9.902 9.9-.001 1.793.48 3.541 1.39 5.093l-.995 3.637 3.794-.996zm12.385-5.597c-.322-.162-1.907-.941-2.203-1.049-.297-.108-.513-.162-.729.162-.216.324-.838 1.049-1.027 1.265-.189.216-.378.243-.7.081-.321-.162-1.354-.499-2.58-1.593-.952-.85-1.596-1.9-1.783-2.224-.188-.324-.02-.5-.181-.661-.146-.145-.322-.378-.484-.567-.162-.189-.216-.324-.323-.541-.108-.216-.054-.405-.027-.567.027-.162.216-.513.323-.675.108-.162.162-.27.243-.432.081-.162.04-.324-.014-.486-.053-.162-.729-1.756-1.001-2.405-.264-.632-.533-.547-.729-.557-.189-.01-.405-.01-.621-.01-.216 0-.568.081-.865.405-.297.324-1.135 1.108-1.135 2.703 0 1.594 1.162 3.135 1.324 3.351.162.216 2.287 3.496 5.541 4.905.774.335 1.378.535 1.85.686.779.248 1.488.213 2.048.129.625-.094 1.908-.78 2.178-1.536.27-.756.27-1.405.189-1.54-.081-.135-.297-.216-.621-.378z"/>
+      </svg>
+      <span>WhatsApp Support</span>
+    </a>
+  </div>
+
+  <!-- Store Premium Footer -->
+  <footer class="store-footer" id="store-footer">
+    <div class="container footer-content">
+      <p>&copy; 2026 PixelPop 3D Prints & Storefront. All rights reserved.</p>
+      <div class="social-links" id="social-links-footer">
+        <!-- Injected dynamically in app.js -->
+      </div>
+    </div>
+  </footer>
+
+  <!-- ADD / EDIT DELIVERY OPTION MODAL -->
+  <div class="modal-overlay" id="delivery-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 500px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <span id="delivery-modal-title" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">Create Delivery Option</span>
+        <button class="close-modal-btn" id="close-delivery-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <form id="delivery-crud-form">
+        <input type="hidden" id="crud-delivery-id">
+        
+        <div class="form-group">
+          <label class="form-label" for="crud-delivery-name">Option Name</label>
+          <input type="text" class="form-input" id="crud-delivery-name" required placeholder="e.g. Standard Shipping">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="crud-delivery-desc">Description</label>
+          <input type="text" class="form-input" id="crud-delivery-desc" required placeholder="e.g. Delivered in 3-5 business days">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="crud-delivery-price">Price ($)</label>
+          <input type="number" step="0.01" class="form-input" id="crud-delivery-price" required placeholder="4.99">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem;" id="delivery-submit-btn">Save Option</button>
+      </form>
     </div>
   </div>
 
