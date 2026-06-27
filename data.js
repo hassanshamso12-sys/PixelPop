@@ -1,4 +1,14 @@
 // 3D Print Shop Seed Data & Database Wrapper
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, deleteDoc } from "firebase/firestore";
+
+const firebaseConfig = {
+  projectId: "pixelpop-cd075",
+  storageBucket: "pixelpop-cd075.firebasestorage.app",
+};
+
+const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(firebaseApp);
 
 const DEFAULT_CATEGORIES = [
   {
@@ -20,6 +30,21 @@ const DEFAULT_CATEGORIES = [
     id: "cosplay-props",
     name: "Cosplay & Props",
     subcategories: ["Helmets", "Wearables", "Replica Props"]
+  },
+  {
+    id: "super-heros",
+    name: "Super Heros",
+    subcategories: ["Superman", "Batman", "Action Figures"]
+  },
+  {
+    id: "politics-religious",
+    name: "Politics & Religious",
+    subcategories: ["National Logos", "Symbols", "Historical Flags"]
+  },
+  {
+    id: "stationary",
+    name: "Stationary",
+    subcategories: ["Organizers", "Pen Holders", "Desk Accents"]
   }
 ];
 
@@ -206,6 +231,46 @@ const DEFAULT_PRODUCTS = [
       filamentUsed: "220g",
       difficulty: "Hard"
     }
+  },
+  {
+    id: "superman-statue",
+    name: "Superman Statue",
+    description: "A highly detailed, 3D printed Superman statue in a classic heroic pose. Ideal for comic fans, office display, or action figure collections. Hand-calibrated layers for maximum muscle definition.",
+    basePrice: 29.99,
+    category: "super-heros",
+    subcategory: "Superman",
+    rating: 5.0,
+    reviewsCount: 15,
+    isFeatured: true,
+    isNewArrival: true,
+    isPriceDrop: false,
+    originalPrice: null,
+    images: {
+      "Classic Blue": "https://images.unsplash.com/photo-1608889175123-8ee362201f81?auto=format&fit=crop&w=600&q=80"
+    },
+    defaultImage: "https://images.unsplash.com/photo-1608889175123-8ee362201f81?auto=format&fit=crop&w=600&q=80",
+    gallery: [
+      "https://images.unsplash.com/photo-1608889175123-8ee362201f81?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1608889175168-984c98e268a7?auto=format&fit=crop&w=600&q=80"
+    ],
+    variations: {
+      colors: [
+        { name: "Classic Blue", hex: "#1e3a8a", priceModifier: 0 },
+        { name: "Steel Grey", hex: "#4b5563", priceModifier: 0 }
+      ],
+      sizes: [
+        { name: "Standard (15cm)", scale: "100%", priceModifier: 0 },
+        { name: "Large (25cm)", scale: "155%", priceModifier: 15.00 }
+      ],
+      materials: [
+        { name: "PLA (Standard)", description: "Environmentally friendly, excellent details.", priceModifier: 0 }
+      ]
+    },
+    specifications: {
+      printTime: "9 hours",
+      filamentUsed: "140g",
+      difficulty: "Medium"
+    }
   }
 ];
 
@@ -244,7 +309,8 @@ const DEFAULT_HERO_CONTENT = {
   priceDropTitle: "🔥 Price Drops",
   priceDropSubtitle: "Special discounts and limited-time filament deals",
   newArrivalTitle: "✨ New Arrivals",
-  newArrivalSubtitle: "Freshly sliced models and newly calibrated designs"
+  newArrivalSubtitle: "Freshly sliced models and newly calibrated designs",
+  images: ["superhero_hero_bg.png"]
 };
 
 const DEFAULT_DELIVERY_OPTIONS = [
@@ -288,12 +354,151 @@ const DEFAULT_THEME_SETTINGS = {
 };
 
 const DB = {
+  async syncFromFirestore() {
+    try {
+      const [
+        categoriesDoc,
+        couponsDoc,
+        deliveryDoc,
+        paymentsDoc,
+        heroDoc,
+        socialDoc,
+        themeDoc,
+        productsSnap,
+        ordersSnap
+      ] = await Promise.all([
+        getDoc(doc(db, "settings", "categories")),
+        getDoc(doc(db, "settings", "coupons")),
+        getDoc(doc(db, "settings", "delivery")),
+        getDoc(doc(db, "settings", "payments")),
+        getDoc(doc(db, "settings", "hero")),
+        getDoc(doc(db, "settings", "social")),
+        getDoc(doc(db, "settings", "theme")),
+        getDocs(collection(db, "products")),
+        getDocs(collection(db, "orders"))
+      ]);
+
+      // Categories
+      if (categoriesDoc.exists()) {
+        localStorage.setItem("categories", JSON.stringify(categoriesDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("categories"));
+        if (local) await setDoc(doc(db, "settings", "categories"), { list: local });
+      }
+
+      // Coupons
+      if (couponsDoc.exists()) {
+        localStorage.setItem("coupons", JSON.stringify(couponsDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("coupons"));
+        if (local) await setDoc(doc(db, "settings", "coupons"), { list: local });
+      }
+
+      // Delivery Options
+      if (deliveryDoc.exists()) {
+        localStorage.setItem("delivery_options", JSON.stringify(deliveryDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("delivery_options"));
+        if (local) await setDoc(doc(db, "settings", "delivery"), { list: local });
+      }
+
+      // Payments Settings
+      if (paymentsDoc.exists()) {
+        localStorage.setItem("payment_settings", JSON.stringify(paymentsDoc.data()));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("payment_settings"));
+        if (local) await setDoc(doc(db, "settings", "payments"), local);
+      }
+
+      // Hero Content
+      if (heroDoc.exists()) {
+        localStorage.setItem("hero_content", JSON.stringify(heroDoc.data()));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("hero_content"));
+        if (local) await setDoc(doc(db, "settings", "hero"), local);
+      }
+
+      // Social Settings
+      if (socialDoc.exists()) {
+        localStorage.setItem("social_settings", JSON.stringify(socialDoc.data()));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("social_settings"));
+        if (local) await setDoc(doc(db, "settings", "social"), local);
+      }
+
+      // Theme Settings
+      if (themeDoc.exists()) {
+        localStorage.setItem("theme_settings", JSON.stringify(themeDoc.data()));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("theme_settings"));
+        if (local) await setDoc(doc(db, "settings", "theme"), local);
+      }
+
+      // Products
+      if (!productsSnap.empty) {
+        const list = [];
+        productsSnap.forEach(d => list.push(d.data()));
+        localStorage.setItem("products", JSON.stringify(list));
+      } else {
+        this.init();
+        const list = JSON.parse(localStorage.getItem("products")) || [];
+        await Promise.all(list.map(p => setDoc(doc(db, "products", p.id), p)));
+      }
+
+      // Orders
+      if (!ordersSnap.empty) {
+        const list = [];
+        ordersSnap.forEach(d => list.push(d.data()));
+        localStorage.setItem("orders", JSON.stringify(list));
+      } else {
+        this.init();
+        const list = JSON.parse(localStorage.getItem("orders")) || [];
+        await Promise.all(list.map(o => setDoc(doc(db, "orders", o.id), o)));
+      }
+    } catch (e) {
+      console.error("Firestore sync error:", e);
+      throw e;
+    }
+  },
+
   init() {
     if (!localStorage.getItem("categories")) {
       localStorage.setItem("categories", JSON.stringify(DEFAULT_CATEGORIES));
+    } else {
+      let cats = JSON.parse(localStorage.getItem("categories"));
+      let updated = false;
+      const requiredCats = ["super-heros", "politics-religious", "stationary"];
+      requiredCats.forEach(catId => {
+        if (!cats.some(c => c.id === catId)) {
+          const match = DEFAULT_CATEGORIES.find(c => c.id === catId);
+          if (match) {
+            cats.push(match);
+            updated = true;
+          }
+        }
+      });
+      if (updated) {
+        localStorage.setItem("categories", JSON.stringify(cats));
+      }
     }
     if (!localStorage.getItem("products")) {
       localStorage.setItem("products", JSON.stringify(DEFAULT_PRODUCTS));
+    } else {
+      let prods = JSON.parse(localStorage.getItem("products"));
+      if (!prods.some(p => p.id === "superman-statue")) {
+        const supermanProd = DEFAULT_PRODUCTS.find(p => p.id === "superman-statue");
+        if (supermanProd) {
+          prods.push(supermanProd);
+          localStorage.setItem("products", JSON.stringify(prods));
+        }
+      }
     }
     if (!localStorage.getItem("orders")) {
       localStorage.setItem("orders", JSON.stringify([]));
@@ -325,6 +530,7 @@ const DB = {
 
   saveCategories(categories) {
     localStorage.setItem("categories", JSON.stringify(categories));
+    setDoc(doc(db, "settings", "categories"), { list: categories }).catch(console.error);
   },
 
   getProducts() {
@@ -346,6 +552,10 @@ const DB = {
         }
         updated = true;
       }
+      if (p.modelUrl === undefined) {
+        p.modelUrl = "";
+        updated = true;
+      }
       return p;
     });
     if (updated) {
@@ -361,12 +571,14 @@ const DB = {
 
   saveProducts(products) {
     localStorage.setItem("products", JSON.stringify(products));
+    Promise.all(products.map(p => setDoc(doc(db, "products", p.id), p))).catch(console.error);
   },
 
   addProduct(product) {
     const products = this.getProducts();
     products.push(product);
     this.saveProducts(products);
+    setDoc(doc(db, "products", product.id), product).catch(console.error);
     return product;
   },
 
@@ -374,6 +586,7 @@ const DB = {
     let products = this.getProducts();
     products = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
     this.saveProducts(products);
+    setDoc(doc(db, "products", updatedProduct.id), updatedProduct).catch(console.error);
     return updatedProduct;
   },
 
@@ -381,6 +594,7 @@ const DB = {
     let products = this.getProducts();
     products = products.filter(p => p.id !== id);
     this.saveProducts(products);
+    deleteDoc(doc(db, "products", id)).catch(console.error);
   },
 
   getOrders() {
@@ -390,12 +604,14 @@ const DB = {
 
   saveOrders(orders) {
     localStorage.setItem("orders", JSON.stringify(orders));
+    Promise.all(orders.map(o => setDoc(doc(db, "orders", o.id), o))).catch(console.error);
   },
 
   createOrder(order) {
     const orders = this.getOrders();
     orders.unshift(order); // Put new orders at the top
     this.saveOrders(orders);
+    setDoc(doc(db, "orders", order.id), order).catch(console.error);
     return order;
   },
 
@@ -405,6 +621,7 @@ const DB = {
     if (order) {
       order.status = status;
       this.saveOrders(orders);
+      setDoc(doc(db, "orders", orderId), order).catch(console.error);
     }
     return order;
   },
@@ -416,6 +633,7 @@ const DB = {
 
   savePaymentSettings(settings) {
     localStorage.setItem("payment_settings", JSON.stringify(settings));
+    setDoc(doc(db, "settings", "payments"), settings).catch(console.error);
   },
 
   getHeroContent() {
@@ -426,6 +644,7 @@ const DB = {
 
   saveHeroContent(content) {
     localStorage.setItem("hero_content", JSON.stringify(content));
+    setDoc(doc(db, "settings", "hero"), content).catch(console.error);
   },
 
   getDeliveryOptions() {
@@ -435,6 +654,7 @@ const DB = {
 
   saveDeliveryOptions(options) {
     localStorage.setItem("delivery_options", JSON.stringify(options));
+    setDoc(doc(db, "settings", "delivery"), { list: options }).catch(console.error);
   },
 
   getSocialSettings() {
@@ -445,6 +665,7 @@ const DB = {
 
   saveSocialSettings(settings) {
     localStorage.setItem("social_settings", JSON.stringify(settings));
+    setDoc(doc(db, "settings", "social"), settings).catch(console.error);
   },
 
   getThemeSettings() {
@@ -454,6 +675,7 @@ const DB = {
 
   saveThemeSettings(settings) {
     localStorage.setItem("theme_settings", JSON.stringify(settings));
+    setDoc(doc(db, "settings", "theme"), settings).catch(console.error);
   },
 
   getCoupons() {
@@ -463,6 +685,7 @@ const DB = {
 
   saveCoupons(coupons) {
     localStorage.setItem("coupons", JSON.stringify(coupons));
+    setDoc(doc(db, "settings", "coupons"), { list: coupons }).catch(console.error);
   },
 
   addCoupon(coupon) {

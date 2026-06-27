@@ -187,6 +187,9 @@ DB.init();
     productFormModalOverlay: document.getElementById("product-form-modal-overlay"),
     closeProductFormBtn: document.getElementById("close-product-form-btn"),
     productCrudForm: document.getElementById("product-crud-form"),
+    clientDetailsModalOverlay: document.getElementById("client-details-modal-overlay"),
+    closeClientDetailsBtn: document.getElementById("close-client-details-btn"),
+    clientDetailsBody: document.getElementById("client-details-body"),
     productModalTitle: document.getElementById("product-modal-title"),
     crudProductId: document.getElementById("crud-product-id"),
     crudName: document.getElementById("crud-name"),
@@ -197,10 +200,13 @@ DB.init();
     crudPrintTime: document.getElementById("crud-print-time"),
     crudWeight: document.getElementById("crud-weight"),
     crudDifficulty: document.getElementById("crud-difficulty"),
-    colorsTagsBox: document.getElementById("colors-tags-box"),
-    colorsTagInput: document.getElementById("colors-tag-input"),
-    crudSizes: document.getElementById("crud-sizes"),
-    crudMaterials: document.getElementById("crud-materials"),
+    crudModelUrl: document.getElementById("crud-model-url"),
+    crudColorsContainer: document.getElementById("crud-colors-container"),
+    addColorOptionBtn: document.getElementById("add-color-option-btn"),
+    crudSizesContainer: document.getElementById("crud-sizes-container"),
+    addSizeOptionBtn: document.getElementById("add-size-option-btn"),
+    crudMaterialsContainer: document.getElementById("crud-materials-container"),
+    addMaterialOptionBtn: document.getElementById("add-material-option-btn"),
     adminLoginPage: document.getElementById("admin-login-page"),
     adminLoginForm: document.getElementById("admin-login-form"),
     adminEmailInput: document.getElementById("admin-email"),
@@ -210,6 +216,8 @@ DB.init();
 
     // Hero config
     heroConfigForm: document.getElementById("hero-config-form"),
+    heroImagesUpload: document.getElementById("cfg-hero-images-upload"),
+    heroGalleryContainer: document.getElementById("cfg-hero-gallery-container"),
     
     // Social & support config
     socialConfigForm: document.getElementById("social-config-form"),
@@ -297,8 +305,29 @@ DB.init();
     crudOriginalPriceGroup: document.getElementById("crud-original-price-group"),
   };
 
-  // Tag input helper list
-  let currentColorsTags = [];
+  // Helper map of hexes for swatch names auto-sync and repair
+  const swatchHexMap = {
+    "silk gold": "#ffd700",
+    "gold": "#ffd700",
+    "matte black": "#1a1a1a",
+    "black": "#1a1a1a",
+    "stealth black": "#0f0f0f",
+    "cosmic blue": "#1e3a8a",
+    "blue": "#1e3a8a",
+    "classic blue": "#1e3a8a",
+    "steel grey": "#4b5563",
+    "crimson red": "#dc2626",
+    "red": "#dc2626",
+    "marble white": "#e8e8e8",
+    "white": "#e8e8e8",
+    "glow green": "#ccff33",
+    "lime": "#a3e635",
+    "lime green": "#a3e635",
+    "metallic purple": "#7c3aed",
+    "purple": "#7c3aed",
+    "silver chrome": "#e2e8f0",
+    "orange": "#ea580c"
+  };
 
   // ==========================================
   // INITIALIZATION & ROUTING
@@ -497,7 +526,7 @@ DB.init();
             </div>
             <div class="card-footer">
               ${priceHtml}
-              <button class="btn btn-secondary btn-sm browse-item-btn" data-id="${p.id}">Configure</button>
+              <button class="btn btn-primary btn-sm browse-item-btn" data-id="${p.id}">Buy 🛒</button>
             </div>
           </div>
         </div>
@@ -1416,6 +1445,7 @@ DB.init();
     const firstName = document.getElementById("chk-first-name").value;
     const lastName = document.getElementById("chk-last-name").value;
     const email = document.getElementById("chk-email").value;
+    const phone = document.getElementById("chk-phone") ? document.getElementById("chk-phone").value.trim() : "";
     const address = document.getElementById("chk-address").value;
     const city = document.getElementById("chk-city").value;
     const zip = document.getElementById("chk-zip").value;
@@ -1455,7 +1485,7 @@ DB.init();
     const orderId = `PIXEL-${Math.floor(100000 + Math.random() * 900000)}`;
     const newOrder = {
       id: orderId,
-      customer: { firstName, lastName, email, address, city, zip },
+      customer: { firstName, lastName, email, phone, address, city, zip },
       items: state.cart.map(item => ({
         productId: item.productId,
         name: item.name,
@@ -1501,6 +1531,7 @@ DB.init();
 
     // Queue simulated auto emails
     triggerAutoOrderEmails(newOrder);
+    updateNotificationBell();
   });
 
 
@@ -1637,6 +1668,7 @@ DB.init();
         if (state.activePage === "dashboard") {
           renderDashboardOrders();
           updateOverviewStats();
+          updateNotificationBell();
         }
 
         const totalWeight = order.items.reduce((sum, item) => sum + (parseInt(item.weight) || 0) * item.qty, 0);
@@ -1659,6 +1691,7 @@ DB.init();
         if (state.activePage === "dashboard") {
           renderDashboardOrders();
           updateOverviewStats();
+          updateNotificationBell();
         }
 
         const trackingNumber = `PXP-${Math.floor(10000000 + Math.random() * 90000000)}US`;
@@ -2054,6 +2087,156 @@ DB.init();
     });
   }
 
+  function printOrderInvoice(order) {
+    const printWindow = window.open("", "_blank");
+    const itemsHtml = order.items.map(item => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">
+          <strong>${item.name}</strong><br>
+          <small style="color: #666;">Color: ${item.color} | Size: ${item.size} | Material: ${item.material}</small>
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$${item.price.toFixed(2)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$${(item.price * item.qty).toFixed(2)}</td>
+      </tr>
+    `).join("");
+
+    const discountRow = order.totals.discount > 0 ? `
+      <tr>
+        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Discount:</td>
+        <td style="padding: 8px; text-align: right; color: #dc2626;">-$${order.totals.discount.toFixed(2)}</td>
+      </tr>
+    ` : "";
+
+    const shippingRow = `
+      <tr>
+        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Shipping:</td>
+        <td style="padding: 8px; text-align: right;">$${order.totals.shipping.toFixed(2)}</td>
+      </tr>
+    `;
+
+    const codSurchargeRow = order.totals.surcharge > 0 ? `
+      <tr>
+        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">COD Fee:</td>
+        <td style="padding: 8px; text-align: right;">$${order.totals.surcharge.toFixed(2)}</td>
+      </tr>
+    ` : "";
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - ${order.id}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 40px; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px; }
+            .header h1 { margin: 0; color: #4f46e5; font-size: 24px; }
+            .meta-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
+            .meta-table td { padding: 5px 0; font-size: 14px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            .items-table th { background: #f3f4f6; padding: 12px 10px; text-align: left; font-size: 14px; border-bottom: 2px solid #e5e7eb; }
+            .items-table td { font-size: 14px; }
+            .totals-table { float: right; width: 300px; margin-top: 20px; }
+            .totals-table td { padding: 5px 0; }
+            .footer { margin-top: 100px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+            @media print {
+              body { margin: 20px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1>PixelPop Print Shop</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">3D Printing & Design Studio</p>
+            </div>
+            <div style="text-align: right;">
+              <h2 style="margin: 0; color: #333; font-size: 20px;">INVOICE</h2>
+              <p style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">Order ID: ${order.id}</p>
+            </div>
+          </div>
+
+          <table class="meta-table">
+            <tr>
+              <td style="width: 50%; vertical-align: top;">
+                <strong style="color: #4f46e5;">Customer Information:</strong><br>
+                ${order.customer.firstName} ${order.customer.lastName}<br>
+                Phone: ${order.customer.phone || 'N/A'}<br>
+                Email: ${order.customer.email || 'N/A'}
+              </td>
+              <td style="width: 50%; vertical-align: top; text-align: right;">
+                <strong style="color: #4f46e5;">Shipping Address:</strong><br>
+                ${order.customer.address}<br>
+                ${order.customer.city}<br>
+                ZIP: ${order.customer.zip || 'N/A'}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-top: 15px;">
+                <strong>Date Placed:</strong> ${order.datePlaced}<br>
+                <strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}
+              </td>
+              <td style="padding-top: 15px; text-align: right;">
+                <strong>Status:</strong> ${order.status.toUpperCase()}
+              </td>
+            </tr>
+          </table>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Item Description</th>
+                <th style="text-align: center; width: 80px;">Qty</th>
+                <th style="text-align: right; width: 100px;">Unit Price</th>
+                <th style="text-align: right; width: 100px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+              ${discountRow}
+              ${shippingRow}
+              ${codSurchargeRow}
+              <tr>
+                <td colspan="3" style="padding: 10px 8px; text-align: right; font-size: 16px; font-weight: bold; border-top: 2px solid #4f46e5;">Total Cost:</td>
+                <td style="padding: 10px 8px; text-align: right; font-size: 16px; font-weight: bold; color: #4f46e5; border-top: 2px solid #4f46e5;">$${order.totals.total.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>Thank you for shopping with PixelPop Print Shop!</p>
+            <p>If you have any questions about this order, please contact support.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  // Update bell notification badge
+  function updateNotificationBell() {
+    const orders = DB.getOrders();
+    const pendingOrdersCount = orders.filter(o => o.status.toLowerCase() === "pending").length;
+    const badge = document.getElementById("db-bell-badge");
+    const bell = document.getElementById("db-notification-bell");
+    if (badge && bell) {
+      if (pendingOrdersCount > 0) {
+        badge.textContent = pendingOrdersCount;
+        badge.style.display = "flex";
+        bell.classList.add("shake-bell");
+      } else {
+        badge.style.display = "none";
+        bell.classList.remove("shake-bell");
+      }
+    }
+  }
+
   function renderDashboardOrders() {
     const orders = DB.getOrders();
 
@@ -2063,7 +2246,15 @@ DB.init();
     }
 
     DOM.dashboardOrdersTbody.innerHTML = orders.map(o => {
-      const itemsList = o.items.map(i => `${i.name} x${i.qty} (${i.color})`).join(", ");
+      const itemsListText = o.items.map(i => `${i.name} x${i.qty} (${i.color})`).join(", ");
+      const itemsListHtml = o.items.map(i => {
+        const prod = DB.getProductById(i.productId);
+        const dlLink = (prod && prod.modelUrl) 
+          ? ` <a href="${prod.modelUrl}" target="_blank" title="Download 3D Model File" style="color: var(--accent-indigo); text-decoration: underline; font-weight: bold; margin-left: 0.4rem;">[Download File 💾]</a>` 
+          : "";
+        return `${i.name} x${i.qty} (${i.color})${dlLink}`;
+      }).join("<br>");
+      
       let paymentLabel = "";
       if (o.paymentMethod === "cod") {
         paymentLabel = "💵 Cash on Delivery";
@@ -2080,8 +2271,14 @@ DB.init();
       return `
         <tr>
           <td><strong>${o.id}</strong></td>
-          <td>${o.customer.firstName} ${o.customer.lastName}</td>
-          <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${itemsList}">${itemsList}</td>
+          <td>
+            <strong>${o.customer.firstName} ${o.customer.lastName}</strong>
+            <div style="display: flex; gap: 0.3rem; margin-top: 0.35rem;">
+              <button type="button" class="btn-view-client" data-id="${o.id}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; border-radius: 6px; background: rgba(79, 70, 229, 0.08); color: var(--accent-indigo); border: 1px solid rgba(79, 70, 229, 0.15); cursor: pointer; transition: all 0.2s ease;">Info 🔍</button>
+              <button type="button" class="btn-print-order" data-id="${o.id}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; border-radius: 6px; background: rgba(14, 165, 233, 0.08); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.15); cursor: pointer; transition: all 0.2s ease;">Print 🖨️</button>
+            </div>
+          </td>
+          <td style="max-width: 280px; font-size: 0.85rem; line-height: 1.4;">${itemsListHtml}</td>
           <td>${o.datePlaced}</td>
           <td>
             <div style="font-weight: 500;">${paymentLabel}</div>
@@ -2102,6 +2299,64 @@ DB.init();
       `;
     }).join("");
 
+    // Order Print click listeners
+    document.querySelectorAll(".btn-print-order").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const orderId = btn.dataset.id;
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          printOrderInvoice(order);
+        }
+      });
+    });
+
+    // Client Info button click listeners
+    document.querySelectorAll(".btn-view-client").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const orderId = btn.dataset.id;
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        const cust = order.customer;
+        const phoneDisplay = cust.phone || "Not provided";
+        const emailDisplay = cust.email || "Not provided";
+        const zipDisplay = cust.zip || "Not provided";
+        const cityDisplay = cust.city || "Not provided";
+        const addressDisplay = cust.address || "Not provided";
+
+        // Render customer info details inside the modal body
+        DOM.clientDetailsBody.innerHTML = `
+          <div>
+            <strong style="color: var(--accent-indigo); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; display: block; margin-bottom: 0.2rem;">Full Name</strong>
+            <span style="font-size: 1.05rem; font-weight: 600;">${cust.firstName} ${cust.lastName}</span>
+          </div>
+          <div>
+            <strong style="color: var(--accent-indigo); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; display: block; margin-bottom: 0.2rem;">Phone Number</strong>
+            <span style="font-size: 1.05rem; font-weight: 600; font-family: var(--font-display);">${phoneDisplay}</span>
+          </div>
+          <div>
+            <strong style="color: var(--accent-indigo); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; display: block; margin-bottom: 0.2rem;">Email Address</strong>
+            <span style="font-size: 1.05rem; font-weight: 600;">${emailDisplay}</span>
+          </div>
+          <div>
+            <strong style="color: var(--accent-indigo); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; display: block; margin-bottom: 0.2rem;">Shipping Destination</strong>
+            <span style="font-weight: 500;">${addressDisplay}, ${cityDisplay} (ZIP: ${zipDisplay})</span>
+          </div>
+          <div style="border-top: 1px solid var(--glass-border); padding-top: 0.8rem; margin-top: 0.4rem;">
+            <strong style="color: var(--accent-indigo); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; display: block; margin-bottom: 0.2rem;">Order Context</strong>
+            <span style="font-size: 0.88rem; color: var(--text-muted);">
+              Order ID: <strong>${order.id}</strong><br>
+              Placed On: ${order.datePlaced}<br>
+              Payment Method: ${order.paymentMethod.toUpperCase()}<br>
+              Shipping Option: ${order.shippingMethod ? order.shippingMethod.toUpperCase() : 'STANDARD'}
+            </span>
+          </div>
+        `;
+
+        DOM.clientDetailsModalOverlay.classList.add("open");
+      });
+    });
+
     // Table drop-down updates
     document.querySelectorAll(".order-action-select").forEach(sel => {
       sel.addEventListener("change", (e) => {
@@ -2110,6 +2365,7 @@ DB.init();
 
         DB.updateOrderStatus(id, newStatus);
         renderDashboardOrders();
+        updateNotificationBell();
         updateOverviewStats();
 
         // Send simulated notification email matching status update
@@ -2146,9 +2402,80 @@ DB.init();
     });
   });
 
+  // Notification bell click shortcut
+  const bell = document.getElementById("db-notification-bell");
+  if (bell) {
+    bell.addEventListener("click", () => {
+      const ordersMenuItem = Array.from(DOM.dbMenuItems).find(item => item.dataset.target === "db-orders");
+      if (ordersMenuItem) {
+        ordersMenuItem.click();
+      }
+    });
+  }
+
   // ==========================================
   // PRODUCT CRUD INVENTORY FORMS
   // ==========================================
+
+  // Dynamic Option Rows for Product CRUD
+  function createColorOptionRow(name = "", hex = "#3b82f6") {
+    const row = document.createElement("div");
+    row.className = "option-row";
+    row.innerHTML = `
+      <input type="text" class="form-input color-name-input" placeholder="e.g. Silk Gold" value="${name}" style="flex: 2;" required>
+      <input type="color" class="form-input color-hex-input" value="${hex}" style="flex: 0.8; padding: 0; min-height: 38px; cursor: pointer;" required>
+      <button type="button" class="option-row-remove-btn" title="Remove Option">×</button>
+    `;
+    
+    const nameInput = row.querySelector(".color-name-input");
+    const hexInput = row.querySelector(".color-hex-input");
+
+    // Automatically sync color picker hex when typing standard color names
+    nameInput.addEventListener("input", (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      if (swatchHexMap[val]) {
+        hexInput.value = swatchHexMap[val];
+      }
+    });
+
+    row.querySelector(".option-row-remove-btn").addEventListener("click", () => row.remove());
+    DOM.crudColorsContainer.appendChild(row);
+  }
+
+  function createSizeOptionRow(name = "", modifier = 0) {
+    const row = document.createElement("div");
+    row.className = "option-row";
+    row.innerHTML = `
+      <input type="text" class="form-input size-name-input" placeholder="e.g. Standard" value="${name}" style="flex: 2;" required>
+      <input type="number" step="0.01" class="form-input size-price-input" placeholder="Price (+$)" value="${modifier}" style="flex: 1;" required>
+      <button type="button" class="option-row-remove-btn" title="Remove Option">×</button>
+    `;
+    row.querySelector(".option-row-remove-btn").addEventListener("click", () => row.remove());
+    DOM.crudSizesContainer.appendChild(row);
+  }
+
+  function createMaterialOptionRow(name = "", modifier = 0) {
+    const row = document.createElement("div");
+    row.className = "option-row";
+    row.innerHTML = `
+      <input type="text" class="form-input material-name-input" placeholder="e.g. PETG" value="${name}" style="flex: 2;" required>
+      <input type="number" step="0.01" class="form-input material-price-input" placeholder="Price (+$)" value="${modifier}" style="flex: 1;" required>
+      <button type="button" class="option-row-remove-btn" title="Remove Option">×</button>
+    `;
+    row.querySelector(".option-row-remove-btn").addEventListener("click", () => row.remove());
+    DOM.crudMaterialsContainer.appendChild(row);
+  }
+
+  // Bind add button click listeners
+  if (DOM.addColorOptionBtn) {
+    DOM.addColorOptionBtn.addEventListener("click", () => createColorOptionRow("", "#3b82f6"));
+  }
+  if (DOM.addSizeOptionBtn) {
+    DOM.addSizeOptionBtn.addEventListener("click", () => createSizeOptionRow("", 0));
+  }
+  if (DOM.addMaterialOptionBtn) {
+    DOM.addMaterialOptionBtn.addEventListener("click", () => createMaterialOptionRow("", 0));
+  }
 
   DOM.inventoryAddItemBtn.addEventListener("click", () => {
     openProductCrudModal();
@@ -2156,6 +2483,11 @@ DB.init();
   DOM.closeProductFormBtn.addEventListener("click", () => {
     DOM.productFormModalOverlay.classList.remove("open");
   });
+  if (DOM.closeClientDetailsBtn) {
+    DOM.closeClientDetailsBtn.addEventListener("click", () => {
+      DOM.clientDetailsModalOverlay.classList.remove("open");
+    });
+  }
 
   if (DOM.crudIsPriceDrop) {
     DOM.crudIsPriceDrop.addEventListener("change", (e) => {
@@ -2171,8 +2503,9 @@ DB.init();
   function openProductCrudModal(productId = null) {
     DOM.productFormModalOverlay.classList.add("open");
     DOM.productCrudForm.reset();
-    currentColorsTags = [];
-    renderColorsTags();
+    if (DOM.crudColorsContainer) DOM.crudColorsContainer.innerHTML = "";
+    if (DOM.crudSizesContainer) DOM.crudSizesContainer.innerHTML = "";
+    if (DOM.crudMaterialsContainer) DOM.crudMaterialsContainer.innerHTML = "";
 
     // Clear image status and preview URL
     document.getElementById("crud-image-url").value = "";
@@ -2202,16 +2535,17 @@ DB.init();
       DOM.crudPrintTime.value = prod.specifications.printTime;
       DOM.crudWeight.value = prod.specifications.filamentUsed;
       DOM.crudDifficulty.value = prod.specifications.difficulty;
+      if (DOM.crudModelUrl) DOM.crudModelUrl.value = prod.modelUrl || "";
 
-      currentColorsTags = prod.variations.colors.map(c => c.name);
-      renderColorsTags();
+      // Populate colors, sizes & materials options as interactive rows
+      DOM.crudColorsContainer.innerHTML = "";
+      prod.variations.colors.forEach(c => createColorOptionRow(c.name, c.hex));
 
-      // Convert sizes & materials array back to formats
-      const sizeStr = prod.variations.sizes.map(s => `${s.name}:${s.priceModifier.toFixed(2)}`).join(", ");
-      DOM.crudSizes.value = sizeStr;
+      DOM.crudSizesContainer.innerHTML = "";
+      prod.variations.sizes.forEach(s => createSizeOptionRow(s.name, s.priceModifier));
 
-      const matStr = prod.variations.materials.map(m => `${m.name}:${m.priceModifier.toFixed(2)}`).join(", ");
-      DOM.crudMaterials.value = matStr;
+      DOM.crudMaterialsContainer.innerHTML = "";
+      prod.variations.materials.forEach(m => createMaterialOptionRow(m.name, m.priceModifier));
 
       // Curation checkboxes & original price
       if (DOM.crudIsFeatured) DOM.crudIsFeatured.checked = prod.isFeatured || false;
@@ -2230,10 +2564,19 @@ DB.init();
       state.crudGalleryUrls = [];
       renderCrudGalleryList();
 
-      currentColorsTags = ["Silk Gold", "Matte Black", "Cosmic Blue"];
-      renderColorsTags();
-      DOM.crudSizes.value = "Small (10cm):-3.00, Standard:0.00, Large:+8.00";
-      DOM.crudMaterials.value = "PLA (Standard):0.00, PETG (Durable):2.50";
+      DOM.crudColorsContainer.innerHTML = "";
+      createColorOptionRow("Silk Gold", "#ffd700");
+      createColorOptionRow("Matte Black", "#1a1a1a");
+      createColorOptionRow("Cosmic Blue", "#1e3a8a");
+
+      DOM.crudSizesContainer.innerHTML = "";
+      createSizeOptionRow("Small (10cm)", -3.00);
+      createSizeOptionRow("Standard", 0.00);
+      createSizeOptionRow("Large", 8.00);
+
+      DOM.crudMaterialsContainer.innerHTML = "";
+      createMaterialOptionRow("PLA (Standard)", 0.00);
+      createMaterialOptionRow("PETG (Durable)", 2.50);
 
       // Curation checkboxes & original price
       if (DOM.crudIsFeatured) DOM.crudIsFeatured.checked = false;
@@ -2241,47 +2584,11 @@ DB.init();
       if (DOM.crudIsPriceDrop) DOM.crudIsPriceDrop.checked = false;
       if (DOM.crudOriginalPrice) DOM.crudOriginalPrice.value = "";
       if (DOM.crudOriginalPriceGroup) DOM.crudOriginalPriceGroup.style.display = "none";
+      if (DOM.crudModelUrl) DOM.crudModelUrl.value = "";
     }
   }
 
-  // Tags Handler for colors
-  function renderColorsTags() {
-    // Render chips
-    const chipsHtml = currentColorsTags.map((col, idx) => `
-      <span class="tag-chip">
-        ${col}
-        <span class="remove-tag-btn" data-index="${idx}">×</span>
-      </span>
-    `).join("");
-
-    // Remove input element temporarily to append chips
-    const input = DOM.colorsTagInput;
-    DOM.colorsTagsBox.innerHTML = chipsHtml;
-    DOM.colorsTagsBox.appendChild(input);
-
-    // Re-attach listener
-    input.focus();
-
-    document.querySelectorAll(".remove-tag-btn").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const idx = parseInt(btn.dataset.index);
-        currentColorsTags.splice(idx, 1);
-        renderColorsTags();
-      });
-    });
-  }
-
-  DOM.colorsTagInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const val = DOM.colorsTagInput.value.trim();
-      if (val && !currentColorsTags.includes(val)) {
-        currentColorsTags.push(val);
-        DOM.colorsTagInput.value = "";
-        renderColorsTags();
-      }
-    }
-  });
+  // Legacy tags handler functions removed in favor of dynamic color options row editor
 
   // Render the list of images in the product CRUD modal
   function renderCrudGalleryList() {
@@ -2381,6 +2688,7 @@ DB.init();
     const printTime = DOM.crudPrintTime.value || "4 hours";
     const weight = DOM.crudWeight.value || "80g";
     const difficulty = DOM.crudDifficulty.value;
+    const modelUrl = DOM.crudModelUrl ? DOM.crudModelUrl.value.trim() : "";
 
     // Read promotion flags & original price
     const isFeatured = DOM.crudIsFeatured ? DOM.crudIsFeatured.checked : false;
@@ -2390,46 +2698,24 @@ DB.init();
       ? parseFloat(DOM.crudOriginalPrice.value)
       : null;
 
-    // Helper map of hexes
-    const swatchHexMap = {
-      "silk gold": "#ffd700",
-      "gold": "#ffd700",
-      "matte black": "#1a1a1a",
-      "black": "#1a1a1a",
-      "stealth black": "#0f0f0f",
-      "cosmic blue": "#1e3a8a",
-      "blue": "#1e3a8a",
-      "crimson red": "#dc2626",
-      "red": "#dc2626",
-      "marble white": "#e8e8e8",
-      "white": "#e8e8e8",
-      "glow green": "#ccff33",
-      "metallic purple": "#7c3aed",
-      "purple": "#7c3aed",
-      "silver chrome": "#e2e8f0",
-      "orange": "#ea580c"
-    };
-
-    // Build color variants
-    const colors = currentColorsTags.map(c => {
-      const lower = c.toLowerCase();
-      const hex = swatchHexMap[lower] || "#3b82f6"; // Default blue fallback
-      return { name: c, hex, priceModifier: 0 };
+    // Build color variations from interactive rows
+    const colors = Array.from(DOM.crudColorsContainer.querySelectorAll(".option-row")).map(row => {
+      const cName = row.querySelector(".color-name-input").value.trim();
+      const hex = row.querySelector(".color-hex-input").value;
+      return { name: cName, hex, priceModifier: 0 };
     });
 
-    // Build sizes from CSV
-    const sizes = DOM.crudSizes.value.split(",").map(szStr => {
-      const parts = szStr.split(":");
-      const sName = parts[0].trim();
-      const modifier = parts[1] ? parseFloat(parts[1]) : 0;
+    // Build sizes from interactive rows
+    const sizes = Array.from(DOM.crudSizesContainer.querySelectorAll(".option-row")).map(row => {
+      const sName = row.querySelector(".size-name-input").value.trim();
+      const modifier = parseFloat(row.querySelector(".size-price-input").value) || 0;
       return { name: sName, scale: "100%", priceModifier: modifier };
     });
 
-    // Build materials from CSV
-    const materials = DOM.crudMaterials.value.split(",").map(matStr => {
-      const parts = matStr.split(":");
-      const mName = parts[0].trim();
-      const modifier = parts[1] ? parseFloat(parts[1]) : 0;
+    // Build materials from interactive rows
+    const materials = Array.from(DOM.crudMaterialsContainer.querySelectorAll(".option-row")).map(row => {
+      const mName = row.querySelector(".material-name-input").value.trim();
+      const modifier = parseFloat(row.querySelector(".material-price-input").value) || 0;
       return { name: mName, description: "Custom parsed density grade", priceModifier: modifier };
     });
 
@@ -2452,10 +2738,11 @@ DB.init();
       isPriceDrop,
       originalPrice,
       images: {
-        [currentColorsTags[0] || "Default"]: state.crudGalleryUrls[0] || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80"
+        [colors[0] ? colors[0].name : "Default"]: state.crudGalleryUrls[0] || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80"
       },
       defaultImage: state.crudGalleryUrls[0] || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=600&q=80",
       gallery: state.crudGalleryUrls,
+      modelUrl,
       variations: { colors, sizes, materials },
       specifications: { printTime, filamentUsed: weight, difficulty }
     };
@@ -2638,6 +2925,38 @@ DB.init();
   // ==========================================
 
   // --- Front-end Renderers ---
+  // Store dynamic slideshow cycle state in state
+  state.heroSlideshowImages = [];
+  state.heroSlideshowIndex = 0;
+  state.heroSlideshowIntervalId = null;
+
+  function startHeroSlideshow(images) {
+    if (state.heroSlideshowIntervalId) {
+      clearInterval(state.heroSlideshowIntervalId);
+      state.heroSlideshowIntervalId = null;
+    }
+
+    const wrapper = document.getElementById("hero-slides-wrapper");
+    if (!wrapper) return;
+
+    state.heroSlideshowImages = (images && images.length > 0) ? images : ["superhero_hero_bg.png"];
+    state.heroSlideshowIndex = 0;
+
+    wrapper.innerHTML = state.heroSlideshowImages.map((imgUrl, index) => `
+      <img src="${imgUrl}" class="hero-slide ${index === 0 ? 'active' : ''}" alt="Hero Visual Slide">
+    `).join("");
+
+    if (state.heroSlideshowImages.length <= 1) return;
+
+    state.heroSlideshowIntervalId = setInterval(() => {
+      const slides = wrapper.querySelectorAll(".hero-slide");
+      if (slides.length === 0) return;
+      slides[state.heroSlideshowIndex].classList.remove("active");
+      state.heroSlideshowIndex = (state.heroSlideshowIndex + 1) % slides.length;
+      slides[state.heroSlideshowIndex].classList.add("active");
+    }, 4000);
+  }
+
   function renderHeroContent() {
     const content = DB.getHeroContent();
     if (!content) return;
@@ -2655,6 +2974,8 @@ DB.init();
     if (printersEl) printersEl.textContent = content.activePrinters;
     if (printsEl) printsEl.textContent = content.completedPrints;
     if (ratingEl) ratingEl.textContent = content.customerRating;
+
+    startHeroSlideshow(content.images);
   }
 
   function renderDeliveryOptions() {
@@ -2755,6 +3076,33 @@ DB.init();
   }
 
   // --- Dashboard Initializers & CRUD ---
+  // Store uploaded Hero Visual URLs
+  state.crudHeroUrls = [];
+
+  function renderHeroGalleryList() {
+    if (!DOM.heroGalleryContainer) return;
+
+    if (state.crudHeroUrls.length === 0) {
+      DOM.heroGalleryContainer.innerHTML = `<p class="text-muted" style="grid-column:1/-1; font-size:0.85rem;">No visual images uploaded. Click above to upload hero slides!</p>`;
+      return;
+    }
+
+    DOM.heroGalleryContainer.innerHTML = state.crudHeroUrls.map((imgUrl, index) => `
+      <div class="crud-gallery-item">
+        <img src="${imgUrl}" alt="Hero Image ${index + 1}">
+        <button type="button" class="crud-gallery-remove" data-index="${index}" title="Delete Image">×</button>
+      </div>
+    `).join("");
+
+    DOM.heroGalleryContainer.querySelectorAll(".crud-gallery-remove").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        state.crudHeroUrls.splice(idx, 1);
+        renderHeroGalleryList();
+      });
+    });
+  }
+
   function initHeroDashboardSettings() {
     const content = DB.getHeroContent();
     if (!content) return;
@@ -2773,6 +3121,66 @@ DB.init();
     if (DOM.cfgPricedropDesc) DOM.cfgPricedropDesc.value = content.priceDropSubtitle || "";
     if (DOM.cfgNewarrivalTitle) DOM.cfgNewarrivalTitle.value = content.newArrivalTitle || "";
     if (DOM.cfgNewarrivalDesc) DOM.cfgNewarrivalDesc.value = content.newArrivalSubtitle || "";
+
+    // Load visual images into state and gallery list
+    state.crudHeroUrls = content.images ? [...content.images] : ["superhero_hero_bg.png"];
+    renderHeroGalleryList();
+
+    // Bind Hero Visual Images File Uploader (once)
+    if (DOM.heroImagesUpload && !DOM.heroImagesUpload.dataset.listenerBound) {
+      DOM.heroImagesUpload.dataset.listenerBound = "true";
+      DOM.heroImagesUpload.addEventListener("change", async (ev) => {
+        const files = Array.from(ev.target.files);
+        if (files.length === 0) return;
+
+        const uploadStatus = document.getElementById("hero-upload-status");
+        if (uploadStatus) {
+          uploadStatus.textContent = "⏳ Uploading visual slides...";
+          uploadStatus.style.color = "var(--accent-indigo)";
+        }
+
+        let loadedCount = 0;
+        let offlineWarning = false;
+
+        for (const file of files) {
+          const localUrl = URL.createObjectURL(file);
+          
+          const uploadPromise = async () => {
+            const fileExtension = file.name.split('.').pop();
+            const fileName = `hero/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+            const storageRef = ref(storage, fileName);
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
+          };
+
+          const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+          try {
+            const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+            state.crudHeroUrls.push(downloadUrl);
+            loadedCount++;
+          } catch (err) {
+            console.warn("Hero image upload failed or timed out. Falling back to local Blob URL:", err);
+            state.crudHeroUrls.push(localUrl);
+            loadedCount++;
+            offlineWarning = true;
+          }
+        }
+
+        renderHeroGalleryList();
+        DOM.heroImagesUpload.value = "";
+
+        if (uploadStatus) {
+          if (offlineWarning) {
+            uploadStatus.textContent = `⚠️ Uploaded ${loadedCount} (local preview)`;
+            uploadStatus.style.color = "var(--accent-gold)";
+          } else {
+            uploadStatus.textContent = `✅ Successfully uploaded ${loadedCount} images!`;
+            uploadStatus.style.color = "var(--accent-green)";
+          }
+        }
+      });
+    }
   }
 
   function initSocialDashboardSettings() {
@@ -2798,16 +3206,16 @@ DB.init();
 
     // Apply Logo
     document.querySelectorAll(".logo").forEach(logoEl => {
-      const iconEl = logoEl.querySelector(".logo-icon");
-      if (iconEl) iconEl.textContent = theme.logoLetter;
-      
-      const spanEl = logoEl.querySelector("span");
-      if (spanEl) {
-        if (logoEl.parentNode.classList.contains("db-sidebar")) {
-          spanEl.innerHTML = `${theme.logoText1}<span class="text-gradient">DB</span>`;
-        } else {
-          spanEl.innerHTML = `${theme.logoText1}<span class="text-gradient">${theme.logoText2}</span>`;
-        }
+      const brandWrap = logoEl.querySelector(".logo-brand-wrap") || logoEl;
+      if (theme.logoImageUrl) {
+        brandWrap.innerHTML = `<img src="${theme.logoImageUrl}" alt="Logo" style="height: 38px; object-fit: contain; max-width: 140px; display: block;">`;
+      } else {
+        const isDb = logoEl.parentNode.classList.contains("db-sidebar") || brandWrap.classList.contains("logo-brand-wrap");
+        const suffix = isDb ? "DB" : (theme.logoText2 || "Pop");
+        brandWrap.innerHTML = `
+          <div class="logo-icon">${theme.logoLetter || "P"}</div>
+          <span>${theme.logoText1 || "Pixel"}<span class="text-gradient">${suffix}</span></span>
+        `;
       }
     });
 
@@ -2828,10 +3236,9 @@ DB.init();
       root.style.setProperty("--text-main", "#f1f5f9");
       root.style.setProperty("--text-muted", "#94a3b8");
       
-      document.body.style.backgroundImage = `
-        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(8, 145, 178, 0.1) 0%, transparent 40%)
-      `;
+      root.style.setProperty("--body-bg-overlay", `
+        linear-gradient(rgba(11, 12, 16, 0.94), rgba(11, 12, 16, 0.94))
+      `);
     } else {
       root.style.setProperty("--bg-primary", "#ffffff");
       root.style.setProperty("--bg-secondary", "#f8fafc");
@@ -2842,10 +3249,9 @@ DB.init();
       root.style.setProperty("--text-main", "#0f172a");
       root.style.setProperty("--text-muted", "#64748b");
       
-      document.body.style.backgroundImage = `
-        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(8, 145, 178, 0.03) 0%, transparent 40%)
-      `;
+      root.style.setProperty("--body-bg-overlay", `
+        linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96))
+      `);
     }
   }
 
@@ -2861,9 +3267,87 @@ DB.init();
     DOM.cfgColorPurple.value = theme.colors["accent-purple"];
     DOM.cfgColorPink.value = theme.colors["accent-pink"];
     
-    DOM.cfgLogoLetter.value = theme.logoLetter;
-    DOM.cfgLogoText1.value = theme.logoText1;
-    DOM.cfgLogoText2.value = theme.logoText2;
+    DOM.cfgLogoLetter.value = theme.logoLetter || "P";
+    DOM.cfgLogoText1.value = theme.logoText1 || "Pixel";
+    DOM.cfgLogoText2.value = theme.logoText2 || "Pop";
+
+    // Set custom logo inputs and preview state
+    const imgUrlInput = document.getElementById("cfg-logo-image-url");
+    const previewContainer = document.getElementById("cfg-logo-preview-container");
+    const previewImg = document.getElementById("cfg-logo-preview");
+    if (imgUrlInput && theme.logoImageUrl) {
+      imgUrlInput.value = theme.logoImageUrl;
+      if (previewImg) previewImg.src = theme.logoImageUrl;
+      if (previewContainer) previewContainer.style.display = "flex";
+    } else {
+      if (imgUrlInput) imgUrlInput.value = "";
+      if (previewContainer) previewContainer.style.display = "none";
+    }
+
+    // Bind logo image file upload triggers (once)
+    const logoUploadInput = document.getElementById("cfg-logo-upload");
+    const logoUploadStatus = document.getElementById("logo-upload-status");
+    const btnRemoveLogoImg = document.getElementById("btn-remove-logo-img");
+
+    if (logoUploadInput && !logoUploadInput.dataset.listenerBound) {
+      logoUploadInput.dataset.listenerBound = "true";
+      logoUploadInput.addEventListener("change", async (ev) => {
+        const file = ev.target.files[0];
+        if (!file) return;
+
+        logoUploadStatus.textContent = "⏳ Uploading logo...";
+        logoUploadStatus.style.color = "var(--accent-indigo)";
+
+        const uploadPromise = async () => {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `logos/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+          const storageRef = ref(storage, fileName);
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        };
+
+        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+        try {
+          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+          const urlField = document.getElementById("cfg-logo-image-url");
+          const previewField = document.getElementById("cfg-logo-preview");
+          const containerField = document.getElementById("cfg-logo-preview-container");
+          if (urlField) urlField.value = downloadUrl;
+          if (previewField) previewField.src = downloadUrl;
+          if (containerField) containerField.style.display = "flex";
+          logoUploadStatus.textContent = "✅ Logo uploaded!";
+          logoUploadStatus.style.color = "var(--accent-green)";
+        } catch (err) {
+          console.warn("Logo upload failed or timed out. Falling back to local Blob URL:", err);
+          const localUrl = URL.createObjectURL(file);
+          const urlField = document.getElementById("cfg-logo-image-url");
+          const previewField = document.getElementById("cfg-logo-preview");
+          const containerField = document.getElementById("cfg-logo-preview-container");
+          if (urlField) urlField.value = localUrl;
+          if (previewField) previewField.src = localUrl;
+          if (containerField) containerField.style.display = "flex";
+          logoUploadStatus.textContent = "⚠️ Uploaded (local preview)";
+          logoUploadStatus.style.color = "var(--accent-gold)";
+        }
+      });
+    }
+
+    if (btnRemoveLogoImg && !btnRemoveLogoImg.dataset.listenerBound) {
+      btnRemoveLogoImg.dataset.listenerBound = "true";
+      btnRemoveLogoImg.addEventListener("click", () => {
+        const urlField = document.getElementById("cfg-logo-image-url");
+        const fileField = document.getElementById("cfg-logo-upload");
+        const previewField = document.getElementById("cfg-logo-preview");
+        const containerField = document.getElementById("cfg-logo-preview-container");
+        if (urlField) urlField.value = "";
+        if (fileField) fileField.value = "";
+        if (previewField) previewField.src = "";
+        if (containerField) containerField.style.display = "none";
+        logoUploadStatus.textContent = "🗑️ Image logo cleared";
+        logoUploadStatus.style.color = "var(--accent-gold)";
+      });
+    }
 
     // Reset old listeners if any by replacing element or just binding directly
     // Preset change handler
@@ -2918,10 +3402,12 @@ DB.init();
     DOM.themeConfigForm.addEventListener("submit", (e) => {
       e.preventDefault();
       
+      const imgUrlInput = document.getElementById("cfg-logo-image-url");
       const updatedTheme = {
         logoLetter: DOM.cfgLogoLetter.value.trim(),
         logoText1: DOM.cfgLogoText1.value.trim(),
         logoText2: DOM.cfgLogoText2.value.trim(),
+        logoImageUrl: imgUrlInput ? imgUrlInput.value : "",
         themeMode: DOM.cfgThemeMode.value,
         colors: {
           "accent-indigo": DOM.cfgColorIndigo.value,
@@ -3020,6 +3506,7 @@ DB.init();
         priceDropSubtitle: DOM.cfgPricedropDesc ? DOM.cfgPricedropDesc.value.trim() : "",
         newArrivalTitle: DOM.cfgNewarrivalTitle ? DOM.cfgNewarrivalTitle.value.trim() : "",
         newArrivalSubtitle: DOM.cfgNewarrivalDesc ? DOM.cfgNewarrivalDesc.value.trim() : "",
+        images: state.crudHeroUrls
       };
       DB.saveHeroContent(updated);
       renderHeroContent();
@@ -3469,7 +3956,41 @@ DB.init();
   }
 
   // INITIALIZE ON RUN
-  initApp();
-  handleUrlRouting();
+  async function startApplication() {
+    try {
+      await DB.syncFromFirestore();
+    } catch (err) {
+      console.warn("Firestore startup sync failed or timed out. Operating in offline/local fallback mode:", err);
+    }
+    initApp();
+
+    // Auto-repair color swatches and names mismatch in the database
+    const products = DB.getProducts();
+    let anyRepaired = false;
+    products.forEach(p => {
+      let repaired = false;
+      if (p.variations && p.variations.colors) {
+        p.variations.colors.forEach(col => {
+          const lowerName = col.name.toLowerCase().trim();
+          if (swatchHexMap[lowerName] && col.hex !== swatchHexMap[lowerName]) {
+            col.hex = swatchHexMap[lowerName];
+            repaired = true;
+          }
+        });
+      }
+      if (repaired) {
+        DB.updateProduct(p);
+        anyRepaired = true;
+      }
+    });
+    if (anyRepaired) {
+      renderProductsList();
+      renderCuratedHomeSections();
+    }
+
+    handleUrlRouting();
+    updateNotificationBell();
+  }
+  startApplication();
 
 
