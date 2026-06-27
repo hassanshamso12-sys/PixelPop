@@ -55,14 +55,26 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
-  background: url("superhero_hero_bg.png");
+  z-index: -2;
+  background-image: var(--site-bg-image, url("superhero_hero_bg.png"));
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   pointer-events: none;
-  filter: blur(8px);
-  opacity: 0.08;
+  filter: blur(8px) saturate(var(--site-bg-saturation, 1.0));
+  opacity: var(--site-bg-opacity, 0.08);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-color: var(--site-bg-overlay, var(--bg-primary));
+  pointer-events: none;
 }
 
 /* Custom Scrollbar */
@@ -2643,29 +2655,93 @@ header {
   animation: shakeBell 1.5s ease infinite;
 }
 
-/* Hero Image Slideshow Slider */
-.hero-slider-container {
-  width: 100%;
-  height: 100%;
+/* Hero Showcase 3D Stage Carousel */
+.hero-showcase-stage {
   position: relative;
+  width: 100%;
+  max-width: 520px;
+  height: 380px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+  margin: 0 auto;
 }
-.hero-slide {
+
+.showcase-card {
   position: absolute;
-  top: 0;
-  left: 0;
+  width: 280px;
+  height: 340px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  background: var(--bg-card);
+  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.showcase-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.8s ease-in-out;
-  z-index: 1;
+  display: block;
 }
-.hero-slide.active {
+
+.showcase-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.2rem;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 20%, rgba(15, 23, 42, 0.6) 70%, transparent 100%);
+  color: #ffffff;
+  z-index: 5;
+}
+
+.showcase-caption h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.showcase-caption p {
+  font-size: 0.82rem;
+  opacity: 0.85;
+  margin: 0;
+}
+
+/* 3D Showcase Shifting States */
+.showcase-card.center {
+  transform: translate3d(0, 0, 80px) scale(1);
   opacity: 1;
-  z-index: 2;
+  z-index: 5;
+  filter: blur(0);
 }
-.hero-image-overlay {
+
+.showcase-card.left {
+  transform: translate3d(-120px, 0, -80px) rotateY(18deg) scale(0.85);
+  opacity: 0.65;
   z-index: 3;
+  filter: blur(1.5px);
+  cursor: pointer;
+}
+
+.showcase-card.right {
+  transform: translate3d(120px, 0, -80px) rotateY(-18deg) scale(0.85);
+  opacity: 0.65;
+  z-index: 3;
+  filter: blur(1.5px);
+  cursor: pointer;
+}
+
+/* Hover effects for secondary cards */
+.showcase-card.left:hover, .showcase-card.right:hover {
+  opacity: 0.85;
+  filter: blur(0.5px);
 }
 
 

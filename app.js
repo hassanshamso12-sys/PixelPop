@@ -2926,35 +2926,109 @@ DB.init();
 
   // --- Front-end Renderers ---
   // Store dynamic slideshow cycle state in state
-  state.heroSlideshowImages = [];
-  state.heroSlideshowIndex = 0;
+  state.heroShowcaseDeck = [];
+  state.heroShowcaseCenterIdx = 1; // starts with middle item
   state.heroSlideshowIntervalId = null;
 
-  function startHeroSlideshow(images) {
+  function startHeroSlideshow(showcaseCards) {
     if (state.heroSlideshowIntervalId) {
       clearInterval(state.heroSlideshowIntervalId);
       state.heroSlideshowIntervalId = null;
     }
 
-    const wrapper = document.getElementById("hero-slides-wrapper");
-    if (!wrapper) return;
+    const stage = document.getElementById("hero-showcase-stage");
+    if (!stage) return;
 
-    state.heroSlideshowImages = (images && images.length > 0) ? images : ["superhero_hero_bg.png"];
-    state.heroSlideshowIndex = 0;
+    // Define standard defaults
+    const defaultDeck = [
+      { img: "fdm_printing.png", title: "FDM Filament", desc: "High-Strength PLA/PETG" },
+      { img: "sla_resin_printing.png", title: "SLA UV Resin", desc: "Ultra-Fine miniatures" },
+      { img: "post_processing.png", title: "Post-Processing", desc: "Custom hand-paint detail" }
+    ];
 
-    wrapper.innerHTML = state.heroSlideshowImages.map((imgUrl, index) => `
-      <img src="${imgUrl}" class="hero-slide ${index === 0 ? 'active' : ''}" alt="Hero Visual Slide">
+    // Build the showcase deck
+    let finalDeck = [];
+    if (showcaseCards && showcaseCards.length === 3) {
+      finalDeck = [...showcaseCards];
+    } else {
+      finalDeck = [...defaultDeck];
+    }
+
+    state.heroShowcaseDeck = finalDeck;
+    state.heroShowcaseCenterIdx = 1; // Center item index
+
+    // Render cards to stage
+    renderShowcaseDeck();
+
+    // Start auto-rotation every 5 seconds
+    state.heroSlideshowIntervalId = setInterval(() => {
+      // Shift center index to the right
+      state.heroShowcaseCenterIdx = (state.heroShowcaseCenterIdx + 1) % state.heroShowcaseDeck.length;
+      updateShowcaseClasses();
+    }, 5000);
+  }
+
+  function renderShowcaseDeck() {
+    const stage = document.getElementById("hero-showcase-stage");
+    if (!stage) return;
+
+    stage.innerHTML = state.heroShowcaseDeck.map((item, index) => `
+      <div class="showcase-card" data-index="${index}">
+        <img src="${item.img}" alt="${item.title}" onerror="this.src='superhero_hero_bg.png'">
+        <div class="showcase-caption">
+          <h3>${item.title}</h3>
+          <p>${item.desc}</p>
+        </div>
+      </div>
     `).join("");
 
-    if (state.heroSlideshowImages.length <= 1) return;
+    updateShowcaseClasses();
 
-    state.heroSlideshowIntervalId = setInterval(() => {
-      const slides = wrapper.querySelectorAll(".hero-slide");
-      if (slides.length === 0) return;
-      slides[state.heroSlideshowIndex].classList.remove("active");
-      state.heroSlideshowIndex = (state.heroSlideshowIndex + 1) % slides.length;
-      slides[state.heroSlideshowIndex].classList.add("active");
-    }, 4000);
+    // Add click event listeners to let users click left/right cards to rotate them to center
+    stage.querySelectorAll(".showcase-card").forEach(card => {
+      card.addEventListener("click", (e) => {
+        const targetIdx = parseInt(e.currentTarget.dataset.index);
+        if (targetIdx !== state.heroShowcaseCenterIdx) {
+          state.heroShowcaseCenterIdx = targetIdx;
+          updateShowcaseClasses();
+          // Reset interval timer to prevent premature transition
+          if (state.heroSlideshowIntervalId) {
+            clearInterval(state.heroSlideshowIntervalId);
+            state.heroSlideshowIntervalId = setInterval(() => {
+              state.heroShowcaseCenterIdx = (state.heroShowcaseCenterIdx + 1) % state.heroShowcaseDeck.length;
+              updateShowcaseClasses();
+            }, 5000);
+          }
+        }
+      });
+    });
+  }
+
+  function updateShowcaseClasses() {
+    const stage = document.getElementById("hero-showcase-stage");
+    if (!stage) return;
+
+    const cards = stage.querySelectorAll(".showcase-card");
+    const len = state.heroShowcaseDeck.length;
+    if (cards.length === 0) return;
+
+    const center = state.heroShowcaseCenterIdx;
+    const left = (center - 1 + len) % len;
+    const right = (center + 1) % len;
+
+    cards.forEach((card, index) => {
+      card.classList.remove("center", "left", "right");
+      
+      if (index === center) {
+        card.classList.add("center");
+      } else if (index === left) {
+        card.classList.add("left");
+      } else if (index === right) {
+        card.classList.add("right");
+      } else {
+        card.classList.add("left");
+      }
+    });
   }
 
   function renderHeroContent() {
@@ -2975,7 +3049,7 @@ DB.init();
     if (printsEl) printsEl.textContent = content.completedPrints;
     if (ratingEl) ratingEl.textContent = content.customerRating;
 
-    startHeroSlideshow(content.images);
+    startHeroSlideshow(content.showcaseCards);
   }
 
   function renderDeliveryOptions() {
@@ -3076,29 +3150,88 @@ DB.init();
   }
 
   // --- Dashboard Initializers & CRUD ---
-  // Store uploaded Hero Visual URLs
-  state.crudHeroUrls = [];
+  function renderHeroCardsEditor(showcaseCards) {
+    const container = document.getElementById("hero-cards-editor-container");
+    if (!container) return;
 
-  function renderHeroGalleryList() {
-    if (!DOM.heroGalleryContainer) return;
+    const cards = (showcaseCards && showcaseCards.length === 3) ? showcaseCards : [
+      { img: "fdm_printing.png", title: "FDM Filament", desc: "High-Strength PLA/PETG" },
+      { img: "sla_resin_printing.png", title: "SLA UV Resin", desc: "Ultra-Fine miniatures" },
+      { img: "post_processing.png", title: "Post-Processing", desc: "Custom hand-paint detail" }
+    ];
 
-    if (state.crudHeroUrls.length === 0) {
-      DOM.heroGalleryContainer.innerHTML = `<p class="text-muted" style="grid-column:1/-1; font-size:0.85rem;">No visual images uploaded. Click above to upload hero slides!</p>`;
-      return;
-    }
+    container.innerHTML = cards.map((card, index) => `
+      <div class="hero-card-editor-row glass-panel" data-index="${index}" style="padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(255,255,255,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <strong style="color: var(--accent-indigo);">Card Frame #${index + 1}</strong>
+          <span class="text-muted" style="font-size: 0.8rem;">(E.g. ${index === 0 ? 'Left' : (index === 1 ? 'Center' : 'Right')} Position)</span>
+        </div>
+        
+        <div class="form-row" style="grid-template-columns: 1.5fr 1fr; gap: 1rem; align-items: end; margin-top: 0;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">Upload Card Image</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="file" class="form-input hero-card-file-input" accept="image/*" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+              <span class="hero-card-upload-status" style="font-size: 0.8rem; font-weight: 500;"></span>
+            </div>
+            <input type="hidden" class="hero-card-img-url" value="${card.img}">
+          </div>
+          
+          <div class="hero-card-preview-wrap" style="height: 55px; width: 65px; border-radius: 6px; overflow: hidden; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.1);">
+            <img class="hero-card-img-preview" src="${card.img}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='superhero_hero_bg.png'">
+          </div>
+        </div>
 
-    DOM.heroGalleryContainer.innerHTML = state.crudHeroUrls.map((imgUrl, index) => `
-      <div class="crud-gallery-item">
-        <img src="${imgUrl}" alt="Hero Image ${index + 1}">
-        <button type="button" class="crud-gallery-remove" data-index="${index}" title="Delete Image">×</button>
+        <div class="form-row" style="gap: 1rem; margin-top: 0;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">Card Title</label>
+            <input type="text" class="form-input hero-card-title-input" value="${card.title}" required style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.85rem;">Card Subtitle / Description</label>
+            <input type="text" class="form-input hero-card-desc-input" value="${card.desc}" required style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+          </div>
+        </div>
       </div>
     `).join("");
 
-    DOM.heroGalleryContainer.querySelectorAll(".crud-gallery-remove").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const idx = parseInt(e.currentTarget.dataset.index);
-        state.crudHeroUrls.splice(idx, 1);
-        renderHeroGalleryList();
+    container.querySelectorAll(".hero-card-editor-row").forEach(row => {
+      const fileInput = row.querySelector(".hero-card-file-input");
+      const uploadStatus = row.querySelector(".hero-card-upload-status");
+      const hiddenUrlInput = row.querySelector(".hero-card-img-url");
+      const previewImg = row.querySelector(".hero-card-img-preview");
+
+      fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        uploadStatus.textContent = "⏳ Uploading...";
+        uploadStatus.style.color = "var(--accent-indigo)";
+
+        const uploadPromise = async () => {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `hero-cards/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+          const storageRef = ref(storage, fileName);
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        };
+
+        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+        try {
+          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+          hiddenUrlInput.value = downloadUrl;
+          previewImg.src = downloadUrl;
+          uploadStatus.textContent = "✅ Uploaded!";
+          uploadStatus.style.color = "var(--accent-green)";
+        } catch (err) {
+          console.warn("Card image upload failed. Using local preview:", err);
+          const localUrl = URL.createObjectURL(file);
+          hiddenUrlInput.value = localUrl;
+          previewImg.src = localUrl;
+          uploadStatus.textContent = "⚠️ Preview only";
+          uploadStatus.style.color = "var(--accent-gold)";
+        }
       });
     });
   }
@@ -3122,65 +3255,8 @@ DB.init();
     if (DOM.cfgNewarrivalTitle) DOM.cfgNewarrivalTitle.value = content.newArrivalTitle || "";
     if (DOM.cfgNewarrivalDesc) DOM.cfgNewarrivalDesc.value = content.newArrivalSubtitle || "";
 
-    // Load visual images into state and gallery list
-    state.crudHeroUrls = content.images ? [...content.images] : ["superhero_hero_bg.png"];
-    renderHeroGalleryList();
-
-    // Bind Hero Visual Images File Uploader (once)
-    if (DOM.heroImagesUpload && !DOM.heroImagesUpload.dataset.listenerBound) {
-      DOM.heroImagesUpload.dataset.listenerBound = "true";
-      DOM.heroImagesUpload.addEventListener("change", async (ev) => {
-        const files = Array.from(ev.target.files);
-        if (files.length === 0) return;
-
-        const uploadStatus = document.getElementById("hero-upload-status");
-        if (uploadStatus) {
-          uploadStatus.textContent = "⏳ Uploading visual slides...";
-          uploadStatus.style.color = "var(--accent-indigo)";
-        }
-
-        let loadedCount = 0;
-        let offlineWarning = false;
-
-        for (const file of files) {
-          const localUrl = URL.createObjectURL(file);
-          
-          const uploadPromise = async () => {
-            const fileExtension = file.name.split('.').pop();
-            const fileName = `hero/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-            const storageRef = ref(storage, fileName);
-            const snapshot = await uploadBytes(storageRef, file);
-            return await getDownloadURL(snapshot.ref);
-          };
-
-          const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-          try {
-            const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
-            state.crudHeroUrls.push(downloadUrl);
-            loadedCount++;
-          } catch (err) {
-            console.warn("Hero image upload failed or timed out. Falling back to local Blob URL:", err);
-            state.crudHeroUrls.push(localUrl);
-            loadedCount++;
-            offlineWarning = true;
-          }
-        }
-
-        renderHeroGalleryList();
-        DOM.heroImagesUpload.value = "";
-
-        if (uploadStatus) {
-          if (offlineWarning) {
-            uploadStatus.textContent = `⚠️ Uploaded ${loadedCount} (local preview)`;
-            uploadStatus.style.color = "var(--accent-gold)";
-          } else {
-            uploadStatus.textContent = `✅ Successfully uploaded ${loadedCount} images!`;
-            uploadStatus.style.color = "var(--accent-green)";
-          }
-        }
-      });
-    }
+    // Load dynamic showcase cards editor
+    renderHeroCardsEditor(content.showcaseCards);
   }
 
   function initSocialDashboardSettings() {
@@ -3208,7 +3284,7 @@ DB.init();
     document.querySelectorAll(".logo").forEach(logoEl => {
       const brandWrap = logoEl.querySelector(".logo-brand-wrap") || logoEl;
       if (theme.logoImageUrl) {
-        brandWrap.innerHTML = `<img src="${theme.logoImageUrl}" alt="Logo" style="height: 38px; object-fit: contain; max-width: 140px; display: block;">`;
+        brandWrap.innerHTML = `<img src="${theme.logoImageUrl}" alt="Logo" style="height: ${theme.logoHeight || 38}px; object-fit: contain; max-width: 180px; display: block;">`;
       } else {
         const isDb = logoEl.parentNode.classList.contains("db-sidebar") || brandWrap.classList.contains("logo-brand-wrap");
         const suffix = isDb ? "DB" : (theme.logoText2 || "Pop");
@@ -3252,6 +3328,35 @@ DB.init();
       root.style.setProperty("--body-bg-overlay", `
         linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96))
       `);
+    }
+
+    // Apply Background Image, Opacity & Overlay Tint
+    if (theme.bgImageUrl) {
+      root.style.setProperty("--site-bg-image", `url("${theme.bgImageUrl}")`);
+    } else {
+      root.style.setProperty("--site-bg-image", `url("superhero_hero_bg.png")`);
+    }
+    
+    if (theme.bgOpacity !== undefined && theme.bgOpacity !== "") {
+      root.style.setProperty("--site-bg-opacity", theme.bgOpacity);
+    } else {
+      root.style.setProperty("--site-bg-opacity", "0.08");
+    }
+
+    if (theme.bgSaturation !== undefined && theme.bgSaturation !== "") {
+      root.style.setProperty("--site-bg-saturation", theme.bgSaturation);
+    } else {
+      root.style.setProperty("--site-bg-saturation", "1.0");
+    }
+
+    if (theme.bgOverlayColor) {
+      if (theme.themeMode === "dark" && theme.bgOverlayColor === "#ffffff") {
+        root.style.setProperty("--site-bg-overlay", "var(--bg-primary)");
+      } else {
+        root.style.setProperty("--site-bg-overlay", theme.bgOverlayColor);
+      }
+    } else {
+      root.style.setProperty("--site-bg-overlay", "var(--bg-primary)");
     }
   }
 
@@ -3349,6 +3454,139 @@ DB.init();
       });
     }
 
+    // Set Logo custom height value
+    const logoHeightInput = document.getElementById("cfg-logo-height");
+    const logoHeightValText = document.getElementById("val-logo-height");
+    if (logoHeightInput) {
+      logoHeightInput.value = theme.logoHeight !== undefined ? theme.logoHeight : 38;
+      if (logoHeightValText) logoHeightValText.textContent = logoHeightInput.value;
+      if (!logoHeightInput.dataset.listenerBound) {
+        logoHeightInput.dataset.listenerBound = "true";
+        logoHeightInput.addEventListener("input", (e) => {
+          if (logoHeightValText) logoHeightValText.textContent = e.target.value;
+        });
+      }
+    }
+
+    // Set custom background inputs and preview state
+    const bgUrlInput = document.getElementById("cfg-bg-image-url");
+    const bgPreviewContainer = document.getElementById("cfg-bg-preview-container");
+    const bgPreviewImg = document.getElementById("cfg-bg-preview");
+    const bgOpacityInput = document.getElementById("cfg-bg-opacity");
+    const bgOpacityValText = document.getElementById("val-bg-opacity");
+    const bgOverlayColorInput = document.getElementById("cfg-bg-overlay-color");
+
+    if (bgUrlInput && theme.bgImageUrl) {
+      bgUrlInput.value = theme.bgImageUrl;
+      if (bgPreviewImg) bgPreviewImg.src = theme.bgImageUrl;
+      if (bgPreviewContainer) bgPreviewContainer.style.display = "flex";
+    } else {
+      if (bgUrlInput) bgUrlInput.value = "";
+      if (bgPreviewContainer) bgPreviewContainer.style.display = "none";
+    }
+
+    if (bgOpacityInput) {
+      bgOpacityInput.value = theme.bgOpacity !== undefined ? theme.bgOpacity : 0.08;
+      if (bgOpacityValText) bgOpacityValText.textContent = bgOpacityInput.value;
+      if (!bgOpacityInput.dataset.listenerBound) {
+        bgOpacityInput.dataset.listenerBound = "true";
+        bgOpacityInput.addEventListener("input", (ev) => {
+          if (bgOpacityValText) bgOpacityValText.textContent = ev.target.value;
+        });
+      }
+    }
+
+    const bgSaturationInput = document.getElementById("cfg-bg-saturation");
+    const bgSaturationValText = document.getElementById("val-bg-saturation");
+    if (bgSaturationInput) {
+      bgSaturationInput.value = theme.bgSaturation !== undefined ? theme.bgSaturation : 1.0;
+      if (bgSaturationValText) bgSaturationValText.textContent = parseFloat(bgSaturationInput.value).toFixed(1);
+      if (!bgSaturationInput.dataset.listenerBound) {
+        bgSaturationInput.dataset.listenerBound = "true";
+        bgSaturationInput.addEventListener("input", (ev) => {
+          if (bgSaturationValText) bgSaturationValText.textContent = parseFloat(ev.target.value).toFixed(1);
+        });
+      }
+    }
+
+    if (bgOverlayColorInput) {
+      bgOverlayColorInput.value = theme.bgOverlayColor || "#ffffff";
+    }
+
+    // Bind reset bg overlay button click (once)
+    const btnResetBgOverlay = document.getElementById("btn-reset-bg-overlay");
+    if (btnResetBgOverlay && !btnResetBgOverlay.dataset.listenerBound) {
+      btnResetBgOverlay.dataset.listenerBound = "true";
+      btnResetBgOverlay.addEventListener("click", () => {
+        if (bgOverlayColorInput) bgOverlayColorInput.value = "#ffffff";
+      });
+    }
+
+    // Bind bg image file upload triggers (once)
+    const bgUploadInput = document.getElementById("cfg-bg-image-upload");
+    const bgUploadStatus = document.getElementById("bg-upload-status");
+    const btnRemoveBgImg = document.getElementById("btn-remove-bg-img");
+
+    if (bgUploadInput && !bgUploadInput.dataset.listenerBound) {
+      bgUploadInput.dataset.listenerBound = "true";
+      bgUploadInput.addEventListener("change", async (ev) => {
+        const file = ev.target.files[0];
+        if (!file) return;
+
+        bgUploadStatus.textContent = "⏳ Uploading background...";
+        bgUploadStatus.style.color = "var(--accent-indigo)";
+
+        const uploadPromise = async () => {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `backgrounds/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+          const storageRef = ref(storage, fileName);
+          const snapshot = await uploadBytes(storageRef, file);
+          return await getDownloadURL(snapshot.ref);
+        };
+
+        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+        try {
+          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
+          const urlField = document.getElementById("cfg-bg-image-url");
+          const previewField = document.getElementById("cfg-bg-preview");
+          const containerField = document.getElementById("cfg-bg-preview-container");
+          if (urlField) urlField.value = downloadUrl;
+          if (previewField) previewField.src = downloadUrl;
+          if (containerField) containerField.style.display = "flex";
+          bgUploadStatus.textContent = "✅ Background uploaded!";
+          bgUploadStatus.style.color = "var(--accent-green)";
+        } catch (err) {
+          console.warn("Background upload failed or timed out. Falling back to local Blob URL:", err);
+          const localUrl = URL.createObjectURL(file);
+          const urlField = document.getElementById("cfg-bg-image-url");
+          const previewField = document.getElementById("cfg-bg-preview");
+          const containerField = document.getElementById("cfg-bg-preview-container");
+          if (urlField) urlField.value = localUrl;
+          if (previewField) previewField.src = localUrl;
+          if (containerField) containerField.style.display = "flex";
+          bgUploadStatus.textContent = "⚠️ Uploaded (local preview)";
+          bgUploadStatus.style.color = "var(--accent-gold)";
+        }
+      });
+    }
+
+    if (btnRemoveBgImg && !btnRemoveBgImg.dataset.listenerBound) {
+      btnRemoveBgImg.dataset.listenerBound = "true";
+      btnRemoveBgImg.addEventListener("click", () => {
+        const urlField = document.getElementById("cfg-bg-image-url");
+        const fileField = document.getElementById("cfg-bg-image-upload");
+        const previewField = document.getElementById("cfg-bg-preview");
+        const containerField = document.getElementById("cfg-bg-preview-container");
+        if (urlField) urlField.value = "";
+        if (fileField) fileField.value = "";
+        if (previewField) previewField.src = "";
+        if (containerField) containerField.style.display = "none";
+        bgUploadStatus.textContent = "🗑️ Custom background cleared";
+        bgUploadStatus.style.color = "var(--accent-gold)";
+      });
+    }
+
     // Reset old listeners if any by replacing element or just binding directly
     // Preset change handler
     DOM.cfgThemePreset.removeEventListener("change", handlePresetChange);
@@ -3403,11 +3641,22 @@ DB.init();
       e.preventDefault();
       
       const imgUrlInput = document.getElementById("cfg-logo-image-url");
+      const bgUrlInput = document.getElementById("cfg-bg-image-url");
+      const bgOpacityInput = document.getElementById("cfg-bg-opacity");
+      const bgSaturationInput = document.getElementById("cfg-bg-saturation");
+      const bgOverlayColorInput = document.getElementById("cfg-bg-overlay-color");
+      const logoHeightInput = document.getElementById("cfg-logo-height");
+
       const updatedTheme = {
         logoLetter: DOM.cfgLogoLetter.value.trim(),
         logoText1: DOM.cfgLogoText1.value.trim(),
         logoText2: DOM.cfgLogoText2.value.trim(),
         logoImageUrl: imgUrlInput ? imgUrlInput.value : "",
+        logoHeight: logoHeightInput ? parseInt(logoHeightInput.value) : 38,
+        bgImageUrl: bgUrlInput ? bgUrlInput.value : "",
+        bgOpacity: bgOpacityInput ? parseFloat(bgOpacityInput.value) : 0.08,
+        bgSaturation: bgSaturationInput ? parseFloat(bgSaturationInput.value) : 1.0,
+        bgOverlayColor: bgOverlayColorInput ? bgOverlayColorInput.value : "#ffffff",
         themeMode: DOM.cfgThemeMode.value,
         colors: {
           "accent-indigo": DOM.cfgColorIndigo.value,
@@ -3492,6 +3741,14 @@ DB.init();
   if (DOM.heroConfigForm) {
     DOM.heroConfigForm.addEventListener("submit", (e) => {
       e.preventDefault();
+      
+      const cards = Array.from(document.querySelectorAll("#hero-cards-editor-container .hero-card-editor-row")).map(row => {
+        const img = row.querySelector(".hero-card-img-url").value;
+        const title = row.querySelector(".hero-card-title-input").value.trim();
+        const desc = row.querySelector(".hero-card-desc-input").value.trim();
+        return { img, title, desc };
+      });
+
       const updated = {
         title: document.getElementById("cfg-hero-title").value.trim(),
         subtitle: document.getElementById("cfg-hero-subtitle").value.trim(),
@@ -3499,14 +3756,13 @@ DB.init();
         activePrinters: document.getElementById("cfg-hero-printers").value.trim(),
         completedPrints: document.getElementById("cfg-hero-prints").value.trim(),
         customerRating: document.getElementById("cfg-hero-rating").value.trim(),
-        // Save curated section values
         featuredTitle: DOM.cfgFeaturedTitle ? DOM.cfgFeaturedTitle.value.trim() : "",
         featuredSubtitle: DOM.cfgFeaturedDesc ? DOM.cfgFeaturedDesc.value.trim() : "",
         priceDropTitle: DOM.cfgPricedropTitle ? DOM.cfgPricedropTitle.value.trim() : "",
         priceDropSubtitle: DOM.cfgPricedropDesc ? DOM.cfgPricedropDesc.value.trim() : "",
         newArrivalTitle: DOM.cfgNewarrivalTitle ? DOM.cfgNewarrivalTitle.value.trim() : "",
         newArrivalSubtitle: DOM.cfgNewarrivalDesc ? DOM.cfgNewarrivalDesc.value.trim() : "",
-        images: state.crudHeroUrls
+        showcaseCards: cards
       };
       DB.saveHeroContent(updated);
       renderHeroContent();

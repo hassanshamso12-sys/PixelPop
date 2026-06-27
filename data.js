@@ -310,7 +310,11 @@ const DEFAULT_HERO_CONTENT = {
   priceDropSubtitle: "Special discounts and limited-time filament deals",
   newArrivalTitle: "✨ New Arrivals",
   newArrivalSubtitle: "Freshly sliced models and newly calibrated designs",
-  images: ["superhero_hero_bg.png"]
+  showcaseCards: [
+    { img: "fdm_printing.png", title: "FDM Filament", desc: "High-Strength PLA/PETG" },
+    { img: "sla_resin_printing.png", title: "SLA UV Resin", desc: "Ultra-Fine miniatures" },
+    { img: "post_processing.png", title: "Post-Processing", desc: "Custom hand-paint detail" }
+  ]
 };
 
 const DEFAULT_DELIVERY_OPTIONS = [
@@ -341,6 +345,12 @@ const DEFAULT_THEME_SETTINGS = {
   logoLetter: "P",
   logoText1: "Pixel",
   logoText2: "Pop",
+  logoImageUrl: "",
+  logoHeight: 38,
+  bgImageUrl: "",
+  bgOpacity: 0.08,
+  bgSaturation: 1.0,
+  bgOverlayColor: "#ffffff",
   themeMode: "light",
   colors: {
     "accent-indigo": "#4f46e5",

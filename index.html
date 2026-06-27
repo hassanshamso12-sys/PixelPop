@@ -63,13 +63,27 @@
       </div>
 
       <div class="hero-visual">
-        <div class="hero-image-card" id="hero-slider-card">
-          <div class="hero-slider-container" id="hero-slides-wrapper">
-            <img src="superhero_hero_bg.png" class="hero-slide active" alt="Superheroes Collage">
+        <div class="hero-showcase-stage" id="hero-showcase-stage">
+          <div class="showcase-card left">
+            <img src="fdm_printing.png" alt="FDM Printing">
+            <div class="showcase-caption">
+              <h3>FDM Filament</h3>
+              <p>High-Strength PLA/PETG</p>
+            </div>
           </div>
-          <div class="hero-image-overlay">
-            <h3>3D Custom Hero Prints</h3>
-            <p>Order high-quality models of your favorite heroes like Superman, Batman, and Iron Man</p>
+          <div class="showcase-card center">
+            <img src="sla_resin_printing.png" alt="SLA Resin">
+            <div class="showcase-caption">
+              <h3>SLA UV Resin</h3>
+              <p>Ultra-Fine miniatures</p>
+            </div>
+          </div>
+          <div class="showcase-card right">
+            <img src="post_processing.png" alt="Hand Painting">
+            <div class="showcase-caption">
+              <h3>Post-Processing</h3>
+              <p>Custom hand-paint detail</p>
+            </div>
           </div>
         </div>
       </div>
@@ -937,13 +951,9 @@
             </div>
 
             <div class="form-group" style="margin-top: 1rem;">
-              <label class="form-label" for="cfg-hero-images-upload">Upload Hero Visual Images (Multiple supported for Slideshow)</label>
-              <div style="display: flex; gap: 1rem; align-items: center;">
-                <input type="file" id="cfg-hero-images-upload" accept="image/*" class="form-input" style="padding: 0.4rem 0.8rem;" multiple>
-                <div id="hero-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>
-              </div>
-              <div id="cfg-hero-gallery-container" class="crud-gallery-grid" style="margin-top: 0.8rem;">
-                <!-- Dynamically populated thumbnails with delete buttons -->
+              <label class="form-label" style="font-weight: 600; font-size: 1.1rem; color: var(--text-main);">🖼️ 3D Showcase Card Frames (Exactly 3 cards)</label>
+              <div id="hero-cards-editor-container" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem;">
+                <!-- Cards Editor Rows dynamically populated here -->
               </div>
             </div>
 
@@ -1188,10 +1198,49 @@
                 <div id="logo-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>
               </div>
               <input type="hidden" id="cfg-logo-image-url">
-              <!-- Preview of currently active logo image -->
               <div id="cfg-logo-preview-container" style="margin-top: 0.8rem; display: none; align-items: center;">
                 <img id="cfg-logo-preview" src="" alt="Logo Preview" style="height: 38px; object-fit: contain; border-radius: 4px; border: 1px solid var(--glass-border); padding: 4px; background: rgba(255,255,255,0.05);">
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-remove-logo-img" style="margin-left: 0.8rem; padding: 0.3rem 0.6rem; font-size: 0.72rem; background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid rgba(220,38,38,0.2);">Remove Image</button>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label" for="cfg-logo-height">Custom Logo Image Height (<span id="val-logo-height">38</span>px)</label>
+              <input type="range" id="cfg-logo-height" min="20" max="100" step="1" value="38" class="form-input" style="padding: 0; cursor: pointer;">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
+            <h3>🖼️ Full Website Background Customization</h3>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label" for="cfg-bg-image-upload">Upload Background Image (PNG / JPEG)</label>
+              <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="file" id="cfg-bg-image-upload" accept="image/png, image/jpeg, image/jpg" class="form-input" style="padding: 0.4rem 0.8rem;">
+                <div id="bg-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>
+              </div>
+              <input type="hidden" id="cfg-bg-image-url">
+              <!-- Preview of currently active background image -->
+              <div id="cfg-bg-preview-container" style="margin-top: 0.8rem; display: none; align-items: center;">
+                <img id="cfg-bg-preview" src="" alt="Background Preview" style="height: 60px; object-fit: cover; width: 120px; border-radius: 6px; border: 1px solid var(--glass-border); padding: 2px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-remove-bg-img" style="margin-left: 0.8rem; padding: 0.3rem 0.6rem; font-size: 0.72rem; background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid rgba(220,38,38,0.2);">Remove Custom Image</button>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-top: 1rem; grid-template-columns: repeat(3, 1fr);">
+              <div class="form-group">
+                <label class="form-label" for="cfg-bg-opacity">Background Image Opacity (<span id="val-bg-opacity">0.08</span>)</label>
+                <input type="range" id="cfg-bg-opacity" min="0" max="0.5" step="0.01" value="0.08" class="form-input" style="padding: 0; cursor: pointer;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-bg-saturation">Background Saturation (<span id="val-bg-saturation">1.0</span>)</label>
+                <input type="range" id="cfg-bg-saturation" min="0" max="2" step="0.1" value="1.0" class="form-input" style="padding: 0; cursor: pointer;">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cfg-bg-overlay-color">Background Overlay Tint Color</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="color" id="cfg-bg-overlay-color" value="#ffffff" class="form-input" style="height: 40px; padding: 0.2rem; cursor: pointer; flex: 1;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-bg-overlay" style="padding: 0.4rem 0.8rem; height: 40px; font-size: 0.8rem;">Reset</button>
+                </div>
               </div>
             </div>
 
