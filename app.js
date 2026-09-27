@@ -48,11 +48,17 @@ DB.init();
     logoBtn: document.getElementById("logo-btn"),
     navHome: document.getElementById("nav-home"),
     navProductsTrigger: document.getElementById("nav-products-trigger"),
+    navTrack: document.getElementById("nav-track"),
     navAbout: document.getElementById("nav-about"),
     navContact: document.getElementById("nav-contact"),
     navDashboard: document.getElementById("nav-dashboard"),
     cartToggleBtn: document.getElementById("cart-toggle-btn"),
     cartCountBadge: document.getElementById("cart-count-badge"),
+    trackOrderModalOverlay: document.getElementById("track-order-modal-overlay"),
+    closeTrackOrderBtn: document.getElementById("close-track-order-btn"),
+    trackOrderForm: document.getElementById("track-order-form"),
+    trackInputQuery: document.getElementById("track-input-query"),
+    trackOrderResults: document.getElementById("track-order-results"),
 
     // Pages
     storefrontPage: document.getElementById("storefront-page"),
@@ -344,6 +350,7 @@ DB.init();
     renderDeliveryOptions();
     renderSocialSettings();
     initSuperheroSpawner();
+    initTrackOrderLogic();
 
     // Default Email Seed if empty
     if (state.emails.length === 0) {
@@ -1514,9 +1521,12 @@ DB.init();
     // Save to Database
     DB.createOrder(newOrder);
 
+    // Play New Order Chime Sound & Toast Alert Notification
+    showOrderNotificationToast(newOrder);
+
     // Visual order confirmation
     DOM.checkoutModalOverlay.classList.remove("open");
-    alert(`Order Placed Successfully! Your Order ID is ${orderId}. Track build pipeline in the simulated inbox drawer.`);
+    alert(`Order Placed Successfully! Your Order ID is ${orderId}. Track your print delivery anytime using the "Track Order" button in the menu.`);
 
     // Clear cart & coupon
     state.cart = [];
@@ -2087,130 +2097,209 @@ DB.init();
     });
   }
 
+  // Realtime Sound Chime & Toast Notification Generator
+  function playNewOrderSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const playTone = (freq, time, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + time);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + time);
+        osc.stop(ctx.currentTime + time + duration);
+      };
+      playTone(523.25, 0, 0.15);   // C5
+      playTone(659.25, 0.12, 0.15); // E5
+      playTone(783.99, 0.24, 0.35); // G5
+    } catch (e) {
+      console.warn("Audio Context playback prevented:", e);
+    }
+  }
+
+  function showOrderNotificationToast(order) {
+    playNewOrderSound();
+    const container = document.getElementById("toast-notification-container");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.innerHTML = `
+      <div style="font-size: 1.8rem; line-height: 1;">🔔</div>
+      <div style="flex: 1;">
+        <strong style="display: block; font-size: 0.92rem; color: var(--text-main);">🔥 New Order Received!</strong>
+        <span style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-top: 0.1rem;">
+          Order <strong>${order.id}</strong> by <strong>${order.customer.firstName} ${order.customer.lastName}</strong> ($${order.totals.total.toFixed(2)})
+        </span>
+      </div>
+      <button type="button" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); padding: 0 0.2rem;" onclick="this.parentElement.remove()">&times;</button>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(100%)";
+      toast.style.transition = "all 0.4s ease";
+      setTimeout(() => toast.remove(), 400);
+    }, 7000);
+  }
+
   function printOrderInvoice(order) {
     const printWindow = window.open("", "_blank");
     const itemsHtml = order.items.map(item => `
       <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left;">
           <strong>${item.name}</strong><br>
-          <small style="color: #666;">Color: ${item.color} | Size: ${item.size} | Material: ${item.material}</small>
+          <small style="color: #64748b;">Color: ${item.color} | Size: ${item.size} | Material: ${item.material}</small>
         </td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$${item.price.toFixed(2)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$${(item.price * item.qty).toFixed(2)}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.qty}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${item.price.toFixed(2)}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">$${(item.price * item.qty).toFixed(2)}</td>
       </tr>
     `).join("");
 
-    const discountRow = order.totals.discount > 0 ? `
+    const discountRow = (order.totals.discount && order.totals.discount > 0) ? `
       <tr>
-        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Discount:</td>
-        <td style="padding: 8px; text-align: right; color: #dc2626;">-$${order.totals.discount.toFixed(2)}</td>
+        <td colspan="3" style="padding: 8px 12px; text-align: right; color: #64748b;">Coupon Discount (${order.totals.couponCode || 'Promo'}):</td>
+        <td style="padding: 8px 12px; text-align: right; color: #dc2626; font-weight: 600;">-$${order.totals.discount.toFixed(2)}</td>
       </tr>
     ` : "";
 
     const shippingRow = `
       <tr>
-        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">Shipping:</td>
-        <td style="padding: 8px; text-align: right;">$${order.totals.shipping.toFixed(2)}</td>
+        <td colspan="3" style="padding: 8px 12px; text-align: right; color: #64748b;">Shipping Fee:</td>
+        <td style="padding: 8px 12px; text-align: right; font-weight: 500;">$${order.totals.shipping.toFixed(2)}</td>
       </tr>
     `;
 
-    const codSurchargeRow = order.totals.surcharge > 0 ? `
+    const surchargeRow = (order.totals.surcharge && order.totals.surcharge > 0) ? `
       <tr>
-        <td colspan="3" style="padding: 8px; text-align: right; font-weight: bold;">COD Fee:</td>
-        <td style="padding: 8px; text-align: right;">$${order.totals.surcharge.toFixed(2)}</td>
+        <td colspan="3" style="padding: 8px 12px; text-align: right; color: #64748b;">COD Surcharge:</td>
+        <td style="padding: 8px 12px; text-align: right; font-weight: 500;">$${order.totals.surcharge.toFixed(2)}</td>
       </tr>
     ` : "";
 
+    const delStatus = order.deliveryStatus || order.status || "Pending";
+    const payStatus = order.paymentStatus || "Unpaid";
+
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
           <title>Invoice - ${order.id}</title>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 40px; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { margin: 0; color: #4f46e5; font-size: 24px; }
-            .meta-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
-            .meta-table td { padding: 5px 0; font-size: 14px; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 40px; background: #ffffff; line-height: 1.5; }
+            .invoice-box { max-width: 800px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-title { font-size: 26px; font-weight: 800; color: #4f46e5; margin: 0; }
+            .logo-subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+            .invoice-title { font-size: 22px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: right; }
+            .order-id { font-size: 14px; font-weight: 700; color: #4f46e5; margin-top: 4px; text-align: right; }
+            
+            .grid { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
+            .card { flex: 1; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9; }
+            .card-title { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #4f46e5; letter-spacing: 0.5px; margin-bottom: 8px; }
+            .card-text { font-size: 13px; color: #334155; }
+
+            .badges { display: flex; gap: 12px; margin-bottom: 25px; }
+            .badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+            .badge-del { background: #e0e7ff; color: #4338ca; }
+            .badge-pay { background: #d1fae5; color: #065f46; }
+            .badge-unpaid { background: #fee2e2; color: #991b1b; }
+
             .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .items-table th { background: #f3f4f6; padding: 12px 10px; text-align: left; font-size: 14px; border-bottom: 2px solid #e5e7eb; }
-            .items-table td { font-size: 14px; }
-            .totals-table { float: right; width: 300px; margin-top: 20px; }
-            .totals-table td { padding: 5px 0; }
-            .footer { margin-top: 100px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+            .items-table th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            .items-table td { font-size: 13px; }
+
+            .totals-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .grand-total { font-size: 18px; font-weight: 800; color: #4f46e5; border-top: 2px solid #4f46e5; padding-top: 10px; }
+
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
             @media print {
-              body { margin: 20px; }
+              body { margin: 0; background: none; }
+              .invoice-box { border: none; box-shadow: none; padding: 0; }
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div>
-              <h1>PixelPop Print Shop</h1>
-              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">3D Printing & Design Studio</p>
+          <div class="invoice-box">
+            <div class="header">
+              <div>
+                <div class="logo-title">PixelPop 3D Print Shop</div>
+                <div class="logo-subtitle">High-Precision Fabrication & Custom Prints</div>
+              </div>
+              <div>
+                <div class="invoice-title">Official Invoice</div>
+                <div class="order-id">#${order.id}</div>
+              </div>
             </div>
-            <div style="text-align: right;">
-              <h2 style="margin: 0; color: #333; font-size: 20px;">INVOICE</h2>
-              <p style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">Order ID: ${order.id}</p>
+
+            <div class="badges">
+              <div class="badge badge-del">🚚 Delivery Status: ${delStatus.toUpperCase()}</div>
+              <div class="badge ${payStatus === 'Paid' ? 'badge-pay' : 'badge-unpaid'}">💳 Payment Status: ${payStatus.toUpperCase()}</div>
             </div>
-          </div>
 
-          <table class="meta-table">
-            <tr>
-              <td style="width: 50%; vertical-align: top;">
-                <strong style="color: #4f46e5;">Customer Information:</strong><br>
-                ${order.customer.firstName} ${order.customer.lastName}<br>
-                Phone: ${order.customer.phone || 'N/A'}<br>
-                Email: ${order.customer.email || 'N/A'}
-              </td>
-              <td style="width: 50%; vertical-align: top; text-align: right;">
-                <strong style="color: #4f46e5;">Shipping Address:</strong><br>
-                ${order.customer.address}<br>
-                ${order.customer.city}<br>
-                ZIP: ${order.customer.zip || 'N/A'}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-top: 15px;">
-                <strong>Date Placed:</strong> ${order.datePlaced}<br>
-                <strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}
-              </td>
-              <td style="padding-top: 15px; text-align: right;">
-                <strong>Status:</strong> ${order.status.toUpperCase()}
-              </td>
-            </tr>
-          </table>
+            <div class="grid">
+              <div class="card">
+                <div class="card-title">Customer Contact</div>
+                <div class="card-text">
+                  <strong>${order.customer.firstName} ${order.customer.lastName}</strong><br>
+                  Phone: ${order.customer.phone || 'N/A'}<br>
+                  Email: ${order.customer.email || 'N/A'}
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title">Delivery Address</div>
+                <div class="card-text">
+                  ${order.customer.address}<br>
+                  ${order.customer.city} (ZIP: ${order.customer.zip || 'N/A'})
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title">Order Context</div>
+                <div class="card-text">
+                  Date: ${order.datePlaced}<br>
+                  Payment: ${order.paymentMethod.toUpperCase()}<br>
+                  ${order.paymentReference ? `Ref: <strong>${order.paymentReference}</strong>` : ''}
+                </div>
+              </div>
+            </div>
 
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th style="text-align: left;">Item Description</th>
-                <th style="text-align: center; width: 80px;">Qty</th>
-                <th style="text-align: right; width: 100px;">Unit Price</th>
-                <th style="text-align: right; width: 100px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-              ${discountRow}
-              ${shippingRow}
-              ${codSurchargeRow}
-              <tr>
-                <td colspan="3" style="padding: 10px 8px; text-align: right; font-size: 16px; font-weight: bold; border-top: 2px solid #4f46e5;">Total Cost:</td>
-                <td style="padding: 10px 8px; text-align: right; font-size: 16px; font-weight: bold; color: #4f46e5; border-top: 2px solid #4f46e5;">$${order.totals.total.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">3D Printed Item</th>
+                  <th style="text-align: center; width: 60px;">Qty</th>
+                  <th style="text-align: right; width: 100px;">Price</th>
+                  <th style="text-align: right; width: 100px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                ${discountRow}
+                ${shippingRow}
+                ${surchargeRow}
+                <tr>
+                  <td colspan="3" style="padding: 12px; text-align: right; font-size: 16px; font-weight: 700; border-top: 2px solid #4f46e5;">Grand Total:</td>
+                  <td style="padding: 12px; text-align: right; font-size: 16px; font-weight: 800; color: #4f46e5; border-top: 2px solid #4f46e5;">$${order.totals.total.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
 
-          <div class="footer">
-            <p>Thank you for shopping with PixelPop Print Shop!</p>
-            <p>If you have any questions about this order, please contact support.</p>
+            <div class="footer">
+              <p style="margin: 0 0 4px 0;">Thank you for your business with PixelPop 3D Prints!</p>
+              <p style="margin: 0;">For inquiries, email support@pixelpop.com or call +961 70 123 456</p>
+            </div>
           </div>
 
           <script>
             window.onload = function() {
               window.print();
-              setTimeout(function() { window.close(); }, 500);
+              setTimeout(function() { window.close(); }, 800);
             };
           </script>
         </body>
@@ -2222,7 +2311,7 @@ DB.init();
   // Update bell notification badge
   function updateNotificationBell() {
     const orders = DB.getOrders();
-    const pendingOrdersCount = orders.filter(o => o.status.toLowerCase() === "pending").length;
+    const pendingOrdersCount = orders.filter(o => (o.deliveryStatus || o.status || "").toLowerCase() === "pending").length;
     const badge = document.getElementById("db-bell-badge");
     const bell = document.getElementById("db-notification-bell");
     if (badge && bell) {
@@ -2241,19 +2330,21 @@ DB.init();
     const orders = DB.getOrders();
 
     if (orders.length === 0) {
-      DOM.dashboardOrdersTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No orders registered yet. Make a purchase on the storefront!</td></tr>`;
+      DOM.dashboardOrdersTbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No orders registered yet. Make a purchase on the storefront!</td></tr>`;
       return;
     }
 
     DOM.dashboardOrdersTbody.innerHTML = orders.map(o => {
-      const itemsListText = o.items.map(i => `${i.name} x${i.qty} (${i.color})`).join(", ");
+      const delStatus = o.deliveryStatus || o.status || "Pending";
+      const payStatus = o.paymentStatus || "Unpaid";
+
       const itemsListHtml = o.items.map(i => {
         const prod = DB.getProductById(i.productId);
         const dlLink = (prod && prod.modelUrl) 
-          ? ` <a href="${prod.modelUrl}" target="_blank" title="Download 3D Model File" style="color: var(--accent-indigo); text-decoration: underline; font-weight: bold; margin-left: 0.4rem;">[Download File 💾]</a>` 
-          : "";
-        return `${i.name} x${i.qty} (${i.color})${dlLink}`;
-      }).join("<br>");
+          ? `<br><a href="${prod.modelUrl}" target="_blank" class="btn-model-link" title="Open MakerWorld / Creality source page">📥 Download 3D Model 💾</a>` 
+          : `<br><button type="button" class="btn-model-link edit-model-link-btn" data-prod-id="${i.productId}" style="background: rgba(0,0,0,0.04); color: var(--text-muted); border-color: var(--glass-border);">+ Add Model Link 🔗</button>`;
+        return `<div style="margin-bottom: 0.4rem;"><strong>${i.name}</strong> x${i.qty} (${i.color}, ${i.size}, ${i.material})${dlLink}</div>`;
+      }).join("");
       
       let paymentLabel = "";
       if (o.paymentMethod === "cod") {
@@ -2273,12 +2364,9 @@ DB.init();
           <td><strong>${o.id}</strong></td>
           <td>
             <strong>${o.customer.firstName} ${o.customer.lastName}</strong>
-            <div style="display: flex; gap: 0.3rem; margin-top: 0.35rem;">
-              <button type="button" class="btn-view-client" data-id="${o.id}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; border-radius: 6px; background: rgba(79, 70, 229, 0.08); color: var(--accent-indigo); border: 1px solid rgba(79, 70, 229, 0.15); cursor: pointer; transition: all 0.2s ease;">Info 🔍</button>
-              <button type="button" class="btn-print-order" data-id="${o.id}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; border-radius: 6px; background: rgba(14, 165, 233, 0.08); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.15); cursor: pointer; transition: all 0.2s ease;">Print 🖨️</button>
-            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem;">${o.customer.phone || o.customer.email}</div>
           </td>
-          <td style="max-width: 280px; font-size: 0.85rem; line-height: 1.4;">${itemsListHtml}</td>
+          <td style="max-width: 300px; font-size: 0.85rem; line-height: 1.4;">${itemsListHtml}</td>
           <td>${o.datePlaced}</td>
           <td>
             <div style="font-weight: 500;">${paymentLabel}</div>
@@ -2286,14 +2374,29 @@ DB.init();
           </td>
           <td><strong>$${o.totals.total.toFixed(2)}</strong></td>
           <td>
-            <span class="order-badge ${o.status.toLowerCase()}">${o.status}</span>
+            <span class="order-badge ${delStatus.toLowerCase().replace(/\s+/g, '-')}" style="display: inline-block; margin-bottom: 0.4rem;">${delStatus}</span>
+            <select class="order-delivery-select form-input" data-id="${o.id}" style="padding: 0.25rem 0.5rem; font-size: 0.78rem; cursor: pointer;">
+              <option value="Pending" ${delStatus === 'Pending' ? 'selected' : ''}>Pending Queue</option>
+              <option value="Printing" ${delStatus === 'Printing' ? 'selected' : ''}>On Print Bed</option>
+              <option value="Quality Check" ${delStatus === 'Quality Check' ? 'selected' : ''}>Quality Check</option>
+              <option value="Shipped" ${delStatus === 'Shipped' ? 'selected' : ''}>Shipped / Dispatched</option>
+              <option value="Delivered" ${delStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+              <option value="Cancelled" ${delStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
           </td>
           <td>
-            <select class="order-action-select" data-id="${o.id}">
-              <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Queue (Pending)</option>
-              <option value="Printing" ${o.status === 'Printing' ? 'selected' : ''}>Start Printing</option>
-              <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Mark Shipped</option>
+            <span class="order-badge ${payStatus.toLowerCase()}" style="display: inline-block; margin-bottom: 0.4rem;">${payStatus}</span>
+            <select class="order-payment-select form-input" data-id="${o.id}" style="padding: 0.25rem 0.5rem; font-size: 0.78rem; cursor: pointer;">
+              <option value="Unpaid" ${payStatus === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
+              <option value="Paid" ${payStatus === 'Paid' ? 'selected' : ''}>Paid ✓</option>
+              <option value="Refunded" ${payStatus === 'Refunded' ? 'selected' : ''}>Refunded</option>
             </select>
+          </td>
+          <td>
+            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+              <button type="button" class="btn-print-order" data-id="${o.id}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: rgba(79, 70, 229, 0.1); color: var(--accent-indigo); border: 1px solid rgba(79, 70, 229, 0.2); cursor: pointer;">📄 PDF Invoice 🖨️</button>
+              <button type="button" class="btn-view-client" data-id="${o.id}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2); cursor: pointer;">Customer Info 🔍</button>
+            </div>
           </td>
         </tr>
       `;
@@ -2307,6 +2410,14 @@ DB.init();
         if (order) {
           printOrderInvoice(order);
         }
+      });
+    });
+
+    // Add Model Link click listener to easily edit product model URL
+    document.querySelectorAll(".edit-model-link-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const prodId = btn.dataset.prodId;
+        openProductCrudModal(prodId);
       });
     });
 
@@ -2348,7 +2459,8 @@ DB.init();
               Order ID: <strong>${order.id}</strong><br>
               Placed On: ${order.datePlaced}<br>
               Payment Method: ${order.paymentMethod.toUpperCase()}<br>
-              Shipping Option: ${order.shippingMethod ? order.shippingMethod.toUpperCase() : 'STANDARD'}
+              Delivery Status: ${order.deliveryStatus || order.status}<br>
+              Payment Status: ${order.paymentStatus || 'Unpaid'}
             </span>
           </div>
         `;
@@ -2357,13 +2469,13 @@ DB.init();
       });
     });
 
-    // Table drop-down updates
-    document.querySelectorAll(".order-action-select").forEach(sel => {
+    // Delivery Status drop-down updates
+    document.querySelectorAll(".order-delivery-select").forEach(sel => {
       sel.addEventListener("change", (e) => {
         const id = sel.dataset.id;
-        const newStatus = e.target.value;
+        const newDeliveryStatus = e.target.value;
 
-        DB.updateOrderStatus(id, newStatus);
+        DB.updateOrderDeliveryStatus(id, newDeliveryStatus);
         renderDashboardOrders();
         updateNotificationBell();
         updateOverviewStats();
@@ -2371,14 +2483,14 @@ DB.init();
         // Send simulated notification email matching status update
         const order = DB.getOrders().find(o => o.id === id);
         if (order) {
-          if (newStatus === "Printing") {
+          if (newDeliveryStatus === "Printing") {
             const totalWeight = order.items.reduce((sum, item) => sum + (parseInt(item.weight) || 0) * item.qty, 0);
             addSimulatedEmail(
               "production@pixelpop.com",
               `Build Commenced - Printing Order ${order.id}`,
               `Hi ${order.customer.firstName},\n\nWe have manually started printing your order ${order.id} on our industrial SLA print bed.\n\nDetails:\nBuild capacity: ${totalWeight}g.\n\nKeep an eye on this space for tracking details!`
             );
-          } else if (newStatus === "Shipped") {
+          } else if (newDeliveryStatus === "Shipped") {
             addSimulatedEmail(
               "shipping@pixelpop.com",
               `Build Dispatched - Order ${order.id} is Shipped`,
@@ -2386,6 +2498,18 @@ DB.init();
             );
           }
         }
+      });
+    });
+
+    // Payment Status drop-down updates
+    document.querySelectorAll(".order-payment-select").forEach(sel => {
+      sel.addEventListener("change", (e) => {
+        const id = sel.dataset.id;
+        const newPaymentStatus = e.target.value;
+
+        DB.updateOrderPaymentStatus(id, newPaymentStatus);
+        renderDashboardOrders();
+        updateOverviewStats();
       });
     });
   }
@@ -4209,6 +4333,141 @@ DB.init();
       renderDashboardCoupons();
       alert(`Coupon "${code}" created successfully! 🏷️`);
     });
+  }
+
+  // Customer Order Tracking Logic
+  function initTrackOrderLogic() {
+    if (DOM.navTrack) {
+      DOM.navTrack.addEventListener("click", () => {
+        if (DOM.trackOrderModalOverlay) {
+          DOM.trackOrderModalOverlay.classList.add("open");
+        }
+      });
+    }
+
+    if (DOM.closeTrackOrderBtn) {
+      DOM.closeTrackOrderBtn.addEventListener("click", () => {
+        if (DOM.trackOrderModalOverlay) {
+          DOM.trackOrderModalOverlay.classList.remove("open");
+        }
+      });
+    }
+
+    if (DOM.trackOrderForm) {
+      DOM.trackOrderForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const rawQuery = DOM.trackInputQuery.value.trim();
+        if (!rawQuery) return;
+
+        const queryLower = rawQuery.toLowerCase();
+        const queryCleanPhone = rawQuery.replace(/[^0-9]/g, "");
+
+        const orders = DB.getOrders();
+        const matchedOrders = orders.filter(o => {
+          const emailMatch = o.customer.email && o.customer.email.toLowerCase().includes(queryLower);
+          const phoneMatch = o.customer.phone && queryCleanPhone.length >= 4 && o.customer.phone.replace(/[^0-9]/g, "").includes(queryCleanPhone);
+          const idMatch = o.id.toLowerCase().includes(queryLower);
+          return emailMatch || phoneMatch || idMatch;
+        });
+
+        if (matchedOrders.length === 0) {
+          DOM.trackOrderResults.innerHTML = `
+            <div style="text-align: center; padding: 2.5rem; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed var(--glass-border);">
+              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
+              <h4 style="margin-bottom: 0.4rem;">No Orders Found</h4>
+              <p class="text-muted" style="font-size: 0.88rem;">We couldn't find any orders matching "<strong>${rawQuery}</strong>". Please check your email address or phone number and try again.</p>
+            </div>
+          `;
+          return;
+        }
+
+        DOM.trackOrderResults.innerHTML = matchedOrders.map(o => {
+          const delStatus = o.deliveryStatus || o.status || "Pending";
+          const payStatus = o.paymentStatus || "Unpaid";
+
+          // Calculate step indexes for visual progress bar
+          // Steps: 1: Placed, 2: Printing, 3: Quality Check, 4: Shipped / Delivered
+          let currentStep = 1;
+          if (delStatus === "Printing") currentStep = 2;
+          else if (delStatus === "Quality Check") currentStep = 3;
+          else if (delStatus === "Shipped" || delStatus === "Delivered") currentStep = 4;
+
+          const progressFillWidth = currentStep === 1 ? '0%' : (currentStep === 2 ? '33%' : (currentStep === 3 ? '66%' : '100%'));
+
+          const itemsText = o.items.map(i => `
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.4rem 0; border-bottom: 1px solid var(--glass-border);">
+              <span><strong>${i.name}</strong> (${i.color}, ${i.size}, ${i.material}) x${i.qty}</span>
+              <span style="font-weight: 600;">$${(i.price * i.qty).toFixed(2)}</span>
+            </div>
+          `).join("");
+
+          return `
+            <div class="glass-panel" style="padding: 1.5rem; border: 1px solid var(--glass-border); border-radius: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                  <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 0.2rem 0;">Order #${o.id}</h3>
+                  <span class="text-muted" style="font-size: 0.82rem;">Placed on ${o.datePlaced}</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span class="order-badge ${delStatus.toLowerCase().replace(/\s+/g, '-')}">${delStatus}</span>
+                  <span class="order-badge ${payStatus.toLowerCase()}">${payStatus}</span>
+                </div>
+              </div>
+
+              <!-- Tracking Progress Bar Timeline -->
+              <div class="tracking-progress-container">
+                <div class="tracking-progress-line">
+                  <div class="tracking-progress-fill" style="width: ${progressFillWidth};"></div>
+                </div>
+                <div class="tracking-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}">
+                  <div class="tracking-step-dot">1</div>
+                  <span class="tracking-step-label">Placed</span>
+                </div>
+                <div class="tracking-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}">
+                  <div class="tracking-step-dot">2</div>
+                  <span class="tracking-step-label">Printing</span>
+                </div>
+                <div class="tracking-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}">
+                  <div class="tracking-step-dot">3</div>
+                  <span class="tracking-step-label">Quality Check</span>
+                </div>
+                <div class="tracking-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}">
+                  <div class="tracking-step-dot">4</div>
+                  <span class="tracking-step-label">${delStatus === 'Delivered' ? 'Delivered' : 'Shipped'}</span>
+                </div>
+              </div>
+
+              <!-- Order Items List -->
+              <div style="margin-top: 1.2rem;">
+                <strong style="font-size: 0.85rem; color: var(--accent-indigo); text-transform: uppercase; letter-spacing: 0.05em;">3D Printed Items</strong>
+                <div style="margin-top: 0.4rem;">
+                  ${itemsText}
+                </div>
+              </div>
+
+              <!-- Customer & Invoice Actions -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                <div>
+                  <span style="font-size: 0.85rem; color: var(--text-muted);">Grand Total: <strong style="color: var(--text-main); font-size: 1.05rem;">$${o.totals.total.toFixed(2)}</strong></span>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm track-print-invoice-btn" data-id="${o.id}" style="padding: 0.4rem 0.9rem; font-size: 0.82rem; border-radius: 8px;">
+                  📄 Download PDF Invoice
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Bind PDF Invoice download buttons in tracking view
+        DOM.trackOrderResults.querySelectorAll(".track-print-invoice-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const orderId = btn.dataset.id;
+            const order = DB.getOrders().find(o => o.id === orderId);
+            if (order) printOrderInvoice(order);
+          });
+        });
+      });
+    }
   }
 
   // INITIALIZE ON RUN

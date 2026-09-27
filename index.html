@@ -24,6 +24,7 @@
             <!-- Dynamically populated by app.js -->
           </div>
         </div>
+        <span class="nav-link" id="nav-track">Track Order 📦</span>
         <span class="nav-link" id="nav-about">About Us</span>
         <span class="nav-link" id="nav-contact">Contact Us</span>
       </nav>
@@ -667,13 +668,14 @@
               <thead>
                 <tr>
                   <th>Order ID</th>
-                  <th>Customer Name</th>
-                  <th>Print Items</th>
+                  <th>Customer Info</th>
+                  <th>Print Items & 3D Model Link</th>
                   <th>Date Placed</th>
                   <th>Payment Method</th>
                   <th>Total Cost</th>
-                  <th>Build Status</th>
-                  <th>System Actions</th>
+                  <th>Delivery Status</th>
+                  <th>Payment Status</th>
+                  <th>Actions & PDF Invoice</th>
                 </tr>
               </thead>
               <tbody id="dashboard-orders-tbody">
@@ -1372,8 +1374,9 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="crud-model-url">3D Model Download Link (Admin Only)</label>
-              <input type="url" class="form-input" id="crud-model-url" placeholder="e.g. https://thingiverse.com/... or Google Drive URL">
+              <label class="form-label" for="crud-model-url">Source 3D Model Link (MakerWorld / Creality / Printables - Admin Only)</label>
+              <input type="url" class="form-input" id="crud-model-url" placeholder="e.g. https://makerworld.com/en/models/12345 or https://crealitycloud.com/model-detail/...">
+              <small class="text-muted" style="display: block; margin-top: 0.3rem; font-size: 0.8rem;">🔒 Internal admin link for downloading 3D files. Never shown to customers.</small>
             </div>
 
             <div class="form-group">
@@ -1557,6 +1560,33 @@
       </div>
     </div>
   </div>
+
+  <!-- CUSTOMER ORDER TRACKING MODAL OVERLAY -->
+  <div class="modal-overlay" id="track-order-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 750px; padding: 2.5rem; border: none; max-height: 90vh; overflow-y: auto;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <span style="font-family: var(--font-display); font-size: 1.35rem; font-weight: bold; color: var(--text-main);">📦 Track Your Order</span>
+        <button class="close-modal-btn" id="close-track-order-btn">&times;</button>
+      </div>
+
+      <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+        Enter your <strong>Email Address</strong> or <strong>Phone Number</strong> (or Order ID e.g. PIXEL-123456) to view live print status, delivery progress, and download your invoice:
+      </p>
+
+      <form id="track-order-form" style="display: flex; gap: 0.8rem; margin-bottom: 2rem;">
+        <input type="text" id="track-input-query" class="form-input" placeholder="e.g. john.doe@example.com or +961 70 123 456" required style="flex: 1;">
+        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Track Order 🔍</button>
+      </form>
+
+      <!-- Results Container -->
+      <div id="track-order-results" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Dynamically populated matching orders -->
+      </div>
+    </div>
+  </div>
+
+  <!-- REALTIME TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
   <!-- DB Seed & State Application -->
   <script type="module" src="data.js"></script>

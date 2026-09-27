@@ -2744,4 +2744,161 @@ header {
   filter: blur(0.5px);
 }
 
+/* Admin Model Download Button */
+.btn-model-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(124, 58, 237, 0.12));
+  color: var(--accent-indigo);
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+.btn-model-link:hover {
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Toast Notifications */
+.toast-notification {
+  pointer-events: auto;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--accent-green);
+  border-radius: 12px;
+  padding: 1rem 1.4rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 320px;
+  max-width: 420px;
+  animation: toast-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(100%) scale(0.9); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Order Status Badges */
+.order-badge.unpaid {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.order-badge.paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.order-badge.refunded {
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+.order-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.order-badge.printing {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.order-badge.shipped {
+  background: rgba(124, 58, 237, 0.15);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+.order-badge.delivered {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.order-badge.cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Order Tracking Progress Bar Timeline */
+.tracking-progress-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin: 1.8rem 0;
+  padding: 0 1rem;
+}
+.tracking-progress-line {
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  background: var(--glass-border);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+.tracking-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo));
+  transition: width 0.5s ease;
+  border-radius: 4px;
+}
+.tracking-step {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-card);
+  padding: 0 0.4rem;
+}
+.tracking-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--glass-border);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  transition: var(--transition-smooth);
+}
+.tracking-step.active .tracking-step-dot {
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+  border-color: var(--accent-indigo);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(79, 70, 229, 0.4);
+}
+.tracking-step.completed .tracking-step-dot {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #ffffff;
+}
+.tracking-step-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.tracking-step.active .tracking-step-label,
+.tracking-step.completed .tracking-step-label {
+  color: var(--text-main);
+}
+
+
 

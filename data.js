@@ -609,7 +609,27 @@ const DB = {
 
   getOrders() {
     this.init();
-    return JSON.parse(localStorage.getItem("orders"));
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+    let updated = false;
+    orders = orders.map(o => {
+      if (!o.deliveryStatus) {
+        o.deliveryStatus = o.status || "Pending";
+        updated = true;
+      }
+      if (!o.status) {
+        o.status = o.deliveryStatus;
+        updated = true;
+      }
+      if (!o.paymentStatus) {
+        o.paymentStatus = (o.paymentMethod === "cod" && o.deliveryStatus !== "Delivered") ? "Unpaid" : "Paid";
+        updated = true;
+      }
+      return o;
+    });
+    if (updated) {
+      localStorage.setItem("orders", JSON.stringify(orders));
+    }
+    return orders;
   },
 
   saveOrders(orders) {
@@ -618,6 +638,10 @@ const DB = {
   },
 
   createOrder(order) {
+    if (!order.deliveryStatus) order.deliveryStatus = order.status || "Pending";
+    if (!order.status) order.status = order.deliveryStatus;
+    if (!order.paymentStatus) order.paymentStatus = "Unpaid";
+    
     const orders = this.getOrders();
     orders.unshift(order); // Put new orders at the top
     this.saveOrders(orders);
@@ -630,6 +654,30 @@ const DB = {
     const order = orders.find(o => o.id === orderId);
     if (order) {
       order.status = status;
+      order.deliveryStatus = status;
+      this.saveOrders(orders);
+      setDoc(doc(db, "orders", orderId), order).catch(console.error);
+    }
+    return order;
+  },
+
+  updateOrderDeliveryStatus(orderId, deliveryStatus) {
+    const orders = this.getOrders();
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      order.deliveryStatus = deliveryStatus;
+      order.status = deliveryStatus;
+      this.saveOrders(orders);
+      setDoc(doc(db, "orders", orderId), order).catch(console.error);
+    }
+    return order;
+  },
+
+  updateOrderPaymentStatus(orderId, paymentStatus) {
+    const orders = this.getOrders();
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      order.paymentStatus = paymentStatus;
       this.saveOrders(orders);
       setDoc(doc(db, "orders", orderId), order).catch(console.error);
     }
