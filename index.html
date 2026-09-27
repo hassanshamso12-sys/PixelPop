@@ -28,14 +28,66 @@
         <span class="nav-link" id="nav-about">About Us</span>
         <span class="nav-link" id="nav-contact">Contact Us</span>
       </nav>
-      <div class="header-actions">
+      <div class="header-actions" style="display: flex; gap: 0.8rem; align-items: center;">
         <button class="cart-icon-btn" id="cart-toggle-btn" aria-label="Open Shopping Cart">
           🛒
           <span class="cart-count" id="cart-count-badge">0</span>
         </button>
+        <button class="hamburger-menu-btn" id="mobile-hamburger-btn" aria-label="Toggle Navigation Menu">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
       </div>
     </div>
   </header>
+
+  <!-- MOBILE SIDEBAR NAVIGATION DRAWER -->
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <aside class="mobile-nav-drawer" id="mobile-nav-drawer">
+    <div class="mobile-nav-header">
+      <div class="logo" id="mobile-logo-btn">
+        <div class="logo-icon">P</div>
+        <span>Pixel<span class="text-gradient">Pop</span></span>
+      </div>
+      <button class="close-modal-btn" id="close-mobile-nav-btn" aria-label="Close Navigation Menu">&times;</button>
+    </div>
+
+    <div class="mobile-nav-body">
+      <button class="mobile-nav-item active" id="mobile-nav-home">
+        <span>🏠 Home</span>
+      </button>
+      <button class="mobile-nav-item" id="mobile-nav-products">
+        <span>📦 All Products</span>
+      </button>
+      
+      <div class="mobile-nav-accordion">
+        <button class="mobile-accordion-trigger" id="mobile-categories-trigger">
+          <span>📁 Browse Categories</span>
+          <span id="mobile-categories-arrow" style="font-size: 0.75rem; transition: transform 0.3s;">▼</span>
+        </button>
+        <div class="mobile-accordion-content" id="mobile-categories-list" style="display: none;">
+          <!-- Dynamically populated in app.js -->
+        </div>
+      </div>
+
+      <button class="mobile-nav-item" id="mobile-nav-track">
+        <span>🔒 Track Order & Reorder 📦</span>
+      </button>
+      <button class="mobile-nav-item" id="mobile-nav-about">
+        <span>ℹ️ About Us</span>
+      </button>
+      <button class="mobile-nav-item" id="mobile-nav-contact">
+        <span>✉️ Contact Us</span>
+      </button>
+      
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+        <button class="mobile-nav-item admin-link" id="mobile-nav-dashboard">
+          <span>🔐 Admin Console</span>
+        </button>
+      </div>
+    </div>
+  </aside>
 
   <!-- STOREFRONT SECTION -->
   <main class="container" id="storefront-page">
@@ -424,7 +476,7 @@
               <label class="form-label" for="chk-tracking-pin" style="color: var(--accent-indigo); font-weight: 700;">🔒 Secret 4-Digit Tracking PIN</label>
               <div style="display: flex; gap: 1rem; align-items: center;">
                 <input type="text" maxlength="4" pattern="\d{4}" class="form-input" id="chk-tracking-pin" required placeholder="1234" style="letter-spacing: 4px; font-weight: bold; text-align: center; max-width: 140px; font-size: 1.1rem;">
-                <small class="text-muted" style="font-size: 0.8rem; line-height: 1.4;">Set a 4-digit secret PIN to track your order status securely and access your reorder history.</small>
+                <small class="text-muted" id="chk-pin-hint" style="font-size: 0.8rem; line-height: 1.4;">Set a 4-digit secret PIN to track your order status securely and access your reorder history.</small>
               </div>
             </div>
             
@@ -596,7 +648,9 @@
           <div class="db-menu-item" data-target="db-theme-settings">🎨 Theme Settings</div>
         </div>
 
-        <button class="btn btn-secondary" style="margin-top: auto;" id="logout-btn">← Back to Store</button>
+        <button class="btn btn-primary" style="margin-top: auto; background: var(--accent-red); border-color: var(--accent-red); justify-content: center; width: 100%; font-weight: 600;" id="logout-btn">
+          🚪 Logout Admin
+        </button>
       </aside>
 
       <!-- Dashboard Central Content -->
@@ -1388,7 +1442,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="crud-image-upload">Product Images (Upload one or more to Storage)</label>
+              <label class="form-label" for="crud-image-upload">Product Images (Upload one or more)</label>
               <div style="display: flex; gap: 1rem; align-items: center;">
                 <input type="file" id="crud-image-upload" accept="image/*" class="form-input" style="padding: 0.4rem 0.8rem;" multiple>
                 <div id="image-upload-status" style="font-size: 0.85rem; font-weight: 500; color: var(--accent-indigo);"></div>

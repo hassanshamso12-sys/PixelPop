@@ -460,17 +460,6 @@ const DB = {
       if (!productsSnap.empty) {
         const list = [];
         productsSnap.forEach(d => list.push(d.data()));
-        
-        // Merge missing default products into list so default catalog is always complete
-        let mergedAny = false;
-        DEFAULT_PRODUCTS.forEach(defProd => {
-          if (!list.some(p => p.id === defProd.id)) {
-            list.push(defProd);
-            mergedAny = true;
-            setDoc(doc(db, "products", defProd.id), defProd);
-          }
-        });
-
         localStorage.setItem("products", JSON.stringify(list));
       } else {
         this.init();
@@ -497,37 +486,9 @@ const DB = {
   init() {
     if (!localStorage.getItem("categories")) {
       localStorage.setItem("categories", JSON.stringify(DEFAULT_CATEGORIES));
-    } else {
-      let cats = JSON.parse(localStorage.getItem("categories"));
-      let updated = false;
-      const requiredCats = ["super-heros", "politics-religious", "stationary"];
-      requiredCats.forEach(catId => {
-        if (!cats.some(c => c.id === catId)) {
-          const match = DEFAULT_CATEGORIES.find(c => c.id === catId);
-          if (match) {
-            cats.push(match);
-            updated = true;
-          }
-        }
-      });
-      if (updated) {
-        localStorage.setItem("categories", JSON.stringify(cats));
-      }
     }
     if (!localStorage.getItem("products")) {
       localStorage.setItem("products", JSON.stringify(DEFAULT_PRODUCTS));
-    } else {
-      let prods = JSON.parse(localStorage.getItem("products")) || [];
-      let updated = false;
-      DEFAULT_PRODUCTS.forEach(defProd => {
-        if (!prods.some(p => p.id === defProd.id)) {
-          prods.push(defProd);
-          updated = true;
-        }
-      });
-      if (updated || prods.length === 0) {
-        localStorage.setItem("products", JSON.stringify(prods.length > 0 ? prods : DEFAULT_PRODUCTS));
-      }
     }
     if (!localStorage.getItem("orders")) {
       localStorage.setItem("orders", JSON.stringify([]));

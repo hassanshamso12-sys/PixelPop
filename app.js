@@ -11,6 +11,66 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const storage = getStorage(firebaseApp);
 
+// Convert file to optimized persistent Base64 Data URL using HTML5 Canvas
+function fileToBase64DataUrl(file, maxDimension = 1200, quality = 0.85) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+        resolve(canvas.toDataURL(mimeType, quality));
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(URL.createObjectURL(file));
+    reader.readAsDataURL(file);
+  });
+}
+
+// Unified image upload helper: tries Firebase Storage first, falls back to persistent Base64 Data URL
+async function uploadImageFile(file, folder = "products", maxDimension = 1200) {
+  const fileExtension = file.name.split('.').pop() || 'jpg';
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+  
+  const uploadPromise = async () => {
+    const storageRef = ref(storage, fileName);
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
+  };
+
+  const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
+  try {
+    const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(4000)]);
+    return { url: downloadUrl, isStorage: true };
+  } catch (err) {
+    console.warn(`Firebase Storage upload fallback for ${file.name}. Using optimized persistent Base64 image.`, err);
+    const base64Url = await fileToBase64DataUrl(file, maxDimension);
+    return { url: base64Url, isStorage: false };
+  }
+}
+
 // Initialize Database
 DB.init();
 
@@ -1575,10 +1635,29 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
 
     // Build Order Object
     const orderId = `PIXEL-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    // Check if customer already has an established PIN for this email or phone
+    const allOrders = DB.getOrders();
+    const existingOrders = allOrders.filter(o => {
+      const matchEmail = email && o.customer && o.customer.email && o.customer.email.toLowerCase().trim() === email.toLowerCase().trim();
+      const matchPhone = phone && phone.replace(/[^0-9]/g, "").length >= 4 && o.customer && o.customer.phone && o.customer.phone.replace(/[^0-9]/g, "") === phone.replace(/[^0-9]/g, "");
+      return matchEmail || matchPhone;
+    });
+
+    let finalPin = trackingPin;
+    if (existingOrders.length > 0) {
+      // Synchronize PIN across all orders under this customer account
+      existingOrders.forEach(o => {
+        o.trackingPin = finalPin;
+        if (o.customer) o.customer.trackingPin = finalPin;
+        DB.updateOrder(o);
+      });
+    }
+
     const newOrder = {
       id: orderId,
-      customer: { firstName, lastName, email, phone, address, city, zip, trackingPin },
-      trackingPin: trackingPin,
+      customer: { firstName, lastName, email, phone, address, city, zip, trackingPin: finalPin },
+      trackingPin: finalPin,
       items: state.cart.map(item => ({
         productId: item.productId,
         name: item.name,
@@ -1607,7 +1686,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     // Save to Database
     DB.createOrder(newOrder);
 
-    // Play New Order Chime Sound & Toast Alert Notification
+    // Play New Order Chime Sound & Toast Alert Notification (Only inside Admin Dashboard)
     showOrderNotificationToast(newOrder);
 
     // Visual order confirmation
@@ -2208,6 +2287,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
   }
 
   function showOrderNotificationToast(order) {
+    if (!state.isAdminLoggedIn) return; // Only notify & play sound inside Admin Dashboard
     playNewOrderSound();
     const container = document.getElementById("toast-notification-container");
     if (!container) return;
@@ -2827,7 +2907,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     });
   }
 
-  // Handle multiple product images upload to Firebase Storage
+  // Handle multiple product images upload (Storage / Persistent Canvas Data URL)
   const imageUploadInput = document.getElementById("crud-image-upload");
   const imageUrlInput = document.getElementById("crud-image-url");
   const uploadStatus = document.getElementById("image-upload-status");
@@ -2837,48 +2917,23 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
 
-      uploadStatus.textContent = `⏳ Uploading ${files.length} image(s)...`;
+      uploadStatus.textContent = `⏳ Processing ${files.length} image(s)...`;
       uploadStatus.style.color = "var(--accent-indigo)";
 
       let loadedCount = 0;
-      let offlineWarning = false;
 
       for (const file of files) {
-        const localUrl = URL.createObjectURL(file);
-        
-        const uploadPromise = async () => {
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `products/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-          const storageRef = ref(storage, fileName);
-          const snapshot = await uploadBytes(storageRef, file);
-          return await getDownloadURL(snapshot.ref);
-        };
-
-        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-        try {
-          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
-          state.crudGalleryUrls.push(downloadUrl);
-          loadedCount++;
-        } catch (err) {
-          console.warn("Firebase Storage upload failed or timed out. Falling back to local Blob URL:", err);
-          state.crudGalleryUrls.push(localUrl);
-          loadedCount++;
-          offlineWarning = true;
-        }
+        const result = await uploadImageFile(file, "products", 1200);
+        state.crudGalleryUrls.push(result.url);
+        loadedCount++;
       }
 
       if (imageUrlInput) {
         imageUrlInput.value = state.crudGalleryUrls[0] || "";
       }
 
-      if (offlineWarning) {
-        uploadStatus.textContent = "⚠️ Uploaded (Firebase offline preview)";
-        uploadStatus.style.color = "var(--accent-gold)";
-      } else {
-        uploadStatus.textContent = `✅ Successfully uploaded ${loadedCount} images!`;
-        uploadStatus.style.color = "var(--accent-green)";
-      }
+      uploadStatus.textContent = `✅ Successfully added ${loadedCount} image(s)!`;
+      uploadStatus.style.color = "var(--accent-green)";
 
       renderCrudGalleryList();
       imageUploadInput.value = "";
@@ -3011,12 +3066,15 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
   if (DOM.navDashboard) {
     DOM.navDashboard.addEventListener("click", () => changePage("dashboard"));
   }
-  DOM.logoutBtn.addEventListener("click", () => {
-    state.isAdminLoggedIn = false;
-    sessionStorage.removeItem("isAdminLoggedIn");
-    changePage("store");
-    DOM.navHome.classList.add("active");
-  });
+  if (DOM.logoutBtn) {
+    DOM.logoutBtn.addEventListener("click", () => {
+      state.isAdminLoggedIn = false;
+      sessionStorage.removeItem("isAdminLoggedIn");
+      changePage("store");
+      DOM.navHome.classList.add("active");
+      showAppAlert("You have been successfully logged out of the Admin Dashboard.", "Admin Logged Out", "🚪");
+    });
+  }
 
   if (DOM.adminLoginForm) {
     DOM.adminLoginForm.addEventListener("submit", (e) => {
@@ -3418,30 +3476,11 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
         uploadStatus.textContent = "⏳ Uploading...";
         uploadStatus.style.color = "var(--accent-indigo)";
 
-        const uploadPromise = async () => {
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `hero-cards/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-          const storageRef = ref(storage, fileName);
-          const snapshot = await uploadBytes(storageRef, file);
-          return await getDownloadURL(snapshot.ref);
-        };
-
-        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-        try {
-          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
-          hiddenUrlInput.value = downloadUrl;
-          previewImg.src = downloadUrl;
-          uploadStatus.textContent = "✅ Uploaded!";
-          uploadStatus.style.color = "var(--accent-green)";
-        } catch (err) {
-          console.warn("Card image upload failed. Using local preview:", err);
-          const localUrl = URL.createObjectURL(file);
-          hiddenUrlInput.value = localUrl;
-          previewImg.src = localUrl;
-          uploadStatus.textContent = "⚠️ Preview only";
-          uploadStatus.style.color = "var(--accent-gold)";
-        }
+        const result = await uploadImageFile(file, "hero-cards", 1200);
+        hiddenUrlInput.value = result.url;
+        previewImg.src = result.url;
+        uploadStatus.textContent = "✅ Uploaded!";
+        uploadStatus.style.color = "var(--accent-green)";
       });
     });
   }
@@ -3613,38 +3652,15 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
         logoUploadStatus.textContent = "⏳ Uploading logo...";
         logoUploadStatus.style.color = "var(--accent-indigo)";
 
-        const uploadPromise = async () => {
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `logos/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-          const storageRef = ref(storage, fileName);
-          const snapshot = await uploadBytes(storageRef, file);
-          return await getDownloadURL(snapshot.ref);
-        };
-
-        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-        try {
-          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
-          const urlField = document.getElementById("cfg-logo-image-url");
-          const previewField = document.getElementById("cfg-logo-preview");
-          const containerField = document.getElementById("cfg-logo-preview-container");
-          if (urlField) urlField.value = downloadUrl;
-          if (previewField) previewField.src = downloadUrl;
-          if (containerField) containerField.style.display = "flex";
-          logoUploadStatus.textContent = "✅ Logo uploaded!";
-          logoUploadStatus.style.color = "var(--accent-green)";
-        } catch (err) {
-          console.warn("Logo upload failed or timed out. Falling back to local Blob URL:", err);
-          const localUrl = URL.createObjectURL(file);
-          const urlField = document.getElementById("cfg-logo-image-url");
-          const previewField = document.getElementById("cfg-logo-preview");
-          const containerField = document.getElementById("cfg-logo-preview-container");
-          if (urlField) urlField.value = localUrl;
-          if (previewField) previewField.src = localUrl;
-          if (containerField) containerField.style.display = "flex";
-          logoUploadStatus.textContent = "⚠️ Uploaded (local preview)";
-          logoUploadStatus.style.color = "var(--accent-gold)";
-        }
+        const result = await uploadImageFile(file, "logos", 800);
+        const urlField = document.getElementById("cfg-logo-image-url");
+        const previewField = document.getElementById("cfg-logo-preview");
+        const containerField = document.getElementById("cfg-logo-preview-container");
+        if (urlField) urlField.value = result.url;
+        if (previewField) previewField.src = result.url;
+        if (containerField) containerField.style.display = "flex";
+        logoUploadStatus.textContent = "✅ Logo uploaded!";
+        logoUploadStatus.style.color = "var(--accent-green)";
       });
     }
 
@@ -3746,38 +3762,15 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
         bgUploadStatus.textContent = "⏳ Uploading background...";
         bgUploadStatus.style.color = "var(--accent-indigo)";
 
-        const uploadPromise = async () => {
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `backgrounds/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-          const storageRef = ref(storage, fileName);
-          const snapshot = await uploadBytes(storageRef, file);
-          return await getDownloadURL(snapshot.ref);
-        };
-
-        const timeoutPromise = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
-
-        try {
-          const downloadUrl = await Promise.race([uploadPromise(), timeoutPromise(8000)]);
-          const urlField = document.getElementById("cfg-bg-image-url");
-          const previewField = document.getElementById("cfg-bg-preview");
-          const containerField = document.getElementById("cfg-bg-preview-container");
-          if (urlField) urlField.value = downloadUrl;
-          if (previewField) previewField.src = downloadUrl;
-          if (containerField) containerField.style.display = "flex";
-          bgUploadStatus.textContent = "✅ Background uploaded!";
-          bgUploadStatus.style.color = "var(--accent-green)";
-        } catch (err) {
-          console.warn("Background upload failed or timed out. Falling back to local Blob URL:", err);
-          const localUrl = URL.createObjectURL(file);
-          const urlField = document.getElementById("cfg-bg-image-url");
-          const previewField = document.getElementById("cfg-bg-preview");
-          const containerField = document.getElementById("cfg-bg-preview-container");
-          if (urlField) urlField.value = localUrl;
-          if (previewField) previewField.src = localUrl;
-          if (containerField) containerField.style.display = "flex";
-          bgUploadStatus.textContent = "⚠️ Uploaded (local preview)";
-          bgUploadStatus.style.color = "var(--accent-gold)";
-        }
+        const result = await uploadImageFile(file, "backgrounds", 1600);
+        const urlField = document.getElementById("cfg-bg-image-url");
+        const previewField = document.getElementById("cfg-bg-preview");
+        const containerField = document.getElementById("cfg-bg-preview-container");
+        if (urlField) urlField.value = result.url;
+        if (previewField) previewField.src = result.url;
+        if (containerField) containerField.style.display = "flex";
+        bgUploadStatus.textContent = "✅ Background uploaded!";
+        bgUploadStatus.style.color = "var(--accent-green)";
       });
     }
 
@@ -4635,6 +4628,154 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     }
   }
 
+  // Auto-detect returning customer PIN during checkout
+  function initCheckoutFormPinAutoCheck() {
+    const chkEmail = document.getElementById("chk-email");
+    const chkPhone = document.getElementById("chk-phone");
+
+    const checkPin = () => {
+      const emailVal = chkEmail ? chkEmail.value.trim().toLowerCase() : "";
+      const phoneVal = chkPhone ? chkPhone.value.trim().replace(/[^0-9]/g, "") : "";
+      const pinInput = document.getElementById("chk-tracking-pin");
+      const pinHint = document.getElementById("chk-pin-hint");
+
+      if ((!emailVal && !phoneVal) || !pinInput) return;
+
+      const orders = DB.getOrders();
+      const existingOrder = orders.find(o => {
+        const matchEmail = emailVal && o.customer && o.customer.email && o.customer.email.toLowerCase().trim() === emailVal;
+        const matchPhone = phoneVal && phoneVal.length >= 4 && o.customer && o.customer.phone && o.customer.phone.replace(/[^0-9]/g, "") === phoneVal;
+        return matchEmail || matchPhone;
+      });
+
+      if (existingOrder) {
+        const registeredPin = existingOrder.trackingPin || (existingOrder.customer && existingOrder.customer.trackingPin) || "1234";
+        pinInput.value = registeredPin;
+        if (pinHint) {
+          pinHint.innerHTML = `🔑 <strong>Welcome back!</strong> Recognized your registered account. Auto-loaded your 4-digit PIN (<strong>${registeredPin}</strong>) so all your orders remain linked under one PIN.`;
+          pinHint.style.color = "var(--accent-indigo)";
+        }
+      } else {
+        if (pinHint) {
+          pinHint.innerHTML = "Set a 4-digit secret PIN to track your order status securely and access your reorder history.";
+          pinHint.style.color = "var(--text-muted)";
+        }
+      }
+    };
+
+    if (chkEmail) {
+      chkEmail.addEventListener("blur", checkPin);
+      chkEmail.addEventListener("input", checkPin);
+    }
+    if (chkPhone) {
+      chkPhone.addEventListener("blur", checkPin);
+      chkPhone.addEventListener("input", checkPin);
+    }
+  }
+
+  // Mobile Hamburger Sidebar Navigation Drawer Handler
+  function initMobileNavigationDrawer() {
+    const hamburgerBtn = document.getElementById("mobile-hamburger-btn");
+    const overlay = document.getElementById("mobile-nav-overlay");
+    const drawer = document.getElementById("mobile-nav-drawer");
+    const closeBtn = document.getElementById("close-mobile-nav-btn");
+
+    if (!hamburgerBtn || !drawer) return;
+
+    const openDrawer = () => {
+      drawer.classList.add("open");
+      if (overlay) overlay.classList.add("open");
+      hamburgerBtn.classList.add("active");
+    };
+
+    const closeDrawer = () => {
+      drawer.classList.remove("open");
+      if (overlay) overlay.classList.remove("open");
+      hamburgerBtn.classList.remove("active");
+    };
+
+    hamburgerBtn.addEventListener("click", () => {
+      if (drawer.classList.contains("open")) {
+        closeDrawer();
+      } else {
+        openDrawer();
+      }
+    });
+
+    if (overlay) overlay.addEventListener("click", closeDrawer);
+    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+
+    // Mobile nav item buttons
+    const mHome = document.getElementById("mobile-nav-home");
+    const mProducts = document.getElementById("mobile-nav-products");
+    const mTrack = document.getElementById("mobile-nav-track");
+    const mAbout = document.getElementById("mobile-nav-about");
+    const mContact = document.getElementById("mobile-nav-contact");
+    const mDashboard = document.getElementById("mobile-nav-dashboard");
+    const mLogo = document.getElementById("mobile-logo-btn");
+
+    const handleMobileNavClick = (pageName, scrollId = null) => {
+      closeDrawer();
+      changePage(pageName);
+      if (scrollId) {
+        const el = document.getElementById(scrollId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    if (mHome) mHome.addEventListener("click", () => handleMobileNavClick("store"));
+    if (mLogo) mLogo.addEventListener("click", () => handleMobileNavClick("store"));
+    if (mProducts) mProducts.addEventListener("click", () => handleMobileNavClick("products"));
+    if (mAbout) mAbout.addEventListener("click", () => handleMobileNavClick("store", "about-us-section"));
+    if (mContact) mContact.addEventListener("click", () => handleMobileNavClick("store", "contact-us-section"));
+    
+    if (mTrack) {
+      mTrack.addEventListener("click", () => {
+        closeDrawer();
+        if (DOM.trackOrderModalOverlay) DOM.trackOrderModalOverlay.classList.add("open");
+      });
+    }
+
+    if (mDashboard) {
+      mDashboard.addEventListener("click", () => {
+        closeDrawer();
+        changePage("dashboard");
+      });
+    }
+
+    // Populate categories accordion
+    const accordionTrigger = document.getElementById("mobile-categories-trigger");
+    const accordionContent = document.getElementById("mobile-categories-list");
+    const accordionArrow = document.getElementById("mobile-categories-arrow");
+
+    if (accordionTrigger && accordionContent) {
+      accordionTrigger.addEventListener("click", () => {
+        const isHidden = accordionContent.style.display === "none";
+        accordionContent.style.display = isHidden ? "flex" : "none";
+        if (accordionArrow) accordionArrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+      });
+
+      const categories = DB.getCategories();
+      accordionContent.innerHTML = categories.map(cat => `
+        <div class="mobile-subcat-link" data-cat="${cat.id}">
+          • ${cat.name}
+        </div>
+      `).join("");
+
+      accordionContent.querySelectorAll(".mobile-subcat-link").forEach(link => {
+        link.addEventListener("click", () => {
+          const catId = link.dataset.cat;
+          state.productsFilterCategory = catId;
+          closeDrawer();
+          changePage("products");
+          if (typeof renderProductsPage === "function") renderProductsPage();
+        });
+      });
+    }
+  }
+
   // INITIALIZE ON RUN
   async function startApplication() {
     try {
@@ -4643,6 +4784,9 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       console.warn("Firestore startup sync failed or timed out. Operating in offline/local fallback mode:", err);
     }
     initApp();
+    initTrackOrderLogic();
+    initCheckoutFormPinAutoCheck();
+    initMobileNavigationDrawer();
 
     // Auto-repair color swatches and names mismatch in the database
     const products = DB.getProducts();
