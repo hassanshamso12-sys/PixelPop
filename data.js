@@ -1,6 +1,6 @@
 // 3D Print Shop Seed Data & Database Wrapper
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc, getDocs, collection, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
   projectId: "pixelpop-cd075",
@@ -369,6 +369,38 @@ const DEFAULT_THEME_SETTINGS = {
 };
 
 const DB = {
+  initRealtimeSync() {
+    try {
+      // Realtime listener for Products
+      onSnapshot(collection(db, "products"), (snapshot) => {
+        if (!snapshot.empty) {
+          const list = [];
+          snapshot.forEach(d => list.push(d.data()));
+          localStorage.setItem("products", JSON.stringify(list));
+          window.dispatchEvent(new CustomEvent("pixelpop:data-updated", { detail: { type: "products" } }));
+        }
+      }, (err) => console.warn("Products realtime sync:", err));
+
+      // Realtime listener for Orders
+      onSnapshot(collection(db, "orders"), (snapshot) => {
+        const list = [];
+        snapshot.forEach(d => list.push(d.data()));
+        localStorage.setItem("orders", JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent("pixelpop:data-updated", { detail: { type: "orders" } }));
+      }, (err) => console.warn("Orders realtime sync:", err));
+
+      // Realtime listener for Categories
+      onSnapshot(doc(db, "settings", "categories"), (snap) => {
+        if (snap.exists() && snap.data().list) {
+          localStorage.setItem("categories", JSON.stringify(snap.data().list));
+          window.dispatchEvent(new CustomEvent("pixelpop:data-updated", { detail: { type: "categories" } }));
+        }
+      }, (err) => console.warn("Categories realtime sync:", err));
+    } catch (e) {
+      console.warn("Could not start realtime Firestore sync:", e);
+    }
+  },
+
   async syncFromFirestore() {
     try {
       const [

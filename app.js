@@ -4783,6 +4783,23 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     } catch (err) {
       console.warn("Firestore startup sync failed or timed out. Operating in offline/local fallback mode:", err);
     }
+
+    // Start live realtime synchronization across desktop, mobile, and all browsers
+    if (typeof DB.initRealtimeSync === "function") {
+      DB.initRealtimeSync();
+    }
+
+    // Register live event listener for remote updates from Firestore
+    window.addEventListener("pixelpop:data-updated", (e) => {
+      if (typeof renderCuratedHomeSections === "function") renderCuratedHomeSections();
+      if (typeof renderProductsList === "function") renderProductsList();
+      if (typeof renderCategoryTabs === "function") renderCategoryTabs();
+      if (typeof renderHeaderProductsDropdown === "function") renderHeaderProductsDropdown();
+      if (typeof renderDashboardInventory === "function") renderDashboardInventory();
+      if (typeof renderDashboardOrders === "function") renderDashboardOrders();
+      if (typeof updateOverviewStats === "function") updateOverviewStats();
+    });
+
     initApp();
     initTrackOrderLogic();
     initCheckoutFormPinAutoCheck();
