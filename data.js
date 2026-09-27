@@ -94,7 +94,8 @@ const DEFAULT_PRODUCTS = [
       printTime: "6.5 hours",
       filamentUsed: "95g",
       difficulty: "Medium"
-    }
+    },
+    sourceModelUrl: "https://makerworld.com/en/models/123456-articulating-crystal-dragon"
   },
   {
     id: "self-watering-planter",
@@ -138,7 +139,8 @@ const DEFAULT_PRODUCTS = [
       printTime: "4.2 hours",
       filamentUsed: "70g",
       difficulty: "Easy"
-    }
+    },
+    sourceModelUrl: "https://crealitycloud.com/model-detail/654321-geometric-planter"
   },
   {
     id: "modular-organizer",
@@ -184,7 +186,8 @@ const DEFAULT_PRODUCTS = [
       printTime: "8 hours",
       filamentUsed: "150g",
       difficulty: "Medium"
-    }
+    },
+    sourceModelUrl: "https://printables.com/model/789101-hexanest-desk-organizer"
   },
   {
     id: "oni-mask",
@@ -230,7 +233,8 @@ const DEFAULT_PRODUCTS = [
       printTime: "14 hours",
       filamentUsed: "220g",
       difficulty: "Hard"
-    }
+    },
+    sourceModelUrl: "https://makerworld.com/en/models/112233-cyberpunk-oni-mask"
   },
   {
     id: "superman-statue",
@@ -270,7 +274,8 @@ const DEFAULT_PRODUCTS = [
       printTime: "9 hours",
       filamentUsed: "140g",
       difficulty: "Medium"
-    }
+    },
+    sourceModelUrl: "https://makerworld.com/en/models/998877-superman-statue"
   }
 ];
 
@@ -455,10 +460,21 @@ const DB = {
       if (!productsSnap.empty) {
         const list = [];
         productsSnap.forEach(d => list.push(d.data()));
+        
+        // Merge missing default products into list so default catalog is always complete
+        let mergedAny = false;
+        DEFAULT_PRODUCTS.forEach(defProd => {
+          if (!list.some(p => p.id === defProd.id)) {
+            list.push(defProd);
+            mergedAny = true;
+            setDoc(doc(db, "products", defProd.id), defProd);
+          }
+        });
+
         localStorage.setItem("products", JSON.stringify(list));
       } else {
         this.init();
-        const list = JSON.parse(localStorage.getItem("products")) || [];
+        const list = JSON.parse(localStorage.getItem("products")) || DEFAULT_PRODUCTS;
         await Promise.all(list.map(p => setDoc(doc(db, "products", p.id), p)));
       }
 
@@ -501,13 +517,16 @@ const DB = {
     if (!localStorage.getItem("products")) {
       localStorage.setItem("products", JSON.stringify(DEFAULT_PRODUCTS));
     } else {
-      let prods = JSON.parse(localStorage.getItem("products"));
-      if (!prods.some(p => p.id === "superman-statue")) {
-        const supermanProd = DEFAULT_PRODUCTS.find(p => p.id === "superman-statue");
-        if (supermanProd) {
-          prods.push(supermanProd);
-          localStorage.setItem("products", JSON.stringify(prods));
+      let prods = JSON.parse(localStorage.getItem("products")) || [];
+      let updated = false;
+      DEFAULT_PRODUCTS.forEach(defProd => {
+        if (!prods.some(p => p.id === defProd.id)) {
+          prods.push(defProd);
+          updated = true;
         }
+      });
+      if (updated || prods.length === 0) {
+        localStorage.setItem("products", JSON.stringify(prods.length > 0 ? prods : DEFAULT_PRODUCTS));
       }
     }
     if (!localStorage.getItem("orders")) {

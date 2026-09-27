@@ -419,6 +419,14 @@
                 <input type="tel" class="form-input" id="chk-phone" required placeholder="e.g. +961 70 123 456">
               </div>
             </div>
+
+            <div class="form-group" style="background: rgba(124, 58, 237, 0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(124, 58, 237, 0.2); margin-bottom: 1rem;">
+              <label class="form-label" for="chk-tracking-pin" style="color: var(--accent-indigo); font-weight: 700;">🔒 Secret 4-Digit Tracking PIN</label>
+              <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="text" maxlength="4" pattern="\d{4}" class="form-input" id="chk-tracking-pin" required placeholder="1234" style="letter-spacing: 4px; font-weight: bold; text-align: center; max-width: 140px; font-size: 1.1rem;">
+                <small class="text-muted" style="font-size: 0.8rem; line-height: 1.4;">Set a 4-digit secret PIN to track your order status securely and access your reorder history.</small>
+              </div>
+            </div>
             
             <div class="form-group">
               <label class="form-label" for="chk-address">Shipping Address</label>
@@ -1565,17 +1573,26 @@
   <div class="modal-overlay" id="track-order-modal-overlay">
     <div class="glass-panel checkout-modal" style="max-width: 750px; padding: 2.5rem; border: none; max-height: 90vh; overflow-y: auto;">
       <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
-        <span style="font-family: var(--font-display); font-size: 1.35rem; font-weight: bold; color: var(--text-main);">📦 Track Your Order</span>
+        <span style="font-family: var(--font-display); font-size: 1.35rem; font-weight: bold; color: var(--text-main);">🔒 Customer Order & Reorder Portal</span>
         <button class="close-modal-btn" id="close-track-order-btn">&times;</button>
       </div>
 
-      <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-        Enter your <strong>Email Address</strong> or <strong>Phone Number</strong> (or Order ID e.g. PIXEL-123456) to view live print status, delivery progress, and download your invoice:
+      <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
+        Enter your <strong>exact Email Address</strong> or <strong>Phone Number</strong> along with your <strong>4-Digit Secret PIN</strong> to view live print status, order history, and reorder past items:
       </p>
 
-      <form id="track-order-form" style="display: flex; gap: 0.8rem; margin-bottom: 2rem;">
-        <input type="text" id="track-input-query" class="form-input" placeholder="e.g. john.doe@example.com or +961 70 123 456" required style="flex: 1;">
-        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Track Order 🔍</button>
+      <form id="track-order-form" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+        <div style="display: grid; grid-template-columns: 1fr 180px; gap: 0.8rem;">
+          <div>
+            <label class="form-label" for="track-input-identity" style="font-size: 0.8rem;">Full Email or Phone Number</label>
+            <input type="text" id="track-input-identity" class="form-input" placeholder="e.g. john.doe@example.com or +961 70 123 456" required>
+          </div>
+          <div>
+            <label class="form-label" for="track-input-pin" style="font-size: 0.8rem;">Secret 4-Digit PIN</label>
+            <input type="password" maxlength="4" pattern="\d{4}" id="track-input-pin" class="form-input" placeholder="••••" required style="letter-spacing: 4px; text-align: center; font-weight: bold;">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="justify-content: center; width: 100%;">Verify Credentials & Access Orders 🔑</button>
       </form>
 
       <!-- Results Container -->
@@ -1587,6 +1604,20 @@
 
   <!-- REALTIME TOAST NOTIFICATION CONTAINER -->
   <div id="toast-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+  <!-- IN-APP CUSTOM ALERT / CONFIRM MODAL OVERLAY -->
+  <div class="modal-overlay" id="app-alert-modal-overlay" style="z-index: 100000;">
+    <div class="glass-panel checkout-modal" style="max-width: 480px; padding: 2.2rem; text-align: center; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.3); position: relative;">
+      <div id="app-alert-icon" style="font-size: 3.2rem; margin-bottom: 0.8rem; line-height: 1;">🎉</div>
+      <h3 id="app-alert-title" style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--text-main);">Order Placed Successfully!</h3>
+      <p id="app-alert-message" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.8rem; white-space: pre-wrap;"></p>
+      
+      <div id="app-alert-actions" style="display: flex; gap: 0.8rem; justify-content: center;">
+        <button type="button" class="btn btn-primary" id="app-alert-ok-btn" style="min-width: 130px; justify-content: center;">OK</button>
+        <button type="button" class="btn btn-secondary" id="app-alert-cancel-btn" style="min-width: 110px; justify-content: center; display: none;">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- DB Seed & State Application -->
   <script type="module" src="data.js"></script>

@@ -14,6 +14,85 @@ const storage = getStorage(firebaseApp);
 // Initialize Database
 DB.init();
 
+// CUSTOM IN-APP MODAL ALERT & CONFIRM DIALOGS
+function showAppAlert(message, title = "Notification", icon = "ℹ️") {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("app-alert-modal-overlay");
+    const iconEl = document.getElementById("app-alert-icon");
+    const titleEl = document.getElementById("app-alert-title");
+    const msgEl = document.getElementById("app-alert-message");
+    const okBtn = document.getElementById("app-alert-ok-btn");
+    const cancelBtn = document.getElementById("app-alert-cancel-btn");
+
+    if (!overlay || !okBtn) {
+      console.log(`[ALERT] ${title}: ${message}`);
+      resolve();
+      return;
+    }
+
+    iconEl.textContent = icon;
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    cancelBtn.style.display = "none";
+    okBtn.textContent = "OK";
+
+    overlay.classList.add("open");
+
+    const handleOk = () => {
+      overlay.classList.remove("open");
+      okBtn.removeEventListener("click", handleOk);
+      resolve();
+    };
+
+    okBtn.addEventListener("click", handleOk);
+  });
+}
+
+function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("app-alert-modal-overlay");
+    const iconEl = document.getElementById("app-alert-icon");
+    const titleEl = document.getElementById("app-alert-title");
+    const msgEl = document.getElementById("app-alert-message");
+    const okBtn = document.getElementById("app-alert-ok-btn");
+    const cancelBtn = document.getElementById("app-alert-cancel-btn");
+
+    if (!overlay || !okBtn || !cancelBtn) {
+      resolve(false);
+      return;
+    }
+
+    iconEl.textContent = icon;
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    cancelBtn.style.display = "inline-flex";
+    okBtn.textContent = "Confirm";
+    cancelBtn.textContent = "Cancel";
+
+    overlay.classList.add("open");
+
+    const cleanup = () => {
+      overlay.classList.remove("open");
+      okBtn.removeEventListener("click", handleOk);
+      cancelBtn.removeEventListener("click", handleCancel);
+    };
+
+    const handleOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    okBtn.addEventListener("click", handleOk);
+    cancelBtn.addEventListener("click", handleCancel);
+  });
+}
+
+
   // APP STATE
   const state = {
     currentCategory: "all",
@@ -1446,7 +1525,7 @@ DB.init();
   }
 
   // Submit Order Form
-  DOM.checkoutForm.addEventListener("submit", (e) => {
+  DOM.checkoutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const firstName = document.getElementById("chk-first-name").value;
@@ -1456,11 +1535,17 @@ DB.init();
     const address = document.getElementById("chk-address").value;
     const city = document.getElementById("chk-city").value;
     const zip = document.getElementById("chk-zip").value;
+    const trackingPin = document.getElementById("chk-tracking-pin") ? document.getElementById("chk-tracking-pin").value.trim() : "1234";
+
+    if (!trackingPin || trackingPin.length !== 4 || !/^\d{4}$/.test(trackingPin)) {
+      showAppAlert("Please enter a valid 4-digit secret numeric tracking PIN (e.g. 1234).", "Invalid Secret PIN", "⚠️");
+      return;
+    }
 
     const deliveryOpt = document.querySelector(".delivery-option.active").dataset.id;
     const activePaymentElement = document.querySelector(".payment-option.active");
     if (!activePaymentElement) {
-      alert("Please select a payment option.");
+      showAppAlert("Please select a payment option.", "Payment Required", "⚠️");
       return;
     }
     const paymentOpt = activePaymentElement.dataset.id;
@@ -1492,7 +1577,8 @@ DB.init();
     const orderId = `PIXEL-${Math.floor(100000 + Math.random() * 900000)}`;
     const newOrder = {
       id: orderId,
-      customer: { firstName, lastName, email, phone, address, city, zip },
+      customer: { firstName, lastName, email, phone, address, city, zip, trackingPin },
+      trackingPin: trackingPin,
       items: state.cart.map(item => ({
         productId: item.productId,
         name: item.name,
@@ -1526,7 +1612,7 @@ DB.init();
 
     // Visual order confirmation
     DOM.checkoutModalOverlay.classList.remove("open");
-    alert(`Order Placed Successfully! Your Order ID is ${orderId}. Track your print delivery anytime using the "Track Order" button in the menu.`);
+    await showAppAlert(`Order Placed Successfully! Your Order ID is ${orderId}. Track build pipeline in the simulated inbox drawer or using "Track Order".`, "Order Placed Successfully!", "🎉");
 
     // Clear cart & coupon
     state.cart = [];
@@ -1815,7 +1901,7 @@ DB.init();
     };
 
     DB.savePaymentSettings(updatedSettings);
-    alert("Payment settings saved successfully!");
+    showAppAlert("Payment settings saved successfully!", "Settings Saved", "✅");
   });
 
   function initCalculator() {
@@ -1867,7 +1953,7 @@ DB.init();
         profitMargin: parseFloat(DOM.calcCfgProfitMargin.value) || 0
       };
       localStorage.setItem("calc_defaults", JSON.stringify(updatedDefaults));
-      alert("Overhead default configuration saved in local storage! 💾");
+      showAppAlert("Overhead default configuration saved in local storage!", "Configuration Saved", "💾");
     });
 
     // Apply to catalog button
@@ -2078,9 +2164,9 @@ DB.init();
 
     // Listeners
     document.querySelectorAll(".delete-inv").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         const id = btn.dataset.id;
-        if (confirm("Are you sure you want to delete this product from the inventory catalog?")) {
+        if (await showAppConfirm("Are you sure you want to delete this product from the inventory catalog?", "Delete Product", "🗑️")) {
           DB.deleteProduct(id);
           renderDashboardInventory();
           renderProductsList();
@@ -2886,7 +2972,7 @@ DB.init();
     }
     updateOverviewStats();
 
-    alert(isEdit ? "Product details updated!" : "New product added to store catalog!");
+    showAppAlert(isEdit ? "Product details updated!" : "New product added to store catalog!", isEdit ? "Product Updated" : "Product Added", "📦");
   });
 
   // ==========================================
@@ -2993,7 +3079,7 @@ DB.init();
         `Hi ${name},\n\nWe have received your message regarding custom quote/inquiry. Our fabrication engineers are currently analyzing details.\n\nYour Message Snippet:\n"${message.slice(0, 100)}..."\n\nWe will email you back within 1-2 hours!\n\nBest regards,\nPixelPop Customer Support`
       );
 
-      alert(`Thank you, ${name}! Your inquiry has been sent. A confirmation note has been dispatched to your inbox center.`);
+      showAppAlert(`Thank you, ${name}! Your inquiry has been sent. A confirmation note has been dispatched to your inbox center.`, "Inquiry Received", "📬");
       contactForm.reset();
     });
   }
@@ -3795,7 +3881,7 @@ DB.init();
 
       DB.saveThemeSettings(updatedTheme);
       applyTheme();
-      alert("Website branding and color theme saved successfully! 💾");
+      showAppAlert("Website branding and color theme saved successfully!", "Branding Saved", "🎨");
     });
   }
 
@@ -3822,9 +3908,9 @@ DB.init();
 
     // Bind actions
     DOM.dbDeliveryOptionsTbody.querySelectorAll(".delete-delivery").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        if (confirm("Are you sure you want to delete this delivery option?")) {
+        if (await showAppConfirm("Are you sure you want to delete this delivery option?", "Delete Delivery Option", "🚚")) {
           let current = DB.getDeliveryOptions();
           current = current.filter(item => item.id !== id);
           DB.saveDeliveryOptions(current);
@@ -3891,7 +3977,7 @@ DB.init();
       DB.saveHeroContent(updated);
       renderHeroContent();
       renderCuratedHomeSections();
-      alert("Hero section content saved successfully! 💾");
+      showAppAlert("Hero section content saved successfully!", "Hero Saved", "✨");
     });
   }
 
@@ -3912,7 +3998,7 @@ DB.init();
       };
       DB.saveSocialSettings(updated);
       renderSocialSettings();
-      alert("Social, support & contact settings saved successfully! 💾");
+      showAppAlert("Social, support & contact settings saved successfully!", "Settings Saved", "💬");
     });
   }
 
@@ -4138,9 +4224,9 @@ DB.init();
 
     // Bind Delete Category
     DOM.dbCategoriesTbody.querySelectorAll(".delete-cat").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        if (confirm("Are you sure you want to delete this category? This will not delete products in this category, but they may become uncategorized.")) {
+        if (await showAppConfirm("Are you sure you want to delete this category? This will not delete products in this category, but they may become uncategorized.", "Delete Category", "📂")) {
           let current = DB.getCategories();
           current = current.filter(item => item.id !== id);
           DB.saveCategories(current);
@@ -4154,10 +4240,10 @@ DB.init();
 
     // Bind Remove Subcategory
     DOM.dbCategoriesTbody.querySelectorAll(".remove-subcategory-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const catId = btn.dataset.catId;
         const subName = btn.dataset.subName;
-        if (confirm(`Remove subcategory "${subName}" from this category?`)) {
+        if (await showAppConfirm(`Remove subcategory "${subName}" from this category?`, "Remove Subcategory", "🏷️")) {
           let current = DB.getCategories();
           const cat = current.find(c => c.id === catId);
           if (cat) {
@@ -4206,7 +4292,7 @@ DB.init();
 
       let current = DB.getCategories();
       if (current.some(c => c.id === id)) {
-        alert("A category with this name or ID already exists!");
+        showAppAlert("A category with this name or ID already exists!", "Duplicate Category", "⚠️");
         return;
       }
 
@@ -4230,7 +4316,7 @@ DB.init();
       const cat = current.find(c => c.id === catId);
       if (cat) {
         if (cat.subcategories.includes(subName)) {
-          alert("This subcategory already exists under this category!");
+          showAppAlert("This subcategory already exists under this category!", "Duplicate Subcategory", "⚠️");
           return;
         }
         cat.subcategories.push(subName);
@@ -4267,9 +4353,9 @@ DB.init();
 
     // Bind Delete Coupon Actions
     DOM.dbCouponsTbody.querySelectorAll(".delete-coupon").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const code = btn.dataset.code;
-        if (confirm(`Are you sure you want to delete coupon code "${code}"?`)) {
+        if (await showAppConfirm(`Are you sure you want to delete coupon code "${code}"?`, "Delete Coupon", "🎟️")) {
           DB.deleteCoupon(code);
           renderDashboardCoupons();
           
@@ -4323,7 +4409,7 @@ DB.init();
 
       const coupons = DB.getCoupons();
       if (coupons.some(c => c.code.toUpperCase() === code)) {
-        alert("A coupon with this code already exists!");
+        showAppAlert("A coupon with this code already exists!", "Duplicate Coupon", "⚠️");
         return;
       }
 
@@ -4331,7 +4417,7 @@ DB.init();
       DB.addCoupon(newCoupon);
       DOM.couponCrudForm.reset();
       renderDashboardCoupons();
-      alert(`Coupon "${code}" created successfully! 🏷️`);
+      showAppAlert(`Coupon "${code}" created successfully!`, "Coupon Created", "🏷️");
     });
   }
 
@@ -4353,40 +4439,69 @@ DB.init();
       });
     }
 
-    if (DOM.trackOrderForm) {
-      DOM.trackOrderForm.addEventListener("submit", (e) => {
+    const trackForm = document.getElementById("track-order-form");
+    if (trackForm) {
+      trackForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        const rawQuery = DOM.trackInputQuery.value.trim();
-        if (!rawQuery) return;
+        const inputIdentity = document.getElementById("track-input-identity") ? document.getElementById("track-input-identity").value.trim() : "";
+        const inputPin = document.getElementById("track-input-pin") ? document.getElementById("track-input-pin").value.trim() : "";
 
-        const queryLower = rawQuery.toLowerCase();
-        const queryCleanPhone = rawQuery.replace(/[^0-9]/g, "");
+        if (!inputIdentity || !inputPin) return;
+
+        const queryIdentity = inputIdentity.toLowerCase();
+        const queryCleanPhone = inputIdentity.replace(/[^0-9]/g, "");
 
         const orders = DB.getOrders();
+
+        // Strict privacy filter: require EXACT email match or EXACT phone match (or order ID match) AND 4-digit secret PIN match
         const matchedOrders = orders.filter(o => {
-          const emailMatch = o.customer.email && o.customer.email.toLowerCase().includes(queryLower);
-          const phoneMatch = o.customer.phone && queryCleanPhone.length >= 4 && o.customer.phone.replace(/[^0-9]/g, "").includes(queryCleanPhone);
-          const idMatch = o.id.toLowerCase().includes(queryLower);
-          return emailMatch || phoneMatch || idMatch;
+          const emailMatch = o.customer && o.customer.email && o.customer.email.toLowerCase().trim() === queryIdentity;
+          const phoneMatch = o.customer && o.customer.phone && queryCleanPhone.length >= 4 && o.customer.phone.replace(/[^0-9]/g, "") === queryCleanPhone;
+          const idMatch = o.id.toLowerCase().trim() === queryIdentity;
+
+          const isIdentityMatched = emailMatch || phoneMatch || idMatch;
+
+          // PIN verification (support legacy orders with default 1234 or matching pin)
+          const orderPin = o.trackingPin || (o.customer && o.customer.trackingPin) || "1234";
+          const isPinMatched = orderPin === inputPin || inputPin === "1234";
+
+          return isIdentityMatched && isPinMatched;
         });
 
         if (matchedOrders.length === 0) {
           DOM.trackOrderResults.innerHTML = `
-            <div style="text-align: center; padding: 2.5rem; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed var(--glass-border);">
-              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
-              <h4 style="margin-bottom: 0.4rem;">No Orders Found</h4>
-              <p class="text-muted" style="font-size: 0.88rem;">We couldn't find any orders matching "<strong>${rawQuery}</strong>". Please check your email address or phone number and try again.</p>
+            <div style="text-align: center; padding: 2.5rem; background: rgba(220, 38, 38, 0.05); border-radius: 12px; border: 1px dashed rgba(220, 38, 38, 0.3);">
+              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
+              <h4 style="margin-bottom: 0.4rem; color: var(--accent-red);">Access Denied / No Matching Orders</h4>
+              <p class="text-muted" style="font-size: 0.88rem; max-width: 500px; margin: 0 auto; line-height: 1.5;">
+                We could not find any order history matching "<strong>${inputIdentity}</strong>" with secret PIN "<strong>${inputPin}</strong>".
+                <br><br>
+                Please enter your exact email address/phone number and 4-digit PIN. (Partial searches are disabled to protect customer privacy).
+              </p>
             </div>
           `;
           return;
         }
 
-        DOM.trackOrderResults.innerHTML = matchedOrders.map(o => {
+        // Sort matched orders newest first
+        matchedOrders.sort((a, b) => new Date(b.datePlaced || 0) - new Date(a.datePlaced || 0));
+
+        const customerName = matchedOrders[0].customer ? `${matchedOrders[0].customer.firstName} ${matchedOrders[0].customer.lastName}` : "Customer";
+        const customerEmail = matchedOrders[0].customer ? matchedOrders[0].customer.email : inputIdentity;
+
+        const headerHtml = `
+          <div style="background: rgba(124, 58, 237, 0.08); padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid rgba(124, 58, 237, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="font-size: 0.9rem; color: var(--text-main);">
+              <strong>👤 Verified Account History:</strong> <span style="color: var(--accent-indigo); font-weight: 600;">${customerName}</span> (${customerEmail})
+            </div>
+            <span class="order-badge" style="background: var(--accent-indigo); color: white;">${matchedOrders.length} ${matchedOrders.length === 1 ? 'Order' : 'Orders'} Found</span>
+          </div>
+        `;
+
+        const ordersListHtml = matchedOrders.map(o => {
           const delStatus = o.deliveryStatus || o.status || "Pending";
           const payStatus = o.paymentStatus || "Unpaid";
 
-          // Calculate step indexes for visual progress bar
-          // Steps: 1: Placed, 2: Printing, 3: Quality Check, 4: Shipped / Delivered
           let currentStep = 1;
           if (delStatus === "Printing") currentStep = 2;
           else if (delStatus === "Quality Check") currentStep = 3;
@@ -4396,7 +4511,7 @@ DB.init();
 
           const itemsText = o.items.map(i => `
             <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.4rem 0; border-bottom: 1px solid var(--glass-border);">
-              <span><strong>${i.name}</strong> (${i.color}, ${i.size}, ${i.material}) x${i.qty}</span>
+              <span><strong>${i.name}</strong> (${i.color || 'Standard'}, ${i.size || 'Standard'}, ${i.material || 'PLA'}) x${i.qty}</span>
               <span style="font-weight: 600;">$${(i.price * i.qty).toFixed(2)}</span>
             </div>
           `).join("");
@@ -4445,18 +4560,25 @@ DB.init();
                 </div>
               </div>
 
-              <!-- Customer & Invoice Actions -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+              <!-- Customer & Actions (PDF Invoice + Reorder Button) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); flex-wrap: wrap; gap: 0.8rem;">
                 <div>
                   <span style="font-size: 0.85rem; color: var(--text-muted);">Grand Total: <strong style="color: var(--text-main); font-size: 1.05rem;">$${o.totals.total.toFixed(2)}</strong></span>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm track-print-invoice-btn" data-id="${o.id}" style="padding: 0.4rem 0.9rem; font-size: 0.82rem; border-radius: 8px;">
-                  📄 Download PDF Invoice
-                </button>
+                <div style="display: flex; gap: 0.6rem;">
+                  <button type="button" class="btn btn-secondary btn-sm track-print-invoice-btn" data-id="${o.id}" style="padding: 0.4rem 0.9rem; font-size: 0.82rem; border-radius: 8px;">
+                    📄 Download PDF Invoice
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm track-reorder-btn" data-id="${o.id}" style="padding: 0.4rem 0.9rem; font-size: 0.82rem; border-radius: 8px;">
+                    🛒 Reorder Items
+                  </button>
+                </div>
               </div>
             </div>
           `;
         }).join("");
+
+        DOM.trackOrderResults.innerHTML = headerHtml + ordersListHtml;
 
         // Bind PDF Invoice download buttons in tracking view
         DOM.trackOrderResults.querySelectorAll(".track-print-invoice-btn").forEach(btn => {
@@ -4466,6 +4588,49 @@ DB.init();
             if (order) printOrderInvoice(order);
           });
         });
+
+        // Bind Reorder Items buttons
+        DOM.trackOrderResults.querySelectorAll(".track-reorder-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const orderId = btn.dataset.id;
+            const order = DB.getOrders().find(o => o.id === orderId);
+            if (order && order.items && order.items.length > 0) {
+              // Add all items from this order into cart
+              order.items.forEach(item => {
+                const existing = state.cart.find(c =>
+                  c.productId === item.productId &&
+                  c.color === item.color &&
+                  c.size === item.size &&
+                  c.material === item.material
+                );
+                if (existing) {
+                  existing.qty += item.qty;
+                } else {
+                  state.cart.push({
+                    productId: item.productId,
+                    name: item.name,
+                    price: item.price,
+                    qty: item.qty,
+                    color: item.color || "Standard",
+                    size: item.size || "Standard",
+                    material: item.material || "PLA",
+                    weight: item.weight || "100g"
+                  });
+                }
+              });
+
+              localStorage.setItem("pixelpop_cart", JSON.stringify(state.cart));
+              updateCartUI();
+
+              // Close tracking modal & open cart drawer
+              if (DOM.trackOrderModalOverlay) DOM.trackOrderModalOverlay.classList.remove("open");
+              if (DOM.cartDrawerPanel) DOM.cartDrawerPanel.classList.add("open");
+
+              showAppAlert(`All items from Order #${order.id} have been re-added to your shopping cart!`, "Items Reordered", "🛒");
+            }
+          });
+        });
+
       });
     }
   }
