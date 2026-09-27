@@ -4804,6 +4804,66 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     initTrackOrderLogic();
     initCheckoutFormPinAutoCheck();
     initMobileNavigationDrawer();
+    initUnderConstructionOverlay();
+
+  // UNDER CONSTRUCTION OVERLAY & 10-TAP SECRET LOGO UNLOCK LOGIC
+  function initUnderConstructionOverlay() {
+    const overlay = document.getElementById("under-construction-overlay");
+    const logoBtn = document.getElementById("construction-logo-btn");
+    const tapCountEl = document.getElementById("construction-tap-count");
+    const secretHintEl = document.getElementById("construction-secret-hint");
+
+    if (!overlay || !logoBtn) return;
+
+    // Check if site is already unlocked in this browser session
+    const isUnlocked = sessionStorage.getItem("pixelpop_site_unlocked") === "true";
+    if (isUnlocked) {
+      overlay.classList.add("unlocked");
+      setTimeout(() => { overlay.style.display = "none"; }, 600);
+      return;
+    }
+
+    let tapCount = 0;
+    let tapResetTimeout = null;
+
+    logoBtn.addEventListener("click", () => {
+      tapCount++;
+      
+      // Pulse animation on tap
+      logoBtn.classList.remove("tap-pulse");
+      void logoBtn.offsetWidth;
+      logoBtn.classList.add("tap-pulse");
+
+      if (tapCountEl) tapCountEl.textContent = tapCount;
+      if (secretHintEl) secretHintEl.classList.add("active-taps");
+
+      // Reset count if inactive for 4 seconds
+      clearTimeout(tapResetTimeout);
+      tapResetTimeout = setTimeout(() => {
+        if (tapCount < 10) {
+          tapCount = 0;
+          if (tapCountEl) tapCountEl.textContent = "0";
+          if (secretHintEl) secretHintEl.classList.remove("active-taps");
+        }
+      }, 4000);
+
+      // UNLOCK WEBSITE ON 10th TAP
+      if (tapCount >= 10) {
+        sessionStorage.setItem("pixelpop_site_unlocked", "true");
+        if (tapCountEl) tapCountEl.textContent = "10 🎉 Unlocked!";
+        
+        logoBtn.style.transform = "scale(1.15)";
+        logoBtn.style.boxShadow = "0 0 50px rgba(56, 189, 248, 0.9)";
+        
+        setTimeout(() => {
+          overlay.classList.add("unlocked");
+          setTimeout(() => {
+            overlay.style.display = "none";
+          }, 600);
+        }, 350);
+      }
+    });
+  }
 
     // Auto-repair color swatches and names mismatch in the database
     const products = DB.getProducts();
