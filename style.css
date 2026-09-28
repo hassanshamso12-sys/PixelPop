@@ -3217,11 +3217,7 @@ header {
   background: rgba(0, 0, 0, 0.03);
 }
 
-/* DEDICATED ADMIN MOBILE SIDEBAR & TOP BAR STYLES */
-.admin-mobile-top-bar {
-  display: none;
-}
-
+/* DEDICATED ADMIN MOBILE SIDEBAR STYLES */
 .mobile-nav-drawer.admin-drawer {
   background: var(--bg-primary);
   border-right: 1px solid rgba(124, 58, 237, 0.2);
@@ -3240,22 +3236,8 @@ html, body {
 }
 
 @media (max-width: 992px) {
-  .admin-mobile-top-bar {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.9rem 1.2rem;
-    margin-bottom: 1.5rem;
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    box-shadow: 0 4px 15px var(--glass-shadow);
-  }
-  .admin-mobile-top-bar .hamburger-menu-btn {
-    display: flex !important;
-  }
   .db-sidebar {
-    display: none !important; /* Desktop sidebar hidden in mobile; dedicated admin drawer used */
+    display: none !important; /* Desktop sidebar hidden in mobile; dedicated admin drawer used via main hamburger */
   }
   .dashboard-grid {
     grid-template-columns: 1fr !important;

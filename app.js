@@ -1241,17 +1241,27 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     const prod = state.selectedProduct;
     if (!prod) return;
 
+    const colorObj = (state.customization && state.customization.color) ? state.customization.color : { name: "Standard", hex: "#3b82f6", priceModifier: 0 };
+    const sizeObj = (state.customization && state.customization.size) ? state.customization.size : { name: "Standard", scale: "100%", priceModifier: 0 };
+    const matObj = (state.customization && state.customization.material) ? state.customization.material : { name: "PLA (Standard)", priceModifier: 0 };
+
+    const colorName = colorObj.name || "Standard";
+    const sizeName = sizeObj.name || "Standard";
+    const matName = matObj.name || "PLA";
+
+    const imgUrl = (prod.images && prod.images[colorName]) || prod.defaultImage || (prod.gallery && prod.gallery[0]) || "";
+
     const cartItem = {
-      id: `${prod.id}-${state.customization.color.name}-${state.customization.size.name}-${state.customization.material.name}`.replace(/\s+/g, '-').toLowerCase(),
+      id: `${prod.id}-${colorName}-${sizeName}-${matName}`.replace(/\s+/g, '-').toLowerCase(),
       productId: prod.id,
       name: prod.name,
-      image: prod.images[state.customization.color.name] || prod.defaultImage,
-      color: state.customization.color.name,
-      size: state.customization.size.name,
-      material: state.customization.material.name,
+      image: imgUrl,
+      color: colorName,
+      size: sizeName,
+      material: matName,
       basePrice: prod.basePrice,
-      price: prod.basePrice + state.customization.color.priceModifier + state.customization.size.priceModifier + state.customization.material.priceModifier,
-      weight: DOM.specFilamentWeight.textContent,
+      price: prod.basePrice + (colorObj.priceModifier || 0) + (sizeObj.priceModifier || 0) + (matObj.priceModifier || 0),
+      weight: DOM.specFilamentWeight ? DOM.specFilamentWeight.textContent : (prod.specifications ? prod.specifications.filamentUsed : "100g"),
       qty: 1
     };
 
@@ -1276,7 +1286,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     }, 1500);
 
     // Open Cart Drawer automatically to show feedback
-    DOM.cartDrawerPanel.classList.add("open");
+    if (DOM.cartDrawerPanel) DOM.cartDrawerPanel.classList.add("open");
   });
 
   // ==========================================
@@ -4781,49 +4791,88 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     }
   }
 
-  // Mobile Hamburger Sidebar Navigation Drawer Handler
+  // Mobile Hamburger Sidebar Navigation Drawer Handler (Unified Top Header Hamburger)
   function initMobileNavigationDrawer() {
     const hamburgerBtn = document.getElementById("mobile-hamburger-btn");
-    const overlay = document.getElementById("mobile-nav-overlay");
-    const drawer = document.getElementById("mobile-nav-drawer");
-    const closeBtn = document.getElementById("close-mobile-nav-btn");
+    const visitorOverlay = document.getElementById("mobile-nav-overlay");
+    const visitorDrawer = document.getElementById("mobile-nav-drawer");
+    const closeVisitorBtn = document.getElementById("close-mobile-nav-btn");
 
-    if (!hamburgerBtn || !drawer) return;
+    const adminOverlay = document.getElementById("admin-mobile-nav-overlay");
+    const adminDrawer = document.getElementById("admin-mobile-nav-drawer");
+    const closeAdminBtn = document.getElementById("close-admin-mobile-nav-btn");
+    const logoutBtn = document.getElementById("admin-mobile-logout-btn");
 
-    const openDrawer = () => {
-      drawer.classList.add("open");
-      if (overlay) overlay.classList.add("open");
+    if (!hamburgerBtn) return;
+
+    const isAdminView = () => {
+      return state.activePage === "dashboard" || (DOM.adminDashboardPage && DOM.adminDashboardPage.style.display !== "none");
+    };
+
+    const openVisitorDrawer = () => {
+      if (visitorDrawer) visitorDrawer.classList.add("open");
+      if (visitorOverlay) visitorOverlay.classList.add("open");
       hamburgerBtn.classList.add("active");
     };
 
-    const closeDrawer = () => {
-      drawer.classList.remove("open");
-      if (overlay) overlay.classList.remove("open");
+    const closeVisitorDrawer = () => {
+      if (visitorDrawer) visitorDrawer.classList.remove("open");
+      if (visitorOverlay) visitorOverlay.classList.remove("open");
+      hamburgerBtn.classList.remove("active");
+    };
+
+    const openAdminDrawer = () => {
+      if (adminDrawer) adminDrawer.classList.add("open");
+      if (adminOverlay) adminOverlay.classList.add("open");
+      hamburgerBtn.classList.add("active");
+    };
+
+    const closeAdminDrawer = () => {
+      if (adminDrawer) adminDrawer.classList.remove("open");
+      if (adminOverlay) adminOverlay.classList.remove("open");
       hamburgerBtn.classList.remove("active");
     };
 
     hamburgerBtn.addEventListener("click", () => {
-      if (drawer.classList.contains("open")) {
-        closeDrawer();
+      if (isAdminView()) {
+        if (adminDrawer && adminDrawer.classList.contains("open")) {
+          closeAdminDrawer();
+        } else {
+          openAdminDrawer();
+        }
       } else {
-        openDrawer();
+        if (visitorDrawer && visitorDrawer.classList.contains("open")) {
+          closeVisitorDrawer();
+        } else {
+          openVisitorDrawer();
+        }
       }
     });
 
-    if (overlay) overlay.addEventListener("click", closeDrawer);
-    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+    if (visitorOverlay) visitorOverlay.addEventListener("click", closeVisitorDrawer);
+    if (closeVisitorBtn) closeVisitorBtn.addEventListener("click", closeVisitorDrawer);
 
-    // Mobile nav item buttons
+    if (adminOverlay) adminOverlay.addEventListener("click", closeAdminDrawer);
+    if (closeAdminBtn) closeAdminBtn.addEventListener("click", closeAdminDrawer);
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        closeAdminDrawer();
+        const desktopLogout = document.getElementById("logout-btn");
+        if (desktopLogout) desktopLogout.click();
+      });
+    }
+
+    // Visitor Mobile nav item buttons
     const mHome = document.getElementById("mobile-nav-home");
     const mProducts = document.getElementById("mobile-nav-products");
     const mTrack = document.getElementById("mobile-nav-track");
     const mAbout = document.getElementById("mobile-nav-about");
     const mContact = document.getElementById("mobile-nav-contact");
-    const mDashboard = document.getElementById("mobile-nav-dashboard");
     const mLogo = document.getElementById("mobile-logo-btn");
 
     const handleMobileNavClick = (pageName, scrollId = null) => {
-      closeDrawer();
+      closeVisitorDrawer();
       changePage(pageName);
       if (scrollId) {
         const el = document.getElementById(scrollId);
@@ -4841,15 +4890,8 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     
     if (mTrack) {
       mTrack.addEventListener("click", () => {
-        closeDrawer();
+        closeVisitorDrawer();
         if (DOM.trackOrderModalOverlay) DOM.trackOrderModalOverlay.classList.add("open");
-      });
-    }
-
-    if (mDashboard) {
-      mDashboard.addEventListener("click", () => {
-        closeDrawer();
-        changePage("dashboard");
       });
     }
 
@@ -4876,78 +4918,35 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
         link.addEventListener("click", () => {
           const catId = link.dataset.cat;
           state.productsFilterCategory = catId;
-          closeDrawer();
+          closeVisitorDrawer();
           changePage("products");
           if (typeof renderProductsPage === "function") renderProductsPage();
         });
       });
     }
-  }
 
-  // DEDICATED ADMIN MOBILE NAVIGATION DRAWER
-  function initAdminMobileDrawer() {
-    const hamburgerBtn = document.getElementById("admin-mobile-hamburger-btn");
-    const overlay = document.getElementById("admin-mobile-nav-overlay");
-    const drawer = document.getElementById("admin-mobile-nav-drawer");
-    const closeBtn = document.getElementById("close-admin-mobile-nav-btn");
-    const logoutBtn = document.getElementById("admin-mobile-logout-btn");
+    // Admin Mobile Drawer Menu Items
+    if (adminDrawer) {
+      const menuItems = adminDrawer.querySelectorAll(".admin-mobile-menu .mobile-nav-item[data-target]");
+      menuItems.forEach(item => {
+        item.addEventListener("click", () => {
+          const targetId = item.dataset.target;
+          closeAdminDrawer();
 
-    if (!hamburgerBtn || !drawer) return;
+          const desktopItem = document.querySelector(`.db-menu .db-menu-item[data-target="${targetId}"]`);
+          if (desktopItem) {
+            desktopItem.click();
+          } else {
+            document.querySelectorAll(".db-section").forEach(sec => sec.classList.remove("active"));
+            const targetSec = document.getElementById(targetId);
+            if (targetSec) targetSec.classList.add("active");
+          }
 
-    const openDrawer = () => {
-      drawer.classList.add("open");
-      if (overlay) overlay.classList.add("open");
-      hamburgerBtn.classList.add("active");
-    };
-
-    const closeDrawer = () => {
-      drawer.classList.remove("open");
-      if (overlay) overlay.classList.remove("open");
-      hamburgerBtn.classList.remove("active");
-    };
-
-    hamburgerBtn.addEventListener("click", () => {
-      if (drawer.classList.contains("open")) {
-        closeDrawer();
-      } else {
-        openDrawer();
-      }
-    });
-
-    if (overlay) overlay.addEventListener("click", closeDrawer);
-    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        closeDrawer();
-        const desktopLogout = document.getElementById("logout-btn");
-        if (desktopLogout) desktopLogout.click();
+          menuItems.forEach(m => m.classList.remove("active"));
+          item.classList.add("active");
+        });
       });
     }
-
-    // Handle menu items inside admin mobile drawer
-    const menuItems = drawer.querySelectorAll(".admin-mobile-menu .mobile-nav-item[data-target]");
-    menuItems.forEach(item => {
-      item.addEventListener("click", () => {
-        const targetId = item.dataset.target;
-        closeDrawer();
-
-        // Trigger corresponding desktop sidebar item to keep state synchronized
-        const desktopItem = document.querySelector(`.db-menu .db-menu-item[data-target="${targetId}"]`);
-        if (desktopItem) {
-          desktopItem.click();
-        } else {
-          // Fallback direct section toggle
-          document.querySelectorAll(".db-section").forEach(sec => sec.classList.remove("active"));
-          const targetSec = document.getElementById(targetId);
-          if (targetSec) targetSec.classList.add("active");
-        }
-
-        // Update active class in admin mobile menu
-        menuItems.forEach(m => m.classList.remove("active"));
-        item.classList.add("active");
-      });
-    });
   }
 
   // INITIALIZE ON RUN
@@ -4978,7 +4977,6 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     initTrackOrderLogic();
     initCheckoutFormPinAutoCheck();
     initMobileNavigationDrawer();
-    initAdminMobileDrawer();
     bindPriceAdviceEvents();
     initUnderConstructionOverlay();
 
