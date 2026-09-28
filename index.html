@@ -1561,35 +1561,73 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="crud-price">Base Price ($)</label>
-                <input type="number" step="0.01" class="form-input" id="crud-price" required placeholder="19.99">
-              </div>
-              <div class="form-group">
                 <label class="form-label" for="crud-category">Main Category</label>
                 <select class="form-input" id="crud-category" required>
                   <!-- Dynamically populated -->
                 </select>
               </div>
-            </div>
-
-            <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="crud-subcategory">Subcategory</label>
                 <select class="form-input" id="crud-subcategory" required>
                   <!-- Dynamically populated -->
                 </select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="crud-print-time">Estimated Build Time</label>
-                <input type="text" class="form-input" id="crud-print-time" placeholder="e.g. 5 hours">
-              </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="crud-weight">Weight (g)</label>
-                <input type="text" class="form-input" id="crud-weight" placeholder="e.g. 85g">
+                <label class="form-label" for="crud-print-time">Estimated Build Time (hours)</label>
+                <input type="text" class="form-input" id="crud-print-time" placeholder="e.g. 10 hours" required>
               </div>
+              <div class="form-group">
+                <label class="form-label" for="crud-weight">Weight (grams)</label>
+                <input type="text" class="form-input" id="crud-weight" placeholder="e.g. 44g" required>
+              </div>
+            </div>
+
+            <!-- SMART PRICE RECOMMENDATION & COST ADVICE WIDGET (PROMINENTLY SHOWN RIGHT AFTER PRINT TIME & GRAMS!) -->
+            <div class="price-advice-widget glass-panel" id="product-price-advice-card" style="padding: 1.25rem; margin: 1.25rem 0; background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(8, 145, 178, 0.08)); border: 1.5px solid rgba(124, 58, 237, 0.25); border-radius: 16px; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <span style="font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.5rem;">
+                  💡 Smart Price Recommendation & Cost Advice
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-recalc-price-advice" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; background: rgba(124, 58, 237, 0.12); color: var(--accent-purple); border: 1px solid rgba(124, 58, 237, 0.25);">
+                  🔄 Recalculate
+                </button>
+              </div>
+              
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem; line-height: 1.4;">
+                Calculates production costs (power, filament weight, wear & labor) and profit margin using your persistent Cost Calculator defaults.
+              </p>
+
+              <div id="price-advice-results" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.8rem;">
+                <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.88rem;">
+                  <span>Estimated COGS (Filament, Power, Wear & Labor):</span>
+                  <strong id="advice-out-cogs" style="color: var(--text-main); font-family: var(--font-display);">$0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; color: var(--accent-green); border-top: 1.5px dashed var(--glass-border); padding-top: 0.6rem; margin-top: 0.2rem;">
+                  <span>Suggested Retail Price (<span id="advice-out-margin">60%</span> margin):</span>
+                  <strong id="advice-out-price" style="font-family: var(--font-display);">$0.00</strong>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary" id="btn-apply-recommended-price" style="width: 100%; justify-content: center; font-size: 0.92rem; padding: 0.7rem; background: linear-gradient(135deg, var(--accent-green), #047857); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                ⚡ Use Recommended Price (<span id="advice-btn-price-label">$0.00</span>)
+              </button>
+            </div>
+
+            <!-- BASE PRICE ($) SLOT (LOCATED RIGHT AFTER PRICE ADVICE & PRINT TIME / GRAMS!) -->
+            <div class="form-group" style="background: rgba(16, 185, 129, 0.05); padding: 1.2rem; border-radius: 14px; border: 1.5px solid rgba(16, 185, 129, 0.2); margin-bottom: 1.5rem;">
+              <label class="form-label" for="crud-price" style="font-weight: 700; font-size: 1.05rem; color: var(--text-main);">
+                🏷️ Base Price ($) <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">(Final price listed in shop catalog)</span>
+              </label>
+              <div style="display: flex; gap: 0.8rem; align-items: center;">
+                <span style="font-size: 1.4rem; font-weight: bold; color: var(--accent-green);">$</span>
+                <input type="number" step="0.01" class="form-input" id="crud-price" required placeholder="0.00" style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); font-family: var(--font-display);">
+              </div>
+            </div>
+
+            <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="crud-difficulty">Build Level</label>
                 <select class="form-input" id="crud-difficulty">
@@ -1598,52 +1636,10 @@
                   <option value="Hard">Hard (Overhangs / supports)</option>
                 </select>
               </div>
-            </div>
-
-            <!-- SMART PRICE RECOMMENDATION & COST ADVICE WIDGET -->
-            <div class="price-advice-widget glass-panel" id="product-price-advice-card" style="padding: 1.25rem; margin: 1.25rem 0; background: rgba(79, 70, 229, 0.04); border: 1px solid rgba(79, 70, 229, 0.2); border-radius: 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-                <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.4rem;">
-                  💡 Smart Price Recommendation & Cost Advice
-                </span>
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-recalc-price-advice" style="padding: 0.3rem 0.7rem; font-size: 0.75rem; background: rgba(124, 58, 237, 0.1); color: var(--accent-purple); border: 1px solid rgba(124, 58, 237, 0.2);">
-                  🔄 Calculate Advice
-                </button>
+              <div class="form-group">
+                <label class="form-label" for="crud-calc-prep">Hands-on Labor (minutes)</label>
+                <input type="number" step="1" class="form-input" id="crud-calc-prep" value="15" placeholder="e.g. 15">
               </div>
-              
-              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem; line-height: 1.4;">
-                Calculates production costs (power, filament weight, wear & labor) and profit margin using your persistent Cost Calculator defaults.
-              </p>
-
-              <div class="form-row" style="grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.8rem;">
-                <div class="form-group" style="margin: 0;">
-                  <label class="form-label" style="font-size: 0.75rem;" for="crud-calc-hours">Hours</label>
-                  <input type="number" step="0.1" class="form-input" id="crud-calc-hours" placeholder="e.g. 4.5" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                  <label class="form-label" style="font-size: 0.75rem;" for="crud-calc-grams">Weight (g)</label>
-                  <input type="number" step="1" class="form-input" id="crud-calc-grams" placeholder="e.g. 120" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                  <label class="form-label" style="font-size: 0.75rem;" for="crud-calc-prep">Labor (mins)</label>
-                  <input type="number" step="1" class="form-input" id="crud-calc-prep" value="15" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
-                </div>
-              </div>
-
-              <div id="price-advice-results" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.82rem;">
-                <div style="display: flex; justify-content: space-between; color: var(--text-muted);">
-                  <span>Estimated COGS (Material, Power, Wear):</span>
-                  <strong id="advice-out-cogs" style="color: var(--text-main);">$0.00</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.95rem; color: var(--accent-green); border-top: 1px dashed var(--glass-border); padding-top: 0.4rem; margin-top: 0.2rem;">
-                  <span>Suggested Retail Price (<span id="advice-out-margin">60%</span> margin):</span>
-                  <strong id="advice-out-price">$0.00</strong>
-                </div>
-              </div>
-
-              <button type="button" class="btn btn-primary btn-sm" id="btn-apply-recommended-price" style="width: 100%; margin-top: 0.8rem; justify-content: center; font-size: 0.85rem; padding: 0.5rem; background: linear-gradient(135deg, var(--accent-green), #047857);">
-                ⚡ Apply Recommended Price (<span id="advice-btn-price-label">$0.00</span>)
-              </button>
             </div>
 
             <div class="form-group">

@@ -2885,6 +2885,10 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       if (DOM.crudOriginalPrice) DOM.crudOriginalPrice.value = "";
       if (DOM.crudOriginalPriceGroup) DOM.crudOriginalPriceGroup.style.display = "none";
       if (DOM.crudModelUrl) DOM.crudModelUrl.value = "";
+
+      if (DOM.crudPrintTime) DOM.crudPrintTime.value = "10 hours";
+      if (DOM.crudWeight) DOM.crudWeight.value = "44g";
+      if (DOM.crudPrice) DOM.crudPrice.value = "19.99";
     }
 
     // Trigger Price Advice calculation when opening modal
@@ -2909,25 +2913,22 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       } catch (e) {}
     }
 
-    const hoursInput = document.getElementById("crud-calc-hours");
-    const gramsInput = document.getElementById("crud-calc-grams");
+    const printTimeEl = document.getElementById("crud-print-time") || DOM.crudPrintTime;
+    const weightEl = document.getElementById("crud-weight") || DOM.crudWeight;
+    const printTimeStr = printTimeEl ? printTimeEl.value : "";
+    const weightStr = weightEl ? weightEl.value : "";
     const prepInput = document.getElementById("crud-calc-prep");
 
-    const printTimeStr = DOM.crudPrintTime ? DOM.crudPrintTime.value : "";
-    const weightStr = DOM.crudWeight ? DOM.crudWeight.value : "";
-
-    let hours = parseFloat(hoursInput ? hoursInput.value : 0);
-    if ((!hours || hours === 0) && printTimeStr) {
+    let hours = 0;
+    if (printTimeStr) {
       const match = printTimeStr.match(/[\d.]+/);
-      if (match) hours = parseFloat(match[0]);
-      if (hoursInput && hours) hoursInput.value = hours;
+      if (match) hours = parseFloat(match[0]) || 0;
     }
 
-    let grams = parseFloat(gramsInput ? gramsInput.value : 0);
-    if ((!grams || grams === 0) && weightStr) {
+    let grams = 0;
+    if (weightStr) {
       const match = weightStr.match(/[\d.]+/);
-      if (match) grams = parseFloat(match[0]);
-      if (gramsInput && grams) gramsInput.value = grams;
+      if (match) grams = parseFloat(match[0]) || 0;
     }
 
     const prepMins = parseFloat(prepInput ? prepInput.value : 15) || 15;
@@ -2965,32 +2966,36 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
   function bindPriceAdviceEvents() {
     const recalcBtn = document.getElementById("btn-recalc-price-advice");
     const applyBtn = document.getElementById("btn-apply-recommended-price");
-    const hoursInput = document.getElementById("crud-calc-hours");
-    const gramsInput = document.getElementById("crud-calc-grams");
     const prepInput = document.getElementById("crud-calc-prep");
+    const printTimeInput = document.getElementById("crud-print-time");
+    const weightInput = document.getElementById("crud-weight");
 
     if (recalcBtn) recalcBtn.addEventListener("click", calculatePriceAdvice);
-    if (hoursInput) hoursInput.addEventListener("input", calculatePriceAdvice);
-    if (gramsInput) gramsInput.addEventListener("input", calculatePriceAdvice);
     if (prepInput) prepInput.addEventListener("input", calculatePriceAdvice);
 
-    if (DOM.crudPrintTime) DOM.crudPrintTime.addEventListener("input", calculatePriceAdvice);
-    if (DOM.crudWeight) DOM.crudWeight.addEventListener("input", calculatePriceAdvice);
+    [printTimeInput, weightInput].forEach(input => {
+      if (input) {
+        input.addEventListener("input", calculatePriceAdvice);
+        input.addEventListener("keyup", calculatePriceAdvice);
+        input.addEventListener("change", calculatePriceAdvice);
+      }
+    });
 
     if (applyBtn) {
       applyBtn.addEventListener("click", () => {
         const price = calculatePriceAdvice();
-        if (price > 0 && DOM.crudPrice) {
-          DOM.crudPrice.value = price.toFixed(2);
-          DOM.crudPrice.style.outline = "2px solid #10b981";
-          DOM.crudPrice.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.4)";
+        const priceInput = document.getElementById("crud-price") || DOM.crudPrice;
+        if (price > 0 && priceInput) {
+          priceInput.value = price.toFixed(2);
+          priceInput.style.outline = "2.5px solid #10b981";
+          priceInput.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.5)";
           setTimeout(() => {
-            DOM.crudPrice.style.outline = "none";
-            DOM.crudPrice.style.boxShadow = "none";
+            priceInput.style.outline = "none";
+            priceInput.style.boxShadow = "none";
           }, 1500);
           showAppAlert(`Recommended retail price $${price.toFixed(2)} applied to product base price!`, "Price Advice Applied", "💡");
         } else {
-          showAppAlert("Please enter valid build time (hours) and model weight (grams) to generate price advice.", "Price Advice", "ℹ️");
+          showAppAlert("Please enter valid Estimated Build Time (hours) and Weight (grams) to generate price advice.", "Price Advice", "ℹ️");
         }
       });
     }
