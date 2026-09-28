@@ -2876,6 +2876,114 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       if (DOM.crudOriginalPriceGroup) DOM.crudOriginalPriceGroup.style.display = "none";
       if (DOM.crudModelUrl) DOM.crudModelUrl.value = "";
     }
+
+    // Trigger Price Advice calculation when opening modal
+    calculatePriceAdvice();
+  }
+
+  // Calculate Smart Price Advice based on persistent Cost Calculator overhead defaults
+  function calculatePriceAdvice() {
+    let defaults = {
+      spoolCost: 24.99,
+      spoolWeight: 1000,
+      wattage: 150,
+      elecRate: 0.120,
+      depreciation: 0.25,
+      laborWage: 15.00,
+      profitMargin: 60
+    };
+
+    if (localStorage.getItem("calc_defaults")) {
+      try {
+        defaults = { ...defaults, ...JSON.parse(localStorage.getItem("calc_defaults")) };
+      } catch (e) {}
+    }
+
+    const hoursInput = document.getElementById("crud-calc-hours");
+    const gramsInput = document.getElementById("crud-calc-grams");
+    const prepInput = document.getElementById("crud-calc-prep");
+
+    const printTimeStr = DOM.crudPrintTime ? DOM.crudPrintTime.value : "";
+    const weightStr = DOM.crudWeight ? DOM.crudWeight.value : "";
+
+    let hours = parseFloat(hoursInput ? hoursInput.value : 0);
+    if ((!hours || hours === 0) && printTimeStr) {
+      const match = printTimeStr.match(/[\d.]+/);
+      if (match) hours = parseFloat(match[0]);
+      if (hoursInput && hours) hoursInput.value = hours;
+    }
+
+    let grams = parseFloat(gramsInput ? gramsInput.value : 0);
+    if ((!grams || grams === 0) && weightStr) {
+      const match = weightStr.match(/[\d.]+/);
+      if (match) grams = parseFloat(match[0]);
+      if (gramsInput && grams) gramsInput.value = grams;
+    }
+
+    const prepMins = parseFloat(prepInput ? prepInput.value : 15) || 15;
+
+    // Formulas
+    const materialCost = (grams * 1.15) * (defaults.spoolCost / (defaults.spoolWeight || 1000));
+    const powerCost = hours * ((defaults.wattage || 150) / 1000) * (defaults.elecRate || 0.12);
+    const wearCost = hours * (defaults.depreciation || 0.25);
+    const laborCost = (prepMins / 60) * (defaults.laborWage || 15.0);
+
+    const totalCogs = materialCost + powerCost + wearCost + laborCost;
+
+    let suggestedPrice = 0;
+    if (defaults.profitMargin < 100) {
+      suggestedPrice = totalCogs / (1 - ((defaults.profitMargin || 60) / 100));
+    } else {
+      suggestedPrice = totalCogs * 1.6;
+    }
+
+    if (isNaN(suggestedPrice) || suggestedPrice < 0) suggestedPrice = 0;
+
+    const cogsEl = document.getElementById("advice-out-cogs");
+    const marginEl = document.getElementById("advice-out-margin");
+    const priceEl = document.getElementById("advice-out-price");
+    const btnLabelEl = document.getElementById("advice-btn-price-label");
+
+    if (cogsEl) cogsEl.textContent = `$${totalCogs.toFixed(2)}`;
+    if (marginEl) marginEl.textContent = `${(defaults.profitMargin || 60).toFixed(0)}%`;
+    if (priceEl) priceEl.textContent = `$${suggestedPrice.toFixed(2)}`;
+    if (btnLabelEl) btnLabelEl.textContent = `$${suggestedPrice.toFixed(2)}`;
+
+    return suggestedPrice;
+  }
+
+  function bindPriceAdviceEvents() {
+    const recalcBtn = document.getElementById("btn-recalc-price-advice");
+    const applyBtn = document.getElementById("btn-apply-recommended-price");
+    const hoursInput = document.getElementById("crud-calc-hours");
+    const gramsInput = document.getElementById("crud-calc-grams");
+    const prepInput = document.getElementById("crud-calc-prep");
+
+    if (recalcBtn) recalcBtn.addEventListener("click", calculatePriceAdvice);
+    if (hoursInput) hoursInput.addEventListener("input", calculatePriceAdvice);
+    if (gramsInput) gramsInput.addEventListener("input", calculatePriceAdvice);
+    if (prepInput) prepInput.addEventListener("input", calculatePriceAdvice);
+
+    if (DOM.crudPrintTime) DOM.crudPrintTime.addEventListener("input", calculatePriceAdvice);
+    if (DOM.crudWeight) DOM.crudWeight.addEventListener("input", calculatePriceAdvice);
+
+    if (applyBtn) {
+      applyBtn.addEventListener("click", () => {
+        const price = calculatePriceAdvice();
+        if (price > 0 && DOM.crudPrice) {
+          DOM.crudPrice.value = price.toFixed(2);
+          DOM.crudPrice.style.outline = "2px solid #10b981";
+          DOM.crudPrice.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.4)";
+          setTimeout(() => {
+            DOM.crudPrice.style.outline = "none";
+            DOM.crudPrice.style.boxShadow = "none";
+          }, 1500);
+          showAppAlert(`Recommended retail price $${price.toFixed(2)} applied to product base price!`, "Price Advice Applied", "💡");
+        } else {
+          showAppAlert("Please enter valid build time (hours) and model weight (grams) to generate price advice.", "Price Advice", "ℹ️");
+        }
+      });
+    }
   }
 
   // Legacy tags handler functions removed in favor of dynamic color options row editor
@@ -4776,6 +4884,72 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     }
   }
 
+  // DEDICATED ADMIN MOBILE NAVIGATION DRAWER
+  function initAdminMobileDrawer() {
+    const hamburgerBtn = document.getElementById("admin-mobile-hamburger-btn");
+    const overlay = document.getElementById("admin-mobile-nav-overlay");
+    const drawer = document.getElementById("admin-mobile-nav-drawer");
+    const closeBtn = document.getElementById("close-admin-mobile-nav-btn");
+    const logoutBtn = document.getElementById("admin-mobile-logout-btn");
+
+    if (!hamburgerBtn || !drawer) return;
+
+    const openDrawer = () => {
+      drawer.classList.add("open");
+      if (overlay) overlay.classList.add("open");
+      hamburgerBtn.classList.add("active");
+    };
+
+    const closeDrawer = () => {
+      drawer.classList.remove("open");
+      if (overlay) overlay.classList.remove("open");
+      hamburgerBtn.classList.remove("active");
+    };
+
+    hamburgerBtn.addEventListener("click", () => {
+      if (drawer.classList.contains("open")) {
+        closeDrawer();
+      } else {
+        openDrawer();
+      }
+    });
+
+    if (overlay) overlay.addEventListener("click", closeDrawer);
+    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        closeDrawer();
+        const desktopLogout = document.getElementById("logout-btn");
+        if (desktopLogout) desktopLogout.click();
+      });
+    }
+
+    // Handle menu items inside admin mobile drawer
+    const menuItems = drawer.querySelectorAll(".admin-mobile-menu .mobile-nav-item[data-target]");
+    menuItems.forEach(item => {
+      item.addEventListener("click", () => {
+        const targetId = item.dataset.target;
+        closeDrawer();
+
+        // Trigger corresponding desktop sidebar item to keep state synchronized
+        const desktopItem = document.querySelector(`.db-menu .db-menu-item[data-target="${targetId}"]`);
+        if (desktopItem) {
+          desktopItem.click();
+        } else {
+          // Fallback direct section toggle
+          document.querySelectorAll(".db-section").forEach(sec => sec.classList.remove("active"));
+          const targetSec = document.getElementById(targetId);
+          if (targetSec) targetSec.classList.add("active");
+        }
+
+        // Update active class in admin mobile menu
+        menuItems.forEach(m => m.classList.remove("active"));
+        item.classList.add("active");
+      });
+    });
+  }
+
   // INITIALIZE ON RUN
   async function startApplication() {
     try {
@@ -4804,6 +4978,8 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     initTrackOrderLogic();
     initCheckoutFormPinAutoCheck();
     initMobileNavigationDrawer();
+    initAdminMobileDrawer();
+    bindPriceAdviceEvents();
     initUnderConstructionOverlay();
 
   // UNDER CONSTRUCTION OVERLAY & 10-TAP SECRET LOGO UNLOCK LOGIC
