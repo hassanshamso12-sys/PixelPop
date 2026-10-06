@@ -3529,5 +3529,52 @@ html, body {
   margin-bottom: 0.5rem;
 }
 
+/* FINANCIAL ANALYTICS MODULE STYLES */
+.fin-pill {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fin-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.fin-pill.active {
+  background: linear-gradient(135deg, var(--accent-indigo), #3730a3);
+  color: #ffffff;
+  border-color: var(--accent-indigo);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.fin-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  line-height: 1.5;
+  transition: opacity 0.15s ease;
+}
+
+.fin-tooltip strong {
+  color: #818cf8;
+}
+
 
 

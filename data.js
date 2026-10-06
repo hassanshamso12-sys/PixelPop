@@ -10,6 +10,96 @@ const firebaseConfig = {
 const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(firebaseApp);
 
+const DEFAULT_ALLOWED_ADMINS = [
+  {
+    email: "hassanshamso12@gmail.com",
+    addedAt: "2026-01-01T00:00:00.000Z",
+    addedBy: "System Administrator"
+  }
+];
+
+const DEFAULT_ADMIN_ACCOUNTS = [
+  {
+    email: "hassanshamso12@gmail.com",
+    password: "11223311",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    isSignedUp: true
+  }
+];
+
+const DEFAULT_INVESTORS = [
+  {
+    id: "inv-1",
+    name: "Alex Vance",
+    email: "investor@pixelpop.com",
+    password: "1234password",
+    createdAt: "2026-01-15T00:00:00.000Z"
+  }
+];
+
+const DEFAULT_PRINTERS = [
+  {
+    id: "prn-1",
+    name: "Bambu Lab X1-Carbon #1",
+    serialNumber: "BL-X1C-99482",
+    investorEmail: "investor@pixelpop.com",
+    hourlyRate: 6.50,
+    costPerHour: 0.90,
+    status: "Idle",
+    currentSessionStart: null,
+    accumulatedSessionSeconds: 0,
+    unpaidHours: 14.5,
+    lifetimeHours: 62.0,
+    sessions: [
+      {
+        id: "sess-1",
+        startDate: "2026-10-04T08:00:00.000Z",
+        endDate: "2026-10-04T14:30:00.000Z",
+        hours: 6.5,
+        rate: 6.50,
+        earnings: 42.25,
+        payoffId: null
+      },
+      {
+        id: "sess-2",
+        startDate: "2026-10-05T09:00:00.000Z",
+        endDate: "2026-10-05T17:00:00.000Z",
+        hours: 8.0,
+        rate: 6.50,
+        earnings: 52.00,
+        payoffId: null
+      }
+    ],
+    payoffHistory: [
+      {
+        id: "pay-101",
+        date: "2026-09-30T18:00:00.000Z",
+        hoursPaid: 47.5,
+        hourlyRate: 6.50,
+        amountPaid: 308.75,
+        notes: "End of September Settlement"
+      }
+    ]
+  }
+];
+
+const DEFAULT_CUSTOM_JOBS = [
+  {
+    id: "cjob-101",
+    clientName: "Architectural Models Ltd",
+    jobTitle: "Scale Prototype Building Model (High Res)",
+    printerId: "prn-1",
+    printerName: "Bambu Lab X1-Carbon #1",
+    investorEmail: "investor@pixelpop.com",
+    durationHours: 12.0,
+    cost: 14.50,
+    price: 85.00,
+    profit: 70.50,
+    date: "2026-10-05T14:00:00.000Z",
+    status: "Completed"
+  }
+];
+
 const DEFAULT_CATEGORIES = [
   {
     id: "home-decor",
@@ -279,6 +369,121 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
+const DEFAULT_ORDERS = [
+  {
+    id: "ORD-1001",
+    createdAt: "2026-10-06T10:15:00.000Z",
+    datePlaced: "2026-10-06",
+    customer: { firstName: "Sami", lastName: "Khoury", email: "sami@example.com", phone: "+961 70 111 222", address: "Hamra St", city: "Beirut", zip: "1103" },
+    items: [
+      { productId: "crystal-dragon", name: "Articulating Crystal Dragon", color: "Silk Gold", size: "Standard (22cm)", material: "PLA (Standard)", qty: 2, price: 19.99, weight: "95g" }
+    ],
+    totals: { subtotal: 39.98, discount: 0, shipping: 4.99, surcharge: 0, total: 44.97 },
+    costAmount: 12.50,
+    deliveryStatus: "Processing",
+    paymentStatus: "Paid",
+    paymentMethod: "cod"
+  },
+  {
+    id: "ORD-1002",
+    createdAt: "2026-10-05T14:30:00.000Z",
+    datePlaced: "2026-10-05",
+    customer: { firstName: "Maya", lastName: "Nassar", email: "maya@example.com", phone: "+961 03 444 555", address: "Achrafieh", city: "Beirut", zip: "1100" },
+    items: [
+      { productId: "oni-mask", name: "Cyberpunk Oni Half-Mask", color: "Crimson Red", size: "Adult Standard", material: "ABS (Tough)", qty: 1, price: 44.99, weight: "220g" }
+    ],
+    totals: { subtotal: 44.99, discount: 0, shipping: 4.99, surcharge: 0, total: 49.98 },
+    costAmount: 14.00,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "wish"
+  },
+  {
+    id: "ORD-1003",
+    createdAt: "2026-10-03T16:20:00.000Z",
+    datePlaced: "2026-10-03",
+    customer: { firstName: "Tariq", lastName: "Salem", email: "tariq@example.com", phone: "+961 71 888 999", address: "Kaslik St", city: "Jounieh", zip: "1201" },
+    items: [
+      { productId: "modular-organizer", name: "HexaNest Modular Desk Organizer", color: "Stealth Black", size: "Master Set (6 Columns)", material: "PETG (Extra Stiff)", qty: 1, price: 41.99, weight: "150g" }
+    ],
+    totals: { subtotal: 41.99, discount: 0, shipping: 4.99, surcharge: 0, total: 46.98 },
+    costAmount: 13.00,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "neo"
+  },
+  {
+    id: "ORD-1004",
+    createdAt: "2026-09-28T11:00:00.000Z",
+    datePlaced: "2026-09-28",
+    customer: { firstName: "Rami", lastName: "El-Hajj", email: "rami@example.com", phone: "+961 76 333 222", address: "Corniche St", city: "Saida", zip: "1600" },
+    items: [
+      { productId: "superman-statue", name: "Superman Statue", color: "Classic Blue", size: "Large (25cm)", material: "PLA (Standard)", qty: 1, price: 44.99, weight: "140g" }
+    ],
+    totals: { subtotal: 44.99, discount: 0, shipping: 4.99, surcharge: 0, total: 49.98 },
+    costAmount: 13.50,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "cod"
+  },
+  {
+    id: "ORD-1005",
+    createdAt: "2026-09-21T09:45:00.000Z",
+    datePlaced: "2026-09-21",
+    customer: { firstName: "Nour", lastName: "Fakhoury", email: "nour@example.com", phone: "+961 70 555 777", address: "Mina St", city: "Tripoli", zip: "1300" },
+    items: [
+      { productId: "self-watering-planter", name: "Geometric Self-Watering Planter", color: "Marble White", size: "Large (15cm)", material: "PETG (Waterproof)", qty: 2, price: 22.99, weight: "70g" }
+    ],
+    totals: { subtotal: 45.98, discount: 0, shipping: 4.99, surcharge: 0, total: 50.97 },
+    costAmount: 14.00,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "wish"
+  },
+  {
+    id: "ORD-1006",
+    createdAt: "2026-09-14T15:10:00.000Z",
+    datePlaced: "2026-09-14",
+    customer: { firstName: "Karim", lastName: "Ziad", email: "karim@example.com", phone: "+961 03 123 789", address: "Old Port", city: "Byblos", zip: "1401" },
+    items: [
+      { productId: "crystal-dragon", name: "Articulating Crystal Dragon", color: "Silk Rainbow", size: "Giant (35cm)", material: "PLA (Standard)", qty: 1, price: 38.49, weight: "160g" }
+    ],
+    totals: { subtotal: 38.49, discount: 0, shipping: 4.99, surcharge: 0, total: 43.48 },
+    costAmount: 11.80,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "neo"
+  },
+  {
+    id: "ORD-1007",
+    createdAt: "2026-08-28T14:00:00.000Z",
+    datePlaced: "2026-08-28",
+    customer: { firstName: "Lina", lastName: "Matar", email: "lina@example.com", phone: "+961 71 444 333", address: "Boulvard St", city: "Zahle", zip: "1800" },
+    items: [
+      { productId: "oni-mask", name: "Cyberpunk Oni Half-Mask", color: "Metallic Purple", size: "Adult Standard", material: "PLA (Standard)", qty: 2, price: 42.49, weight: "220g" }
+    ],
+    totals: { subtotal: 84.98, discount: 5.00, shipping: 4.99, surcharge: 0, total: 84.97 },
+    costAmount: 26.00,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "cod"
+  },
+  {
+    id: "ORD-1008",
+    createdAt: "2026-08-12T10:30:00.000Z",
+    datePlaced: "2026-08-12",
+    customer: { firstName: "Fadi", lastName: "Haddad", email: "fadi@example.com", phone: "+961 70 888 111", address: "Main Road", city: "Batroun", zip: "1450" },
+    items: [
+      { productId: "modular-organizer", name: "HexaNest Modular Desk Organizer", color: "Cosmic Blue", size: "Master Set (6 Columns)", material: "PETG (Extra Stiff)", qty: 2, price: 41.99, weight: "150g" }
+    ],
+    totals: { subtotal: 83.98, discount: 10.00, shipping: 4.99, surcharge: 0, total: 78.97 },
+    costAmount: 23.50,
+    deliveryStatus: "Delivered",
+    paymentStatus: "Paid",
+    paymentMethod: "wish"
+  }
+];
+
 // Helper to interact with LocalStorage
 const DEFAULT_PAYMENT_SETTINGS = {
   cod: {
@@ -411,6 +616,11 @@ const DB = {
         heroDoc,
         socialDoc,
         themeDoc,
+        allowedAdminsDoc,
+        adminAccountsDoc,
+        investorsDoc,
+        printersDoc,
+        customJobsDoc,
         productsSnap,
         ordersSnap
       ] = await Promise.all([
@@ -421,6 +631,11 @@ const DB = {
         getDoc(doc(db, "settings", "hero")),
         getDoc(doc(db, "settings", "social")),
         getDoc(doc(db, "settings", "theme")),
+        getDoc(doc(db, "settings", "allowed_admins")),
+        getDoc(doc(db, "settings", "admin_accounts")),
+        getDoc(doc(db, "settings", "investors")),
+        getDoc(doc(db, "settings", "printers")),
+        getDoc(doc(db, "settings", "custom_jobs")),
         getDocs(collection(db, "products")),
         getDocs(collection(db, "orders"))
       ]);
@@ -488,6 +703,51 @@ const DB = {
         if (local) await setDoc(doc(db, "settings", "theme"), local);
       }
 
+      // Allowed Admin Emails
+      if (allowedAdminsDoc.exists()) {
+        localStorage.setItem("allowed_admin_emails", JSON.stringify(allowedAdminsDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("allowed_admin_emails"));
+        if (local) await setDoc(doc(db, "settings", "allowed_admins"), { list: local });
+      }
+
+      // Admin Accounts
+      if (adminAccountsDoc.exists()) {
+        localStorage.setItem("admin_accounts", JSON.stringify(adminAccountsDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("admin_accounts"));
+        if (local) await setDoc(doc(db, "settings", "admin_accounts"), { list: local });
+      }
+
+      // Investors Accounts
+      if (investorsDoc.exists()) {
+        localStorage.setItem("investors", JSON.stringify(investorsDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("investors"));
+        if (local) await setDoc(doc(db, "settings", "investors"), { list: local });
+      }
+
+      // Printers Fleet
+      if (printersDoc.exists()) {
+        localStorage.setItem("printers", JSON.stringify(printersDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("printers"));
+        if (local) await setDoc(doc(db, "settings", "printers"), { list: local });
+      }
+
+      // Custom Jobs
+      if (customJobsDoc && customJobsDoc.exists()) {
+        localStorage.setItem("custom_jobs", JSON.stringify(customJobsDoc.data().list));
+      } else {
+        this.init();
+        const local = JSON.parse(localStorage.getItem("custom_jobs"));
+        if (local) await setDoc(doc(db, "settings", "custom_jobs"), { list: local });
+      }
+
       // Products
       if (!productsSnap.empty) {
         const list = [];
@@ -522,8 +782,8 @@ const DB = {
     if (!localStorage.getItem("products")) {
       localStorage.setItem("products", JSON.stringify(DEFAULT_PRODUCTS));
     }
-    if (!localStorage.getItem("orders")) {
-      localStorage.setItem("orders", JSON.stringify([]));
+    if (!localStorage.getItem("orders") || JSON.parse(localStorage.getItem("orders") || "[]").length === 0) {
+      localStorage.setItem("orders", JSON.stringify(DEFAULT_ORDERS));
     }
     if (!localStorage.getItem("payment_settings")) {
       localStorage.setItem("payment_settings", JSON.stringify(DEFAULT_PAYMENT_SETTINGS));
@@ -542,6 +802,21 @@ const DB = {
     }
     if (!localStorage.getItem("coupons")) {
       localStorage.setItem("coupons", JSON.stringify(DEFAULT_COUPONS));
+    }
+    if (!localStorage.getItem("allowed_admin_emails")) {
+      localStorage.setItem("allowed_admin_emails", JSON.stringify(DEFAULT_ALLOWED_ADMINS));
+    }
+    if (!localStorage.getItem("admin_accounts")) {
+      localStorage.setItem("admin_accounts", JSON.stringify(DEFAULT_ADMIN_ACCOUNTS));
+    }
+    if (!localStorage.getItem("investors")) {
+      localStorage.setItem("investors", JSON.stringify(DEFAULT_INVESTORS));
+    }
+    if (!localStorage.getItem("printers")) {
+      localStorage.setItem("printers", JSON.stringify(DEFAULT_PRINTERS));
+    }
+    if (!localStorage.getItem("custom_jobs")) {
+      localStorage.setItem("custom_jobs", JSON.stringify(DEFAULT_CUSTOM_JOBS));
     }
   },
 
@@ -769,6 +1044,407 @@ const DB = {
     let coupons = this.getCoupons();
     coupons = coupons.filter(c => c.code !== code);
     this.saveCoupons(coupons);
+  },
+
+  // ADMIN AUTHORIZATION & ACCOUNT MANAGERS
+  getAllowedAdmins() {
+    this.init();
+    return JSON.parse(localStorage.getItem("allowed_admin_emails")) || DEFAULT_ALLOWED_ADMINS;
+  },
+
+  saveAllowedAdmins(list) {
+    localStorage.setItem("allowed_admin_emails", JSON.stringify(list));
+    setDoc(doc(db, "settings", "allowed_admins"), { list }).catch(console.error);
+  },
+
+  isEmailAllowedAsAdmin(email) {
+    if (!email) return false;
+    const normalized = email.trim().toLowerCase();
+    const allowed = this.getAllowedAdmins();
+    return allowed.some(a => {
+      const e = typeof a === 'string' ? a : a.email;
+      return e.toLowerCase().trim() === normalized;
+    });
+  },
+
+  addAllowedAdmin(email, addedBy = "Dashboard Admin") {
+    const normalized = email.trim().toLowerCase();
+    let allowed = this.getAllowedAdmins();
+    const exists = allowed.some(a => {
+      const e = typeof a === 'string' ? a : a.email;
+      return e.toLowerCase().trim() === normalized;
+    });
+
+    if (!exists) {
+      allowed.push({
+        email: normalized,
+        addedAt: new Date().toISOString(),
+        addedBy: addedBy || "Dashboard Admin"
+      });
+      this.saveAllowedAdmins(allowed);
+    }
+    return allowed;
+  },
+
+  removeAllowedAdmin(email) {
+    const normalized = email.trim().toLowerCase();
+    let allowed = this.getAllowedAdmins();
+    allowed = allowed.filter(a => {
+      const e = typeof a === 'string' ? a : a.email;
+      return e.toLowerCase().trim() !== normalized;
+    });
+    this.saveAllowedAdmins(allowed);
+
+    // Also purge existing signed-up account if revoked
+    let accounts = this.getAdminAccounts();
+    accounts = accounts.filter(ac => ac.email.toLowerCase().trim() !== normalized);
+    this.saveAdminAccounts(accounts);
+    return allowed;
+  },
+
+  getAdminAccounts() {
+    this.init();
+    return JSON.parse(localStorage.getItem("admin_accounts")) || DEFAULT_ADMIN_ACCOUNTS;
+  },
+
+  saveAdminAccounts(list) {
+    localStorage.setItem("admin_accounts", JSON.stringify(list));
+    setDoc(doc(db, "settings", "admin_accounts"), { list }).catch(console.error);
+  },
+
+  getAdminAccount(email) {
+    if (!email) return null;
+    const normalized = email.trim().toLowerCase();
+    const accounts = this.getAdminAccounts();
+    return accounts.find(a => a.email.toLowerCase().trim() === normalized) || null;
+  },
+
+  registerAdminAccount(email, password) {
+    const normalized = email.trim().toLowerCase();
+    let accounts = this.getAdminAccounts();
+    const existingIndex = accounts.findIndex(a => a.email.toLowerCase().trim() === normalized);
+    const accountData = {
+      email: normalized,
+      password: password,
+      createdAt: new Date().toISOString(),
+      isSignedUp: true
+    };
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = accountData;
+    } else {
+      accounts.push(accountData);
+    }
+    this.saveAdminAccounts(accounts);
+    return accountData;
+  },
+
+  // INVESTOR ACCOUNT MANAGEMENT
+  getInvestors() {
+    this.init();
+    return JSON.parse(localStorage.getItem("investors")) || DEFAULT_INVESTORS;
+  },
+
+  saveInvestors(list) {
+    localStorage.setItem("investors", JSON.stringify(list));
+    setDoc(doc(db, "settings", "investors"), { list }).catch(console.error);
+  },
+
+  getInvestorByEmail(email) {
+    if (!email) return null;
+    const normalized = email.trim().toLowerCase();
+    const investors = this.getInvestors();
+    return investors.find(i => i.email.toLowerCase().trim() === normalized) || null;
+  },
+
+  addInvestor(investor) {
+    let investors = this.getInvestors();
+    investor.email = investor.email.trim().toLowerCase();
+    const existingIdx = investors.findIndex(i => i.email === investor.email);
+    if (existingIdx >= 0) {
+      investors[existingIdx] = { ...investors[existingIdx], ...investor };
+    } else {
+      investors.push({
+        id: "inv-" + Date.now(),
+        createdAt: new Date().toISOString(),
+        ...investor
+      });
+    }
+    this.saveInvestors(investors);
+    return investor;
+  },
+
+  deleteInvestor(id) {
+    let investors = this.getInvestors();
+    investors = investors.filter(i => i.id !== id);
+    this.saveInvestors(investors);
+  },
+
+  // PRINTER FLEET & PIPELINE MANAGEMENT
+  getPrinters() {
+    this.init();
+    return JSON.parse(localStorage.getItem("printers")) || DEFAULT_PRINTERS;
+  },
+
+  savePrinters(list) {
+    localStorage.setItem("printers", JSON.stringify(list));
+    setDoc(doc(db, "settings", "printers"), { list }).catch(console.error);
+  },
+
+  getPrinterById(id) {
+    const printers = this.getPrinters();
+    return printers.find(p => p.id === id) || null;
+  },
+
+  getPrintersForInvestor(investorEmail) {
+    if (!investorEmail) return [];
+    const normalized = investorEmail.trim().toLowerCase();
+    const printers = this.getPrinters();
+    return printers.filter(p => p.investorEmail.toLowerCase().trim() === normalized);
+  },
+
+  addPrinter(printer) {
+    let printers = this.getPrinters();
+    const newPrinter = {
+      id: "prn-" + Date.now(),
+      status: "Idle",
+      currentSessionStart: null,
+      accumulatedSessionSeconds: 0,
+      unpaidHours: 0,
+      lifetimeHours: 0,
+      costPerHour: parseFloat(printer.costPerHour) || 0,
+      sessions: [],
+      payoffHistory: [],
+      ...printer,
+      hourlyRate: parseFloat(printer.hourlyRate) || 0,
+      investorEmail: printer.investorEmail.trim().toLowerCase()
+    };
+    printers.push(newPrinter);
+    this.savePrinters(printers);
+    return newPrinter;
+  },
+
+  updatePrinter(updatedPrinter) {
+    let printers = this.getPrinters();
+    printers = printers.map(p => p.id === updatedPrinter.id ? updatedPrinter : p);
+    this.savePrinters(printers);
+    return updatedPrinter;
+  },
+
+  deletePrinter(id) {
+    let printers = this.getPrinters();
+    printers = printers.filter(p => p.id !== id);
+    this.savePrinters(printers);
+  },
+
+  // PRINTER LIVE TIMER & CONTROL TRIGGERS
+  startPrinter(printerId) {
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+    if (!printer) return;
+
+    if (printer.status !== "Printing") {
+      printer.status = "Printing";
+      printer.currentSessionStart = Date.now();
+      this.savePrinters(printers);
+    }
+    return printer;
+  },
+
+  pausePrinter(printerId) {
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+    if (!printer) return;
+
+    if (printer.status === "Printing" && printer.currentSessionStart) {
+      const elapsedSeconds = Math.floor((Date.now() - printer.currentSessionStart) / 1000);
+      printer.accumulatedSessionSeconds = (printer.accumulatedSessionSeconds || 0) + elapsedSeconds;
+      printer.currentSessionStart = null;
+      printer.status = "Paused";
+      this.savePrinters(printers);
+    }
+    return printer;
+  },
+
+  stopPrinter(printerId) {
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+    if (!printer) return;
+
+    let totalSeconds = printer.accumulatedSessionSeconds || 0;
+    if (printer.status === "Printing" && printer.currentSessionStart) {
+      totalSeconds += Math.floor((Date.now() - printer.currentSessionStart) / 1000);
+    }
+
+    const durationHours = parseFloat((totalSeconds / 3600).toFixed(2));
+    const now = new Date().toISOString();
+
+    if (durationHours > 0 || totalSeconds > 0) {
+      if (!printer.sessions) printer.sessions = [];
+      const sessionObj = {
+        id: "sess-" + Date.now(),
+        startDate: printer.currentSessionStart ? new Date(printer.currentSessionStart).toISOString() : now,
+        endDate: now,
+        hours: durationHours,
+        rate: printer.hourlyRate,
+        earnings: parseFloat((durationHours * printer.hourlyRate).toFixed(2)),
+        payoffId: null
+      };
+      printer.sessions.unshift(sessionObj);
+      printer.unpaidHours = parseFloat(((printer.unpaidHours || 0) + durationHours).toFixed(2));
+      printer.lifetimeHours = parseFloat(((printer.lifetimeHours || 0) + durationHours).toFixed(2));
+    }
+
+    printer.status = "Idle";
+    printer.currentSessionStart = null;
+    printer.accumulatedSessionSeconds = 0;
+
+    this.savePrinters(printers);
+    return printer;
+  },
+
+  editPrinterHours(printerId, newUnpaidHours, newLifetimeHours = null) {
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+    if (!printer) return;
+
+    printer.unpaidHours = Math.max(0, parseFloat(newUnpaidHours) || 0);
+    if (newLifetimeHours !== null) {
+      printer.lifetimeHours = Math.max(0, parseFloat(newLifetimeHours) || 0);
+    }
+    this.savePrinters(printers);
+    return printer;
+  },
+
+  triggerPayoff(printerId, notes = "Payment Settlement") {
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+    if (!printer) return;
+
+    const unpaidHrs = printer.unpaidHours || 0;
+    const rate = printer.hourlyRate || 0;
+    const amount = parseFloat((unpaidHrs * rate).toFixed(2));
+
+    const payoffRecord = {
+      id: "pay-" + Date.now(),
+      date: new Date().toISOString(),
+      printerId: printer.id,
+      printerName: printer.name,
+      serialNumber: printer.serialNumber,
+      investorEmail: printer.investorEmail,
+      hoursPaid: unpaidHrs,
+      hourlyRate: rate,
+      amountPaid: amount,
+      notes: notes || "Payment Settlement"
+    };
+
+    if (!printer.payoffHistory) printer.payoffHistory = [];
+    printer.payoffHistory.unshift(payoffRecord);
+
+    // Mark current unpaid sessions as paid
+    if (printer.sessions) {
+      printer.sessions.forEach(s => {
+        if (!s.payoffId) s.payoffId = payoffRecord.id;
+      });
+    }
+
+    // Reset unpaid hours to 0
+    printer.unpaidHours = 0;
+
+    this.savePrinters(printers);
+    return payoffRecord;
+  },
+
+  // ON-DEMAND CUSTOM PRINTING JOBS
+  getCustomJobs() {
+    this.init();
+    return JSON.parse(localStorage.getItem("custom_jobs")) || DEFAULT_CUSTOM_JOBS;
+  },
+
+  saveCustomJobs(list) {
+    localStorage.setItem("custom_jobs", JSON.stringify(list));
+    setDoc(doc(db, "settings", "custom_jobs"), { list }).catch(console.error);
+  },
+
+  addCustomJob(job) {
+    let jobs = this.getCustomJobs();
+    const cost = parseFloat(job.cost) || 0;
+    const price = parseFloat(job.price) || 0;
+    const profit = parseFloat((price - cost).toFixed(2));
+
+    let printerName = "Unassigned";
+    let investorEmail = "N/A";
+
+    if (job.printerId) {
+      const printer = this.getPrinterById(job.printerId);
+      if (printer) {
+        printerName = printer.name;
+        investorEmail = printer.investorEmail;
+      }
+    }
+
+    const newJob = {
+      id: "cjob-" + Date.now(),
+      date: new Date().toISOString(),
+      status: "Completed",
+      printerName,
+      investorEmail,
+      ...job,
+      cost,
+      price,
+      profit,
+      durationHours: parseFloat(job.durationHours) || 0
+    };
+
+    jobs.unshift(newJob);
+    this.saveCustomJobs(jobs);
+
+    // If assigned to a printer, credit hours to printer unpaidHours & add session
+    if (job.printerId) {
+      let printers = this.getPrinters();
+      const printer = printers.find(p => p.id === job.printerId);
+      if (printer) {
+        const hrs = parseFloat(job.durationHours) || 0;
+        printer.unpaidHours = parseFloat(((printer.unpaidHours || 0) + hrs).toFixed(2));
+        printer.lifetimeHours = parseFloat(((printer.lifetimeHours || 0) + hrs).toFixed(2));
+        if (!printer.sessions) printer.sessions = [];
+        printer.sessions.unshift({
+          id: "sess-" + Date.now(),
+          startDate: new Date().toISOString(),
+          endDate: new Date().toISOString(),
+          hours: hrs,
+          rate: printer.hourlyRate,
+          earnings: parseFloat((hrs * printer.hourlyRate).toFixed(2)),
+          payoffId: null
+        });
+        this.savePrinters(printers);
+      }
+    }
+
+    return newJob;
+  },
+
+  deleteCustomJob(id) {
+    let jobs = this.getCustomJobs();
+    jobs = jobs.filter(j => j.id !== id);
+    this.saveCustomJobs(jobs);
+  },
+
+  dispatchOrderToPrinter(orderId, printerId) {
+    let orders = this.getOrders();
+    const order = orders.find(o => o.id === orderId);
+    let printers = this.getPrinters();
+    const printer = printers.find(p => p.id === printerId);
+
+    if (order && printer) {
+      order.assignedPrinterId = printer.id;
+      order.assignedPrinterName = printer.name;
+      order.deliveryStatus = "Printing";
+      order.status = "Printing";
+      this.saveOrders(orders);
+
+      // Start target printer live timecode & status
+      this.startPrinter(printer.id);
+    }
   }
 };
 
@@ -782,3 +1458,8 @@ window.DEFAULT_DELIVERY_OPTIONS = DEFAULT_DELIVERY_OPTIONS;
 window.DEFAULT_SOCIAL_SETTINGS = DEFAULT_SOCIAL_SETTINGS;
 window.DEFAULT_THEME_SETTINGS = DEFAULT_THEME_SETTINGS;
 window.DEFAULT_COUPONS = DEFAULT_COUPONS;
+window.DEFAULT_ALLOWED_ADMINS = DEFAULT_ALLOWED_ADMINS;
+window.DEFAULT_ADMIN_ACCOUNTS = DEFAULT_ADMIN_ACCOUNTS;
+window.DEFAULT_INVESTORS = DEFAULT_INVESTORS;
+window.DEFAULT_PRINTERS = DEFAULT_PRINTERS;
+window.DEFAULT_CUSTOM_JOBS = DEFAULT_CUSTOM_JOBS;

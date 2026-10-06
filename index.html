@@ -726,24 +726,67 @@
           <span>Pixel<span class="text-gradient">Pop</span></span>
         </div>
         <h2>Admin Console</h2>
-        <p class="text-muted">Log in to manage prints, inventory, and payments.</p>
+        <p class="text-muted">Log in or sign up to access your 3D print pipeline dashboard.</p>
       </div>
-      <form id="admin-login-form">
-        <div class="form-group">
-          <label class="form-label" for="admin-email">Email Address</label>
-          <input type="email" id="admin-email" class="form-input" placeholder="admin@pixelpop.com" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="admin-password">Password</label>
-          <input type="password" id="admin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-        <div id="login-error-msg" class="text-danger" style="display: none; font-size: 0.85rem; margin-top: -0.5rem; margin-bottom: 1rem; font-weight: 500;">
-          ❌ Invalid email or password
-        </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
-          Log In 🔒
-        </button>
-      </form>
+
+      <!-- Auth Mode Tabs -->
+      <div class="auth-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(0, 0, 0, 0.03); padding: 0.3rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+        <button type="button" class="auth-tab active" id="auth-tab-login" style="flex: 1; padding: 0.6rem; border: none; border-radius: 6px; font-family: var(--font-body); font-weight: 600; cursor: pointer; transition: var(--transition-smooth); background: var(--bg-primary); color: var(--accent-indigo); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">Log In 🔒</button>
+        <button type="button" class="auth-tab" id="auth-tab-signup" style="flex: 1; padding: 0.6rem; border: none; border-radius: 6px; font-family: var(--font-body); font-weight: 600; cursor: pointer; transition: var(--transition-smooth); background: transparent; color: var(--text-muted);">Sign Up 📝</button>
+      </div>
+
+      <!-- LOG IN PANEL -->
+      <div id="admin-login-panel">
+        <form id="admin-login-form">
+          <div class="form-group">
+            <label class="form-label" for="admin-email">Email Address</label>
+            <input type="email" id="admin-email" class="form-input" placeholder="admin@pixelpop.com" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="admin-password">Password</label>
+            <input type="password" id="admin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <div id="login-error-msg" class="text-danger" style="display: none; font-size: 0.85rem; margin-top: -0.2rem; margin-bottom: 1rem; font-weight: 500;">
+            ❌ Invalid email or password
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+            Log In 🔒
+          </button>
+        </form>
+      </div>
+
+      <!-- SIGN UP PANEL -->
+      <div id="admin-signup-panel" style="display: none;">
+        <p class="text-muted" style="font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.4;">
+          Choose a password to activate your account. Your email must be previously registered by an administrator from the dashboard.
+        </p>
+        <form id="admin-signup-form">
+          <div class="form-group">
+            <label class="form-label" for="admin-signup-email">Email Address</label>
+            <input type="email" id="admin-signup-email" class="form-input" placeholder="admin@pixelpop.com" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="admin-signup-password">Choose Password</label>
+            <input type="password" id="admin-signup-password" class="form-input" placeholder="••••••••" required minlength="4" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="admin-signup-confirm-password">Confirm Password</label>
+            <input type="password" id="admin-signup-confirm-password" class="form-input" placeholder="••••••••" required minlength="4" autocomplete="new-password">
+          </div>
+
+          <div id="signup-error-msg" class="text-danger" style="display: none; font-size: 0.85rem; margin-top: -0.2rem; margin-bottom: 1rem; font-weight: 500; background: rgba(220,38,38,0.08); padding: 0.6rem; border-radius: 6px; border: 1px solid rgba(220,38,38,0.2);">
+            ❌ <span id="signup-error-text">This email is not yet registered.</span>
+          </div>
+          <div id="signup-success-msg" style="display: none; font-size: 0.85rem; margin-top: -0.2rem; margin-bottom: 1rem; font-weight: 600; color: var(--accent-green); background: rgba(5,150,105,0.08); padding: 0.6rem; border-radius: 6px; border: 1px solid rgba(5,150,105,0.2);">
+            ✅ Account created successfully! Logging you in...
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.8rem;">
+            Complete Sign Up 🚀
+          </button>
+        </form>
+      </div>
+
       <div style="text-align: center; margin-top: 1.5rem;">
         <button class="btn-link" id="login-back-to-store" style="background: none; border: none; color: var(--text-muted); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; text-decoration: underline; transition: var(--transition-smooth);">
           ← Return to Store
@@ -776,6 +819,9 @@
         <button class="mobile-nav-item" data-target="db-delivery"><span>🚚 Delivery Options</span></button>
         <button class="mobile-nav-item" data-target="db-social"><span>🌐 Social & Support</span></button>
         <button class="mobile-nav-item" data-target="db-theme-settings"><span>🎨 Theme Settings</span></button>
+        <button class="mobile-nav-item" data-target="db-admins"><span>👥 Admin Team</span></button>
+        <button class="mobile-nav-item" data-target="db-fleet"><span>🖨️ Printer Fleet</span></button>
+        <button class="mobile-nav-item" data-target="db-finance"><span>📈 Financial Analytics</span></button>
         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
           <button class="mobile-nav-item" id="admin-mobile-logout-btn" style="color: var(--accent-red); font-weight: 600;">
             <span>🚪 Logout Admin</span>
@@ -811,6 +857,9 @@
           <div class="db-menu-item" data-target="db-delivery">🚚 Delivery Options</div>
           <div class="db-menu-item" data-target="db-social">🌐 Social & Support</div>
           <div class="db-menu-item" data-target="db-theme-settings">🎨 Theme Settings</div>
+          <div class="db-menu-item" data-target="db-admins">👥 Admin Team</div>
+          <div class="db-menu-item" data-target="db-fleet">🖨️ Printer Fleet</div>
+          <div class="db-menu-item" data-target="db-finance">📈 Financial Analytics</div>
         </div>
 
         <button class="btn btn-primary" style="margin-top: auto; background: var(--accent-red); border-color: var(--accent-red); justify-content: center; width: 100%; font-weight: 600;" id="logout-btn">
@@ -1532,6 +1581,371 @@
           </div>
         </div>
 
+        <!-- SECTION 12: ADMIN TEAM & AUTHORIZED USERS MANAGEMENT -->
+        <div class="db-section" id="db-admins">
+          <div class="db-section-header">
+            <h2>Admin Team & Management</h2>
+            <span class="text-muted">Authorize new team members to sign up as administrators</span>
+          </div>
+
+          <div class="admin-management-grid" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+            <!-- Register New Admin Card -->
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-size: 1.1rem; font-family: var(--font-display); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>➕</span> Register New Admin Email
+              </h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.2rem; line-height: 1.4;">
+                Enter the email address of the team member you want to authorize. Once registered here, they can navigate to the admin page, click "Sign Up", and choose their password.
+              </p>
+
+              <form id="register-admin-email-form">
+                <div class="form-group" style="margin-bottom: 1.2rem;">
+                  <label class="form-label" for="new-admin-email-input">Admin Email Address</label>
+                  <input type="email" id="new-admin-email-input" class="form-input" placeholder="colleague@pixelpop.com" required autocomplete="email">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-weight: 600;">
+                  Register Admin Email 🚀
+                </button>
+              </form>
+            </div>
+
+            <!-- Authorized Admins List Card -->
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-size: 1.1rem; font-family: var(--font-display); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🛡️</span> Authorized Admin List
+              </h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.2rem;">
+                Emails allowed to log in or sign up to access the admin dashboard.
+              </p>
+
+              <div class="table-responsive" style="overflow-x: auto;">
+                <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                      <th style="padding: 0.6rem;">Admin Email</th>
+                      <th style="padding: 0.6rem;">Account Status</th>
+                      <th style="padding: 0.6rem;">Added Date</th>
+                      <th style="padding: 0.6rem; text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-admins-tbody">
+                    <!-- Dynamically rendered rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- SECTION 13: PRINTER FLEET & INVESTORS MANAGEMENT -->
+        <div class="db-section" id="db-fleet">
+          <div class="db-section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2>Printer Fleet & Investor Operations</h2>
+              <span class="text-muted">Monitor live printer timecodes, calculate hourly rates, and manage investor payoffs</span>
+            </div>
+            <button class="btn btn-primary" id="add-printer-btn">+ Add New Printer 🖨️</button>
+          </div>
+
+          <!-- Sub-Tab Switcher inside Fleet Section -->
+          <div class="fleet-subtabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="fleet-subtab active" id="fleet-tab-console" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: var(--accent-indigo); color: white;">🖨️ Printer Console</button>
+            <button type="button" class="fleet-subtab" id="fleet-tab-investors" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">👥 Investor Accounts</button>
+            <button type="button" class="fleet-subtab" id="fleet-tab-custom-jobs" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">🛠️ On-Demand Custom Jobs</button>
+            <button type="button" class="fleet-subtab" id="fleet-tab-payoffs" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">📜 Payoff Receipts Log</button>
+          </div>
+
+          <!-- SUB-PANEL 1: PRINTER FLEET CONSOLE -->
+          <div id="fleet-panel-console">
+            <div id="fleet-printers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+              <!-- Dynamically rendered printer cards -->
+            </div>
+          </div>
+
+          <!-- SUB-PANEL 2: INVESTOR ACCOUNTS -->
+          <div id="fleet-panel-investors" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+              <!-- Add Investor Card -->
+              <div class="glass-panel" style="padding: 1.5rem;">
+                <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.5rem;">➕ Create Investor Account</h3>
+                <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.2rem;">
+                  Investors can log in to view their assigned printers' live status, hours printed, and payoff history.
+                </p>
+
+                <form id="investor-account-form">
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="investor-name-input">Investor Full Name</label>
+                    <input type="text" id="investor-name-input" class="form-input" placeholder="e.g. Alex Vance" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="investor-email-input">Investor Email Address</label>
+                    <input type="email" id="investor-email-input" class="form-input" placeholder="investor@pixelpop.com" required autocomplete="email">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 1.2rem;">
+                    <label class="form-label" for="investor-password-input">Account Password</label>
+                    <input type="password" id="investor-password-input" class="form-input" placeholder="••••••••" required minlength="4" autocomplete="new-password">
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-weight: 600;">Create Investor Account 🚀</button>
+                </form>
+              </div>
+
+              <!-- Investors Table -->
+              <div class="glass-panel" style="padding: 1.5rem;">
+                <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.5rem;">👥 Registered Investor Accounts</h3>
+                <div class="table-responsive" style="overflow-x: auto;">
+                  <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                        <th style="padding: 0.6rem;">Investor Name</th>
+                        <th style="padding: 0.6rem;">Email</th>
+                        <th style="padding: 0.6rem;">Assigned Printers</th>
+                        <th style="padding: 0.6rem; text-align: right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="db-investors-tbody">
+                      <!-- Dynamically populated -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-PANEL 3: ON-DEMAND CUSTOM PRINTING JOBS -->
+          <div id="fleet-panel-custom-jobs" style="display: none;">
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.2rem;">🛠️ Custom & On-Demand Printing Jobs</h3>
+                  <p class="text-muted" style="font-size: 0.85rem;">Jobs fabricated upon special customer request. Integrated directly into shop revenue & profit analytics.</p>
+                </div>
+                <button type="button" class="btn btn-primary" id="add-custom-job-btn">+ Log Custom Printing Job 🛠️</button>
+              </div>
+
+              <div class="table-responsive" style="overflow-x: auto;">
+                <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                      <th style="padding: 0.6rem;">Date</th>
+                      <th style="padding: 0.6rem;">Client / Customer</th>
+                      <th style="padding: 0.6rem;">Job Description</th>
+                      <th style="padding: 0.6rem;">Assigned Printer</th>
+                      <th style="padding: 0.6rem;">Hours</th>
+                      <th style="padding: 0.6rem;">Cost ($)</th>
+                      <th style="padding: 0.6rem;">Charged Price ($)</th>
+                      <th style="padding: 0.6rem;">Net Profit ($)</th>
+                      <th style="padding: 0.6rem; text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-custom-jobs-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-PANEL 4: PAYOFF RECEIPTS LOG -->
+          <div id="fleet-panel-payoffs" style="display: none;">
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.5rem;">📜 Historical Payoff Receipts</h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.2rem;">
+                Complete log of past investor payouts, dates, hours reset, and amounts settled.
+              </p>
+
+              <div class="table-responsive" style="overflow-x: auto;">
+                <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                      <th style="padding: 0.6rem;">Date</th>
+                      <th style="padding: 0.6rem;">Investor Email</th>
+                      <th style="padding: 0.6rem;">Printer / Serial</th>
+                      <th style="padding: 0.6rem;">Hours Settled</th>
+                      <th style="padding: 0.6rem;">Hourly Rate</th>
+                      <th style="padding: 0.6rem;">Total Paid</th>
+                      <th style="padding: 0.6rem;">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-payoffs-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION 14: FINANCIAL ANALYTICS & PROFIT HISTOGRAM -->
+        <div class="db-section" id="db-finance">
+          <div class="db-section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2>💰 Financial Performance & Analytics</h2>
+              <span class="text-muted">Analyze shop revenue, cost of goods sold (COGS), net profits, and order trends</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary" id="export-finance-report-btn">📥 Export Financial CSV 📊</button>
+            </div>
+          </div>
+
+          <!-- Financial Filter Bar -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; justify-content: space-between;">
+            <!-- Timeframe quick pills -->
+            <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-right: 0.4rem;">Timeframe:</span>
+              <button type="button" class="fin-pill active" data-period="all">All Time</button>
+              <button type="button" class="fin-pill" data-period="year">This Year (2026)</button>
+              <button type="button" class="fin-pill" data-period="month">This Month</button>
+              <button type="button" class="fin-pill" data-period="week">This Week</button>
+              <button type="button" class="fin-pill" data-period="custom">Custom Range</button>
+            </div>
+
+            <!-- Custom Date Container -->
+            <div id="fin-custom-date-container" style="display: none; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="fin-start-date" style="font-size: 0.8rem; color: var(--text-muted);">From:</label>
+                <input type="date" id="fin-start-date" class="form-input" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; width: 135px;">
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="fin-end-date" style="font-size: 0.8rem; color: var(--text-muted);">To:</label>
+                <input type="date" id="fin-end-date" class="form-input" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; width: 135px;">
+              </div>
+              <button type="button" class="btn btn-primary" id="fin-apply-custom-btn" style="padding: 0.35rem 0.8rem; font-size: 0.82rem;">Apply Filter</button>
+            </div>
+
+            <!-- Granularity Select -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Grouping:</span>
+              <select id="fin-granularity-select" class="form-input" style="padding: 0.35rem 0.7rem; font-size: 0.85rem; width: 115px; cursor: pointer;">
+                <option value="daily">Daily</option>
+                <option value="weekly" selected>Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Financial Summary KPI Cards -->
+          <div class="analytics-cards" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="glass-panel stat-card">
+              <div class="stat-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--accent-indigo);">💵</div>
+              <div class="stat-info">
+                <span class="stat-label">Gross Revenue</span>
+                <span class="stat-value" id="fin-kpi-revenue">$0.00</span>
+                <span class="stat-change positive" id="fin-kpi-orders-count">0 Transactions</span>
+              </div>
+            </div>
+
+            <div class="glass-panel stat-card">
+              <div class="stat-icon" style="background: rgba(220, 38, 38, 0.15); color: var(--accent-red);">📉</div>
+              <div class="stat-info">
+                <span class="stat-label">Total COGS & Costs</span>
+                <span class="stat-value" id="fin-kpi-costs">$0.00</span>
+                <span class="stat-change" style="color: var(--text-muted);" id="fin-kpi-cogs-breakdown">Material + Machine Cost</span>
+              </div>
+            </div>
+
+            <div class="glass-panel stat-card">
+              <div class="stat-icon" style="background: rgba(5, 150, 105, 0.15); color: var(--accent-green);">📈</div>
+              <div class="stat-info">
+                <span class="stat-label">Net Profit</span>
+                <span class="stat-value" id="fin-kpi-profit" style="color: var(--accent-green);">$0.00</span>
+                <span class="stat-change positive" id="fin-kpi-margin-percent">Margin: 0.0%</span>
+              </div>
+            </div>
+
+            <div class="glass-panel stat-card">
+              <div class="stat-icon" style="background: rgba(217, 119, 6, 0.15); color: var(--accent-gold);">⚖️</div>
+              <div class="stat-info">
+                <span class="stat-label">Avg Order Profit</span>
+                <span class="stat-value" id="fin-kpi-avg-profit">$0.00</span>
+                <span class="stat-change" style="color: var(--text-muted);" id="fin-kpi-avg-revenue">Avg Rev: $0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- HISTOGRAM TREND VISUALIZATION -->
+          <div class="glass-panel" style="padding: 1.75rem; margin-bottom: 1.5rem; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>📊</span> Orders & Profit Trend Histogram
+                </h3>
+                <p class="text-muted" style="font-size: 0.85rem;">Dual-axis comparison of Order Volume (Bars) and Net Profit ($)</p>
+              </div>
+
+              <!-- Legend -->
+              <div style="display: flex; gap: 1.25rem; align-items: center; font-size: 0.82rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: inline-block;"></span>
+                  <span style="font-weight: 600;">Orders Count</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #10b981, #059669); display: inline-block;"></span>
+                  <span style="font-weight: 600;">Net Profit ($)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #f59e0b, #d97706); display: inline-block;"></span>
+                  <span style="font-weight: 600;">Gross Revenue ($)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div id="fin-histogram-container" style="position: relative; width: 100%; min-height: 320px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 1rem; border: 1px solid var(--glass-border);">
+              <canvas id="fin-histogram-canvas" style="width: 100%; height: 320px; display: block;"></canvas>
+              <div id="fin-canvas-tooltip" class="fin-tooltip" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- BREAKDOWN TABLES GRID -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <!-- Revenue Stream Breakdown -->
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🛍️</span> Revenue Streams Breakdown
+              </h3>
+              <div class="table-responsive">
+                <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                      <th style="padding: 0.6rem;">Source Stream</th>
+                      <th style="padding: 0.6rem;">Count</th>
+                      <th style="padding: 0.6rem;">Revenue ($)</th>
+                      <th style="padding: 0.6rem;">Profit ($)</th>
+                      <th style="padding: 0.6rem; text-align: right;">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fin-streams-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Top Profit Performers -->
+            <div class="glass-panel" style="padding: 1.5rem;">
+              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🏆</span> Top Profit Performers
+              </h3>
+              <div class="table-responsive">
+                <table class="db-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                      <th style="padding: 0.6rem;">Item / Job</th>
+                      <th style="padding: 0.6rem;">Type</th>
+                      <th style="padding: 0.6rem;">Qty / Hrs</th>
+                      <th style="padding: 0.6rem;">Net Profit ($)</th>
+                      <th style="padding: 0.6rem; text-align: right;">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fin-performers-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
     </div>
   </main>
@@ -1879,6 +2293,260 @@
       </div>
     </div>
   </div>
+
+  <!-- ADD / EDIT PRINTER MODAL OVERLAY -->
+  <div class="modal-overlay" id="printer-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 520px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <span id="printer-modal-title" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">🖨️ Register Printer in Fleet</span>
+        <button class="close-modal-btn" id="close-printer-modal-btn">&times;</button>
+      </div>
+
+      <form id="printer-crud-form">
+        <input type="hidden" id="crud-printer-id">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="crud-printer-name">Printer Model & Name</label>
+          <input type="text" id="crud-printer-name" class="form-input" placeholder="e.g. Bambu Lab X1-Carbon #1" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="crud-printer-serial">Serial Number / Hardware ID</label>
+          <input type="text" id="crud-printer-serial" class="form-input" placeholder="e.g. BL-X1C-99482" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="crud-printer-investor">Assigned Investor Email</label>
+          <select id="crud-printer-investor" class="form-input" required>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="crud-printer-rate">Hourly Rate ($/hr)</label>
+            <input type="number" step="0.10" id="crud-printer-rate" class="form-input" placeholder="6.50" required min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="crud-printer-cost">Wear/Operating Cost ($/hr)</label>
+            <input type="number" step="0.10" id="crud-printer-cost" class="form-input" placeholder="0.90" value="0.90">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1.5rem;" id="printer-submit-btn">Save Printer 💾</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT HOURS MODAL OVERLAY -->
+  <div class="modal-overlay" id="edit-hours-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 450px; padding: 2.2rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-family: var(--font-display); font-size: 1.2rem; font-weight: bold;">✏️ Adjust Unpaid Hours</span>
+        <button class="close-modal-btn" id="close-edit-hours-btn">&times;</button>
+      </div>
+      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.2rem;">
+        Adjust accumulated unpaid printing hours for this printer (e.g. if timer was accidentally left running).
+      </p>
+
+      <form id="edit-hours-form">
+        <input type="hidden" id="edit-hours-printer-id">
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label" for="edit-hours-input">Unpaid Hours Counter</label>
+          <input type="number" step="0.1" id="edit-hours-input" class="form-input" required min="0">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Save Adjusted Hours 💾</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DISPATCH ORDER TO STANDBY PRINTER MODAL OVERLAY -->
+  <div class="modal-overlay" id="dispatch-order-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 540px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;">
+        <span style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">🚀 Printer Recommendation & Order Dispatcher</span>
+        <button class="close-modal-btn" id="close-dispatch-modal-btn">&times;</button>
+      </div>
+
+      <div id="dispatch-order-info-card" style="background: rgba(79,70,229,0.06); border: 1px solid rgba(79,70,229,0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem;">
+        <!-- Order details populated dynamically -->
+      </div>
+
+      <form id="dispatch-order-form">
+        <input type="hidden" id="dispatch-target-order-id">
+        <label class="form-label" style="font-weight: 700; font-size: 1rem; margin-bottom: 0.6rem; display: block;">
+          Select Available Standby Printer
+        </label>
+        
+        <div id="dispatch-printers-recommendations" style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; max-height: 260px; overflow-y: auto;">
+          <!-- Dynamically populated recommended standby printers -->
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; background: linear-gradient(135deg, var(--accent-indigo), #3730a3);" id="confirm-dispatch-btn">
+          ⚡ Dispatch Job to Printer & Start Live Ticker
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE ON-DEMAND CUSTOM PRINTING JOB MODAL OVERLAY -->
+  <div class="modal-overlay" id="custom-job-modal-overlay">
+    <div class="glass-panel checkout-modal" style="max-width: 520px; padding: 2.5rem; border: none;">
+      <div class="checkout-title" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <span style="font-family: var(--font-display); font-size: 1.25rem; font-weight: bold;">🛠️ Create On-Demand Custom Printing Job</span>
+        <button class="close-modal-btn" id="close-custom-job-modal-btn">&times;</button>
+      </div>
+
+      <form id="custom-job-crud-form">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="custom-job-client">Client / Customer Name</label>
+          <input type="text" id="custom-job-client" class="form-input" placeholder="e.g. Architectural Models Ltd" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="custom-job-title">Job Title / Description</label>
+          <input type="text" id="custom-job-title" class="form-input" placeholder="e.g. Scale Prototype Building Model" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="custom-job-printer">Assign Printer from Fleet</label>
+          <select id="custom-job-printer" class="form-input" required>
+            <!-- Dynamically populated printers -->
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="custom-job-hours">Estimated Print Time (Hours)</label>
+          <input type="number" step="0.1" id="custom-job-hours" class="form-input" placeholder="e.g. 8.5" required min="0.1">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="custom-job-cost">Manufacturing COGS / Cost ($)</label>
+            <input type="number" step="0.01" id="custom-job-cost" class="form-input" placeholder="12.50" required min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="custom-job-price">Charged Price to Client ($)</label>
+            <input type="number" step="0.01" id="custom-job-price" class="form-input" placeholder="75.00" required min="0">
+          </div>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.08); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom: 1.5rem; text-align: center;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Estimated Net Profit: </span>
+          <strong id="custom-job-profit-preview" style="font-size: 1.1rem; color: var(--accent-green); font-family: var(--font-display);">$0.00</strong>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-green), #047857);">
+          Save & Register Custom Printing Job 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DEDICATED INVESTOR MONITORING PORTAL -->
+  <main class="container investor-portal-view" id="investor-portal-page" style="display: none; padding-top: 2rem; padding-bottom: 4rem;">
+    <!-- Investor Portal Header -->
+    <div class="glass-panel" style="padding: 1.5rem 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="logo-icon" style="width: 44px; height: 44px; font-size: 1.4rem;">P</div>
+        <div>
+          <h1 style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0.1rem;">Investor Live Monitoring Console</h1>
+          <span id="investor-welcome-name" class="text-muted" style="font-size: 0.9rem;">Welcome back!</span>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary" id="investor-logout-btn" style="background: rgba(220,38,38,0.1); color: var(--accent-red); border-color: rgba(220,38,38,0.2); font-weight: 600;">
+        🚪 Logout Investor
+      </button>
+    </div>
+
+    <!-- Summary Stats Cards -->
+    <div class="analytics-cards" style="margin-bottom: 2rem;">
+      <div class="glass-panel stat-card">
+        <span class="label">My Active Printers</span>
+        <span class="value" id="inv-stat-printers">0</span>
+        <span class="trend text-muted">Assigned Hardware Units</span>
+      </div>
+      <div class="glass-panel stat-card">
+        <span class="label">Unpaid Printing Hours</span>
+        <span class="value" id="inv-stat-unpaid-hours">0.0 hrs</span>
+        <span class="trend text-muted">Since last payoff</span>
+      </div>
+      <div class="glass-panel stat-card">
+        <span class="label">Current Unpaid Earnings</span>
+        <span class="value" id="inv-stat-unpaid-earnings" style="color: var(--accent-green);">$0.00</span>
+        <span class="trend up">▲ Pending next payoff</span>
+      </div>
+      <div class="glass-panel stat-card">
+        <span class="label">Lifetime Total Paid Out</span>
+        <span class="value" id="inv-stat-lifetime-paid">$0.00</span>
+        <span class="trend text-muted">Historical payoffs settled</span>
+      </div>
+    </div>
+
+    <!-- Live Printer Cards Section -->
+    <div style="margin-bottom: 2.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-family: var(--font-display); font-size: 1.3rem;">🖨️ My Live Hardware Printers</h2>
+        <span class="text-muted" style="font-size: 0.85rem;">Updated live in real-time</span>
+      </div>
+
+      <div id="investor-printers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+        <!-- Investor printer cards dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- Breakdown Tabs & Tables Section -->
+    <div class="glass-panel" style="padding: 2rem;">
+      <div class="fleet-subtabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+        <button type="button" class="investor-subtab active" id="inv-tab-sessions" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: var(--accent-indigo); color: white;">📝 Printing Sessions History</button>
+        <button type="button" class="investor-subtab" id="inv-tab-payoffs" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">📜 Settled Payoff Receipts</button>
+      </div>
+
+      <!-- Sessions Table -->
+      <div id="inv-panel-sessions">
+        <div class="table-responsive" style="overflow-x: auto;">
+          <table class="db-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                <th style="padding: 0.6rem;">Session Date</th>
+                <th style="padding: 0.6rem;">Printer Name</th>
+                <th style="padding: 0.6rem;">Duration</th>
+                <th style="padding: 0.6rem;">Hourly Rate</th>
+                <th style="padding: 0.6rem;">Total Gained</th>
+                <th style="padding: 0.6rem;">Payoff Status</th>
+              </tr>
+            </thead>
+            <tbody id="investor-sessions-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payoffs Table -->
+      <div id="inv-panel-payoffs" style="display: none;">
+        <div class="table-responsive" style="overflow-x: auto;">
+          <table class="db-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-muted);">
+                <th style="padding: 0.6rem;">Receipt Date</th>
+                <th style="padding: 0.6rem;">Receipt ID</th>
+                <th style="padding: 0.6rem;">Printer Name & Serial</th>
+                <th style="padding: 0.6rem;">Hours Settled</th>
+                <th style="padding: 0.6rem;">Rate Paid</th>
+                <th style="padding: 0.6rem;">Total Amount Paid</th>
+                <th style="padding: 0.6rem;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="investor-payoffs-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
 
   <!-- DB Seed & State Application -->
   <script type="module" src="data.js"></script>

@@ -172,6 +172,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     isDragging: false,
     startX: 0,
     isAdminLoggedIn: sessionStorage.getItem("isAdminLoggedIn") === "true",
+    isInvestorLoggedIn: sessionStorage.getItem("isInvestorLoggedIn") === "true",
     appliedCoupon: null,
     productsFilterCategory: "all",
     crudGalleryUrls: [],
@@ -359,6 +360,52 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     loginErrorMsg: document.getElementById("login-error-msg"),
     loginBackToStore: document.getElementById("login-back-to-store"),
 
+    // Auth Tabs & Sign Up elements
+    authTabLogin: document.getElementById("auth-tab-login"),
+    authTabSignup: document.getElementById("auth-tab-signup"),
+    adminLoginPanel: document.getElementById("admin-login-panel"),
+    adminSignupPanel: document.getElementById("admin-signup-panel"),
+    adminSignupForm: document.getElementById("admin-signup-form"),
+    adminSignupEmail: document.getElementById("admin-signup-email"),
+    adminSignupPassword: document.getElementById("admin-signup-password"),
+    adminSignupConfirmPassword: document.getElementById("admin-signup-confirm-password"),
+    signupErrorMsg: document.getElementById("signup-error-msg"),
+    signupErrorText: document.getElementById("signup-error-text"),
+    signupSuccessMsg: document.getElementById("signup-success-msg"),
+
+    // Admin Team Management
+    registerAdminEmailForm: document.getElementById("register-admin-email-form"),
+    newAdminEmailInput: document.getElementById("new-admin-email-input"),
+    dbAdminsTbody: document.getElementById("db-admins-tbody"),
+
+    // Printer Fleet & Investor Operations
+    addPrinterBtn: document.getElementById("add-printer-btn"),
+    printerModalOverlay: document.getElementById("printer-modal-overlay"),
+    closePrinterModalBtn: document.getElementById("close-printer-modal-btn"),
+    printerCrudForm: document.getElementById("printer-crud-form"),
+    crudPrinterId: document.getElementById("crud-printer-id"),
+    crudPrinterName: document.getElementById("crud-printer-name"),
+    crudPrinterSerial: document.getElementById("crud-printer-serial"),
+    crudPrinterInvestor: document.getElementById("crud-printer-investor"),
+    crudPrinterRate: document.getElementById("crud-printer-rate"),
+    crudPrinterCost: document.getElementById("crud-printer-cost"),
+    editHoursModalOverlay: document.getElementById("edit-hours-modal-overlay"),
+    closeEditHoursBtn: document.getElementById("close-edit-hours-btn"),
+    editHoursForm: document.getElementById("edit-hours-form"),
+    editHoursPrinterId: document.getElementById("edit-hours-printer-id"),
+    editHoursInput: document.getElementById("edit-hours-input"),
+    fleetPrintersGrid: document.getElementById("fleet-printers-grid"),
+    investorAccountForm: document.getElementById("investor-account-form"),
+    investorNameInput: document.getElementById("investor-name-input"),
+    investorEmailInput: document.getElementById("investor-email-input"),
+    investorPasswordInput: document.getElementById("investor-password-input"),
+    dbInvestorsTbody: document.getElementById("db-investors-tbody"),
+    dbPayoffsTbody: document.getElementById("db-payoffs-tbody"),
+
+    // Investor Portal View
+    investorPortalPage: document.getElementById("investor-portal-page"),
+    investorLogoutBtn: document.getElementById("investor-logout-btn"),
+
     // Hero config
     heroConfigForm: document.getElementById("hero-config-form"),
     heroImagesUpload: document.getElementById("cfg-hero-images-upload"),
@@ -516,10 +563,11 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     DOM.adminDashboardPage.style.display = "none";
     if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "none";
     if (DOM.productsPage) DOM.productsPage.style.display = "none";
+    if (DOM.investorPortalPage) DOM.investorPortalPage.style.display = "none";
 
     const footer = document.getElementById("store-footer");
     const waWidget = document.getElementById("whatsapp-widget");
-    if (page === "dashboard" || page === "admin-login") {
+    if (page === "dashboard" || page === "admin-login" || page === "investor-portal") {
       if (footer) footer.style.display = "none";
       if (waWidget) waWidget.style.display = "none";
     } else {
@@ -560,6 +608,16 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
       if (pushState && window.location.pathname !== "/admin") {
         history.pushState({ page: "dashboard" }, "", "/admin");
       }
+    } else if (page === "investor-portal") {
+      if (!state.isInvestorLoggedIn) {
+        changePage("admin-login", pushState);
+        return;
+      }
+      if (DOM.investorPortalPage) DOM.investorPortalPage.style.display = "block";
+      renderInvestorPortal();
+      if (pushState && window.location.pathname !== "/investor") {
+        history.pushState({ page: "investor-portal" }, "", "/investor");
+      }
     } else if (page === "admin-login") {
       if (DOM.navDashboard) DOM.navDashboard.classList.add("active");
       if (DOM.adminLoginPage) DOM.adminLoginPage.style.display = "flex";
@@ -575,6 +633,12 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
 
     if (path === "/admin" || hash === "#admin") {
       changePage("dashboard", false);
+    } else if (path === "/investor" || hash === "#investor") {
+      if (state.isInvestorLoggedIn) {
+        changePage("investor-portal", false);
+      } else {
+        changePage("admin-login", false);
+      }
     } else if (path === "/products" || hash === "#products") {
       changePage("products", false);
     } else if (path.startsWith("/product/")) {
@@ -1905,6 +1969,8 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     renderDashboardCategories();
     renderDashboardCoupons();
     renderDashboardOrders();
+    renderDashboardAdmins();
+    initFleetDashboard();
     initPaymentsDashboardSettings();
     initCalculator();
     initHeroDashboardSettings();
@@ -2129,29 +2195,40 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
 
   function updateOverviewStats() {
     const orders = DB.getOrders();
+    const customJobs = DB.getCustomJobs();
 
-    // Revenue (Sum of all orders)
-    const revenue = orders.reduce((sum, o) => sum + o.totals.total, 0);
-    DOM.statRevenue.textContent = `$${revenue.toFixed(2)}`;
+    // Storefront E-Commerce Revenue
+    const storefrontRevenue = orders.reduce((sum, o) => sum + (o.totals ? o.totals.total : 0), 0);
 
-    // Orders Count
-    DOM.statOrdersCount.textContent = orders.length;
+    // Custom On-Demand Printing Jobs Revenue
+    const customJobsRevenue = customJobs.reduce((sum, j) => sum + (j.price || 0), 0);
+
+    // Total Combined Revenue
+    const totalRevenue = storefrontRevenue + customJobsRevenue;
+    DOM.statRevenue.textContent = `$${totalRevenue.toFixed(2)}`;
+
+    // Orders & Jobs Count
+    const totalJobsCount = orders.length + customJobs.length;
+    DOM.statOrdersCount.textContent = totalJobsCount;
 
     // Filament Consumed
-    // Sum of weight from order items
     let totalWeightGrams = 0;
     orders.forEach(o => {
-      o.items.forEach(item => {
-        const wtVal = parseInt(item.weight) || 0;
-        totalWeightGrams += wtVal * item.qty;
-      });
+      if (o.items) {
+        o.items.forEach(item => {
+          const wtVal = parseInt(item.weight) || 0;
+          totalWeightGrams += wtVal * item.qty;
+        });
+      }
     });
     const weightKg = totalWeightGrams / 1000;
     DOM.statFilamentConsumed.textContent = `${weightKg.toFixed(2)} kg`;
 
     // Active Prints
-    const activeCount = orders.filter(o => o.status === "Printing").length;
-    DOM.statActivePrints.textContent = activeCount;
+    const printers = DB.getPrinters();
+    const activeOrdersCount = orders.filter(o => o.status === "Printing").length;
+    const activePrintersCount = printers.filter(p => p.status === "Printing").length;
+    DOM.statActivePrints.textContent = Math.max(activeOrdersCount, activePrintersCount);
   }
 
   function renderOverviewCharts() {
@@ -2570,6 +2647,10 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
           </td>
           <td>
             <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+              <button type="button" class="btn-dispatch-order" data-id="${o.id}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: linear-gradient(135deg, var(--accent-indigo), #3730a3); color: white; border: none; cursor: pointer; font-weight: 600;">
+                🚀 Dispatch Printer
+              </button>
+              ${o.assignedPrinterName ? `<div style="font-size: 0.72rem; color: var(--accent-green); font-weight: 600;">🖨️ ${o.assignedPrinterName}</div>` : ''}
               <button type="button" class="btn-print-order" data-id="${o.id}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: rgba(79, 70, 229, 0.1); color: var(--accent-indigo); border: 1px solid rgba(79, 70, 229, 0.2); cursor: pointer;">📄 PDF Invoice 🖨️</button>
               <button type="button" class="btn-view-client" data-id="${o.id}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2); cursor: pointer;">Customer Info 🔍</button>
             </div>
@@ -2577,6 +2658,13 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
         </tr>
       `;
     }).join("");
+
+    // Dispatch Order click listeners
+    document.querySelectorAll(".btn-dispatch-order").forEach(btn => {
+      btn.addEventListener("click", () => {
+        openDispatchModal(btn.dataset.id);
+      });
+    });
 
     // Order Print click listeners
     document.querySelectorAll(".btn-print-order").forEach(btn => {
@@ -2690,6 +2778,1535 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     });
   }
 
+  // Admin Team Management Dashboard Section Render
+  function renderDashboardAdmins() {
+    if (!DOM.dbAdminsTbody) return;
+
+    const allowedAdmins = DB.getAllowedAdmins();
+    const accounts = DB.getAdminAccounts();
+    const currentEmail = (sessionStorage.getItem("currentAdminEmail") || "").toLowerCase().trim();
+
+    if (allowedAdmins.length === 0) {
+      DOM.dbAdminsTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No admin emails registered.</td></tr>`;
+      return;
+    }
+
+    DOM.dbAdminsTbody.innerHTML = allowedAdmins.map(item => {
+      const email = typeof item === 'string' ? item : item.email;
+      const addedAt = item.addedAt ? new Date(item.addedAt).toLocaleDateString() : "System Default";
+      const account = accounts.find(ac => ac.email.toLowerCase().trim() === email.toLowerCase().trim());
+      const isSignedUp = account && account.isSignedUp;
+      const isCurrent = currentEmail === email.toLowerCase().trim();
+
+      return `
+        <tr style="border-bottom: 1px solid var(--glass-border);">
+          <td style="padding: 0.8rem 0.6rem; font-weight: 500;">
+            ${email} ${isCurrent ? '<span style="font-size:0.75rem; background: var(--accent-indigo); color: white; padding: 2px 6px; border-radius: 10px; margin-left: 4px;">You</span>' : ''}
+          </td>
+          <td style="padding: 0.8rem 0.6rem;">
+            ${isSignedUp 
+              ? '<span style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">✅ Active Account</span>' 
+              : '<span style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 500;">⏳ Pending Password Setup</span>'}
+          </td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem; color: var(--text-muted);">
+            ${addedAt}
+          </td>
+          <td style="padding: 0.8rem 0.6rem; text-align: right;">
+            <button class="action-icon-btn delete delete-admin-btn" data-email="${email}" title="Revoke Admin Access" ${isCurrent ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+              🗑️
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Attach delete/revoke handlers
+    DOM.dbAdminsTbody.querySelectorAll(".delete-admin-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const email = btn.dataset.email;
+        if (await showAppConfirm(`Are you sure you want to revoke access for ${email}? They will no longer be able to log in or sign up.`, "Revoke Admin Access", "⚠️")) {
+          DB.removeAllowedAdmin(email);
+          renderDashboardAdmins();
+          showAppAlert(`Admin access for ${email} has been revoked.`, "Admin Revoked", "🗑️");
+        }
+      });
+    });
+  }
+
+  if (DOM.registerAdminEmailForm) {
+    DOM.registerAdminEmailForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newEmail = DOM.newAdminEmailInput.value.trim().toLowerCase();
+      const currentAdmin = sessionStorage.getItem("currentAdminEmail") || "Dashboard Admin";
+
+      if (DB.isEmailAllowedAsAdmin(newEmail)) {
+        showAppAlert(`The email "${newEmail}" is already registered as an authorized admin!`, "Already Registered", "ℹ️");
+        return;
+      }
+
+      DB.addAllowedAdmin(newEmail, currentAdmin);
+      DOM.newAdminEmailInput.value = "";
+      renderDashboardAdmins();
+      showAppAlert(`"${newEmail}" has been registered! They can now navigate to the login page, click "Sign Up", and choose their password.`, "Admin Registered", "🎉");
+    });
+  }
+
+  // ==========================================
+  // PRINTER FLEET & INVESTOR OPERATIONS
+  // ==========================================
+
+  function formatSecondsToTimecode(totalSecs) {
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    const hh = String(hours).padStart(2, '0');
+    const mm = String(mins).padStart(2, '0');
+    const ss = String(secs).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  let livePrinterTickerInterval = null;
+
+  function initLivePrinterTicker() {
+    if (livePrinterTickerInterval) return;
+
+    livePrinterTickerInterval = setInterval(() => {
+      const printers = DB.getPrinters();
+      printers.forEach(printer => {
+        if (printer.status === "Printing") {
+          let currentElapsedSec = printer.accumulatedSessionSeconds || 0;
+          if (printer.currentSessionStart) {
+            currentElapsedSec += Math.floor((Date.now() - printer.currentSessionStart) / 1000);
+          }
+
+          const formattedTime = formatSecondsToTimecode(currentElapsedSec);
+
+          const adminTickerEl = document.getElementById(`timecode-${printer.id}`);
+          if (adminTickerEl) adminTickerEl.textContent = formattedTime;
+
+          const invTickerEl = document.getElementById(`inv-timecode-${printer.id}`);
+          if (invTickerEl) invTickerEl.textContent = formattedTime;
+        }
+      });
+    }, 1000);
+  }
+
+  function renderFleetConsole() {
+    if (!DOM.fleetPrintersGrid) return;
+
+    const printers = DB.getPrinters();
+    const investors = DB.getInvestors();
+
+    if (printers.length === 0) {
+      DOM.fleetPrintersGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem 0;">No printers registered in fleet. Click "+ Add New Printer" above.</div>`;
+      return;
+    }
+
+    DOM.fleetPrintersGrid.innerHTML = printers.map(p => {
+      const investor = investors.find(i => i.email.toLowerCase().trim() === p.investorEmail.toLowerCase().trim());
+      const investorName = investor ? investor.name : p.investorEmail;
+
+      const rate = p.hourlyRate || 0;
+      const cost = p.costPerHour || 0;
+      const unpaidHrs = p.unpaidHours || 0;
+
+      const totalGained = parseFloat((unpaidHrs * rate).toFixed(2));
+      const totalCost = parseFloat((unpaidHrs * cost).toFixed(2));
+      const profit = parseFloat((totalGained - totalCost).toFixed(2));
+
+      let currentSessionSec = p.accumulatedSessionSeconds || 0;
+      if (p.status === "Printing" && p.currentSessionStart) {
+        currentSessionSec += Math.floor((Date.now() - p.currentSessionStart) / 1000);
+      }
+      const timecodeDisplay = formatSecondsToTimecode(currentSessionSec);
+
+      let badgeBg = "rgba(107, 114, 128, 0.15)";
+      let badgeColor = "var(--text-muted)";
+      if (p.status === "Printing") {
+        badgeBg = "rgba(16, 185, 129, 0.15)";
+        badgeColor = "var(--accent-green)";
+      } else if (p.status === "Paused") {
+        badgeBg = "rgba(217, 119, 6, 0.15)";
+        badgeColor = "var(--accent-gold)";
+      }
+
+      return `
+        <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-radius: 16px; position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.2rem;">${p.name}</h3>
+              <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-display);">SN: ${p.serialNumber}</span>
+            </div>
+            <span style="padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: ${badgeBg}; color: ${badgeColor}; display: inline-flex; align-items: center; gap: 0.4rem;">
+              ${p.status === 'Printing' ? '⚡ PRINTING' : (p.status === 'Paused' ? '⏸️ PAUSED' : '💤 IDLE')}
+            </span>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 0.5rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+            👤 Investor: <strong>${investorName}</strong> <span style="font-size:0.75rem;">(${p.investorEmail})</span>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.05); padding: 0.8rem; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.2rem;">Live Active Session Ticker</div>
+            <div id="timecode-${p.id}" style="font-family: monospace; font-size: 1.6rem; font-weight: 800; color: ${p.status === 'Printing' ? 'var(--accent-green)' : 'var(--text-main)'}; letter-spacing: 2px;">
+              ${timecodeDisplay}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 0.85rem;">
+            <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <span class="text-muted" style="font-size: 0.75rem; display: block;">Hourly Rate:</span>
+              <strong style="color: var(--accent-indigo);">$${rate.toFixed(2)} / hr</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <span class="text-muted" style="font-size: 0.75rem; display: block;">Unpaid Hours:</span>
+              <strong>${unpaidHrs.toFixed(1)} hrs</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <span class="text-muted" style="font-size: 0.75rem; display: block;">Total Gained:</span>
+              <strong style="color: var(--accent-green);">$${totalGained.toFixed(2)}</strong>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <span class="text-muted" style="font-size: 0.75rem; display: block;">Operating Cost / Profit:</span>
+              <span style="font-size: 0.8rem;">Cost: $${totalCost.toFixed(2)} | <strong style="color: var(--accent-indigo);">Net: $${profit.toFixed(2)}</strong></span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; border-top: 1px solid var(--glass-border); padding-top: 0.8rem;">
+            <div style="display: flex; gap: 0.5rem;">
+              ${p.status !== 'Printing' ? `
+                <button type="button" class="btn btn-primary btn-sm start-printer-btn" data-id="${p.id}" style="flex: 1; justify-content: center; background: linear-gradient(135deg, var(--accent-green), #047857); box-shadow: 0 4px 12px rgba(16,185,129,0.25);">
+                  ▶️ Start Printing
+                </button>
+              ` : `
+                <button type="button" class="btn btn-secondary btn-sm pause-printer-btn" data-id="${p.id}" style="flex: 1; justify-content: center; background: rgba(217, 119, 6, 0.12); color: var(--accent-gold); border: 1px solid rgba(217, 119, 6, 0.3);">
+                  ⏸️ Pause
+                </button>
+                <button type="button" class="btn btn-primary btn-sm stop-printer-btn" data-id="${p.id}" style="flex: 1; justify-content: center; background: linear-gradient(135deg, var(--accent-indigo), #3730a3);">
+                  ⏹️ Stop & Save
+                </button>
+              `}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm edit-hours-btn" data-id="${p.id}" style="justify-content: center; font-size: 0.78rem;">
+                ✏️ Edit Hours
+              </button>
+              <button type="button" class="btn btn-primary btn-sm payoff-printer-btn" data-id="${p.id}" style="justify-content: center; font-size: 0.78rem; background: linear-gradient(135deg, #059669, #047857);">
+                💵 Payoff ($0)
+              </button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem;">
+              <button type="button" class="btn-link edit-printer-info-btn" data-id="${p.id}" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">
+                ⚙️ Edit Rates & Info
+              </button>
+              <button type="button" class="btn-link delete-printer-btn" data-id="${p.id}" style="font-size: 0.78rem; color: var(--accent-red); text-decoration: underline; background: none; border: none; cursor: pointer;">
+                🗑️ Delete Hardware
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    DOM.fleetPrintersGrid.querySelectorAll(".start-printer-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        DB.startPrinter(btn.dataset.id);
+        renderFleetConsole();
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".pause-printer-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        DB.pausePrinter(btn.dataset.id);
+        renderFleetConsole();
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".stop-printer-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        DB.stopPrinter(btn.dataset.id);
+        renderFleetConsole();
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".edit-hours-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = DB.getPrinterById(btn.dataset.id);
+        if (!p) return;
+        DOM.editHoursPrinterId.value = p.id;
+        DOM.editHoursInput.value = p.unpaidHours || 0;
+        DOM.editHoursModalOverlay.classList.add("open");
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".payoff-printer-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const p = DB.getPrinterById(btn.dataset.id);
+        if (!p) return;
+        const unpaidHrs = p.unpaidHours || 0;
+        const amount = (unpaidHrs * p.hourlyRate).toFixed(2);
+
+        if (unpaidHrs <= 0) {
+          showAppAlert(`Printer "${p.name}" has 0 unpaid hours. No payout needed.`, "Zero Balance", "ℹ️");
+          return;
+        }
+
+        if (await showAppConfirm(`Confirm settlement payoff of $${amount} (${unpaidHrs} hrs @ $${p.hourlyRate}/hr) for "${p.name}" (${p.investorEmail})?\n\nThis will reset unpaid hours and balance to 0 and log a payoff receipt.`, "Confirm Payoff Settlement", "💵")) {
+          DB.triggerPayoff(p.id, `Settlement on ${new Date().toLocaleDateString()}`);
+          renderFleetConsole();
+          renderPayoffHistory();
+          showAppAlert(`Payoff settled! $${amount} logged to receipts log and unpaid hours reset to 0.`, "Payoff Completed", "🎉");
+        }
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".edit-printer-info-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        openPrinterCrudModal(btn.dataset.id);
+      });
+    });
+
+    DOM.fleetPrintersGrid.querySelectorAll(".delete-printer-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const p = DB.getPrinterById(btn.dataset.id);
+        if (p && await showAppConfirm(`Are you sure you want to delete printer "${p.name}" (${p.serialNumber}) from the fleet?`, "Delete Printer", "🗑️")) {
+          DB.deletePrinter(btn.dataset.id);
+          renderFleetConsole();
+        }
+      });
+    });
+  }
+
+  function renderInvestorAccounts() {
+    if (!DOM.dbInvestorsTbody) return;
+
+    const investors = DB.getInvestors();
+    const printers = DB.getPrinters();
+
+    if (investors.length === 0) {
+      DOM.dbInvestorsTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No investor accounts registered.</td></tr>`;
+      return;
+    }
+
+    DOM.dbInvestorsTbody.innerHTML = investors.map(inv => {
+      const assignedPrinters = printers.filter(p => p.investorEmail.toLowerCase().trim() === inv.email.toLowerCase().trim());
+      const printerNames = assignedPrinters.length > 0
+        ? assignedPrinters.map(p => p.name).join(", ")
+        : '<span style="color: var(--text-muted); font-style: italic;">None assigned</span>';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--glass-border);">
+          <td style="padding: 0.8rem 0.6rem; font-weight: 600;">${inv.name}</td>
+          <td style="padding: 0.8rem 0.6rem; font-family: var(--font-display);">${inv.email}</td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">${printerNames}</td>
+          <td style="padding: 0.8rem 0.6rem; text-align: right;">
+            <button class="action-icon-btn delete delete-investor-btn" data-id="${inv.id}" data-name="${inv.name}" title="Delete Investor Account">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    DOM.dbInvestorsTbody.querySelectorAll(".delete-investor-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        if (await showAppConfirm(`Are you sure you want to delete investor account "${name}"?`, "Delete Investor", "🗑️")) {
+          DB.deleteInvestor(id);
+          renderInvestorAccounts();
+        }
+      });
+    });
+  }
+
+  function renderPayoffHistory() {
+    if (!DOM.dbPayoffsTbody) return;
+
+    const printers = DB.getPrinters();
+    const allPayoffs = [];
+
+    printers.forEach(p => {
+      if (p.payoffHistory && p.payoffHistory.length > 0) {
+        p.payoffHistory.forEach(rec => {
+          allPayoffs.push({ ...rec, printerName: p.name, serialNumber: p.serialNumber, investorEmail: p.investorEmail });
+        });
+      }
+    });
+
+    allPayoffs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (allPayoffs.length === 0) {
+      DOM.dbPayoffsTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No settled payoffs logged yet.</td></tr>`;
+      return;
+    }
+
+    DOM.dbPayoffsTbody.innerHTML = allPayoffs.map(rec => {
+      const dateStr = new Date(rec.date).toLocaleString();
+      return `
+        <tr style="border-bottom: 1px solid var(--glass-border);">
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">${dateStr}</td>
+          <td style="padding: 0.8rem 0.6rem; font-family: var(--font-display); font-size: 0.85rem;">${rec.investorEmail}</td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;"><strong>${rec.printerName}</strong> <span class="text-muted">(${rec.serialNumber})</span></td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 600;">${rec.hoursPaid.toFixed(1)} hrs</td>
+          <td style="padding: 0.8rem 0.6rem;">$${rec.hourlyRate.toFixed(2)}/hr</td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 800; color: var(--accent-green);">$${rec.amountPaid.toFixed(2)}</td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.82rem; color: var(--text-muted);">${rec.notes || 'Settlement'}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function openPrinterCrudModal(printerId = null) {
+    const titleEl = document.getElementById("printer-modal-title");
+    const selectEl = DOM.crudPrinterInvestor;
+    const investors = DB.getInvestors();
+
+    if (selectEl) {
+      if (investors.length === 0) {
+        selectEl.innerHTML = `<option value="">No registered investors - add an investor first!</option>`;
+      } else {
+        selectEl.innerHTML = investors.map(i => `<option value="${i.email}">${i.name} (${i.email})</option>`).join("");
+      }
+    }
+
+    if (printerId) {
+      const p = DB.getPrinterById(printerId);
+      if (!p) return;
+      if (titleEl) titleEl.textContent = "✏️ Edit Printer Details & Hourly Rates";
+      DOM.crudPrinterId.value = p.id;
+      DOM.crudPrinterName.value = p.name;
+      DOM.crudPrinterSerial.value = p.serialNumber;
+      if (selectEl) selectEl.value = p.investorEmail;
+      DOM.crudPrinterRate.value = p.hourlyRate;
+      DOM.crudPrinterCost.value = p.costPerHour || 0.90;
+    } else {
+      if (titleEl) titleEl.textContent = "🖨️ Register Printer in Fleet";
+      DOM.crudPrinterId.value = "";
+      DOM.crudPrinterName.value = "";
+      DOM.crudPrinterSerial.value = "";
+      DOM.crudPrinterRate.value = "6.50";
+      DOM.crudPrinterCost.value = "0.90";
+    }
+
+    if (DOM.printerModalOverlay) DOM.printerModalOverlay.classList.add("open");
+  }
+
+  function initFleetFormListeners() {
+    if (DOM.addPrinterBtn) {
+      DOM.addPrinterBtn.addEventListener("click", () => openPrinterCrudModal());
+    }
+
+    if (DOM.closePrinterModalBtn) {
+      DOM.closePrinterModalBtn.addEventListener("click", () => DOM.printerModalOverlay.classList.remove("open"));
+    }
+
+    if (DOM.printerCrudForm) {
+      DOM.printerCrudForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const pid = DOM.crudPrinterId.value;
+        const name = DOM.crudPrinterName.value.trim();
+        const serialNumber = DOM.crudPrinterSerial.value.trim();
+        const investorEmail = DOM.crudPrinterInvestor.value.trim();
+        const hourlyRate = parseFloat(DOM.crudPrinterRate.value) || 0;
+        const costPerHour = parseFloat(DOM.crudPrinterCost.value) || 0;
+
+        if (pid) {
+          const existing = DB.getPrinterById(pid);
+          if (existing) {
+            existing.name = name;
+            existing.serialNumber = serialNumber;
+            existing.investorEmail = investorEmail;
+            existing.hourlyRate = hourlyRate;
+            existing.costPerHour = costPerHour;
+            DB.updatePrinter(existing);
+          }
+        } else {
+          DB.addPrinter({ name, serialNumber, investorEmail, hourlyRate, costPerHour });
+        }
+
+        if (DOM.printerModalOverlay) DOM.printerModalOverlay.classList.remove("open");
+        renderFleetConsole();
+        renderInvestorAccounts();
+        showAppAlert(pid ? "Printer details updated!" : "New printer registered in fleet!", pid ? "Printer Updated" : "Printer Added", "🖨️");
+      });
+    }
+
+    if (DOM.closeEditHoursBtn) {
+      DOM.closeEditHoursBtn.addEventListener("click", () => DOM.editHoursModalOverlay.classList.remove("open"));
+    }
+
+    if (DOM.editHoursForm) {
+      DOM.editHoursForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const pid = DOM.editHoursPrinterId.value;
+        const newHours = parseFloat(DOM.editHoursInput.value) || 0;
+
+        DB.editPrinterHours(pid, newHours);
+        if (DOM.editHoursModalOverlay) DOM.editHoursModalOverlay.classList.remove("open");
+        renderFleetConsole();
+        showAppAlert(`Unpaid hours updated to ${newHours.toFixed(1)} hrs.`, "Hours Adjusted", "✏️");
+      });
+    }
+
+    if (DOM.investorAccountForm) {
+      DOM.investorAccountForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = DOM.investorNameInput.value.trim();
+        const email = DOM.investorEmailInput.value.trim();
+        const password = DOM.investorPasswordInput.value;
+
+        DB.addInvestor({ name, email, password });
+        DOM.investorNameInput.value = "";
+        DOM.investorEmailInput.value = "";
+        DOM.investorPasswordInput.value = "";
+
+        renderInvestorAccounts();
+        showAppAlert(`Investor account for "${name}" (${email}) created successfully! They can log in using their credentials.`, "Investor Account Created", "👥");
+      });
+    }
+  }
+
+  function renderCustomJobs() {
+    const tbody = document.getElementById("db-custom-jobs-tbody");
+    if (!tbody) return;
+
+    const jobs = DB.getCustomJobs();
+
+    if (jobs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No custom printing jobs logged yet. Click "+ Log Custom Printing Job" above.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = jobs.map(j => {
+      const dateStr = new Date(j.date).toLocaleDateString();
+      return `
+        <tr style="border-bottom: 1px solid var(--glass-border);">
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">${dateStr}</td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 600;">${j.clientName}</td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.88rem;">${j.jobTitle}</td>
+          <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">
+            <strong>${j.printerName}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${j.investorEmail}</div>
+          </td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 500;">${j.durationHours.toFixed(1)} hrs</td>
+          <td style="padding: 0.8rem 0.6rem; color: var(--text-muted);">$${j.cost.toFixed(2)}</td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 700; color: var(--text-main);">$${j.price.toFixed(2)}</td>
+          <td style="padding: 0.8rem 0.6rem; font-weight: 800; color: var(--accent-green);">$${j.profit.toFixed(2)}</td>
+          <td style="padding: 0.8rem 0.6rem; text-align: right;">
+            <button class="action-icon-btn delete delete-custom-job-btn" data-id="${j.id}" title="Delete Custom Job">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll(".delete-custom-job-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        if (await showAppConfirm("Are you sure you want to delete this custom job entry?", "Delete Custom Job", "🗑️")) {
+          DB.deleteCustomJob(id);
+          renderCustomJobs();
+          updateOverviewStats();
+        }
+      });
+    });
+  }
+
+  function openDispatchModal(orderId) {
+    const overlay = document.getElementById("dispatch-order-modal-overlay");
+    const infoCard = document.getElementById("dispatch-order-info-card");
+    const targetInput = document.getElementById("dispatch-target-order-id");
+    const container = document.getElementById("dispatch-printers-recommendations");
+
+    if (!overlay || !infoCard || !container) return;
+
+    const orders = DB.getOrders();
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    targetInput.value = order.id;
+
+    const itemsSummary = order.items ? order.items.map(i => `${i.name} (x${i.qty})`).join(", ") : "Custom item";
+    infoCard.innerHTML = `
+      <div style="font-weight: 700; color: var(--accent-indigo); margin-bottom: 0.3rem;">Order #${order.id}</div>
+      <div><strong>Customer:</strong> ${order.customer.firstName} ${order.customer.lastName}</div>
+      <div><strong>Items to Print:</strong> ${itemsSummary}</div>
+      <div><strong>Order Total:</strong> $${order.totals.total.toFixed(2)}</div>
+    `;
+
+    // Smart Printer Recommendation Engine
+    const printers = DB.getPrinters();
+    const investors = DB.getInvestors();
+
+    if (printers.length === 0) {
+      container.innerHTML = `<p class="text-danger" style="font-size: 0.85rem;">No printers registered in fleet. Add printers first!</p>`;
+    } else {
+      // Sort printers: Idle first, then Paused, then Printing
+      const sortedPrinters = [...printers].sort((a, b) => {
+        const score = (p) => p.status === 'Idle' ? 0 : (p.status === 'Paused' ? 1 : 2);
+        return score(a) - score(b);
+      });
+
+      container.innerHTML = sortedPrinters.map((p, idx) => {
+        const isStandby = p.status === "Idle" || p.status === "Paused";
+        const isBestMatch = idx === 0 && isStandby;
+        const investor = investors.find(i => i.email.toLowerCase().trim() === p.investorEmail.toLowerCase().trim());
+        const investorName = investor ? investor.name : p.investorEmail;
+
+        return `
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; border-radius: 10px; border: 1.5px solid ${isBestMatch ? 'var(--accent-green)' : 'var(--glass-border)'}; background: ${isBestMatch ? 'rgba(16, 185, 129, 0.05)' : 'var(--bg-card)'}; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+              <input type="radio" name="dispatch_printer_choice" value="${p.id}" ${idx === 0 ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+              <div>
+                <strong style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                  ${p.name}
+                  ${isBestMatch ? '<span style="font-size: 0.7rem; background: var(--accent-green); color: white; padding: 2px 6px; border-radius: 10px;">⭐ Recommended (Standby)</span>' : ''}
+                </strong>
+                <span class="text-muted" style="font-size: 0.78rem;">SN: ${p.serialNumber} | Rate: $${p.hourlyRate.toFixed(2)}/hr | Cost: $${p.costPerHour.toFixed(2)}/hr</span>
+              </div>
+            </div>
+            <span style="font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 12px; background: ${p.status === 'Printing' ? 'rgba(220,38,38,0.1)' : 'rgba(16,185,129,0.1)'}; color: ${p.status === 'Printing' ? 'var(--accent-red)' : 'var(--accent-green)'};">
+              ${p.status.toUpperCase()}
+            </span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    overlay.classList.add("open");
+  }
+
+  function openCustomJobModal() {
+    const overlay = document.getElementById("custom-job-modal-overlay");
+    const selectEl = document.getElementById("custom-job-printer");
+    const printers = DB.getPrinters();
+
+    if (selectEl) {
+      if (printers.length === 0) {
+        selectEl.innerHTML = `<option value="">No printers registered in fleet!</option>`;
+      } else {
+        selectEl.innerHTML = printers.map(p => `<option value="${p.id}">${p.name} (${p.serialNumber}) - $${p.hourlyRate.toFixed(2)}/hr</option>`).join("");
+      }
+    }
+
+    if (overlay) overlay.classList.add("open");
+  }
+
+  function initFleetDashboard() {
+    renderFleetConsole();
+    renderInvestorAccounts();
+    renderCustomJobs();
+    renderPayoffHistory();
+
+    const tabs = [
+      { btn: document.getElementById("fleet-tab-console"), panel: document.getElementById("fleet-panel-console") },
+      { btn: document.getElementById("fleet-tab-investors"), panel: document.getElementById("fleet-panel-investors") },
+      { btn: document.getElementById("fleet-tab-custom-jobs"), panel: document.getElementById("fleet-panel-custom-jobs") },
+      { btn: document.getElementById("fleet-tab-payoffs"), panel: document.getElementById("fleet-panel-payoffs") }
+    ];
+
+    tabs.forEach(({ btn, panel }) => {
+      if (!btn || !panel) return;
+      btn.onclick = () => {
+        tabs.forEach(t => {
+          if (t.btn && t.panel) {
+            t.btn.classList.remove("active");
+            t.btn.style.background = "transparent";
+            t.btn.style.color = "var(--text-muted)";
+            t.panel.style.display = "none";
+          }
+        });
+        btn.classList.add("active");
+        btn.style.background = "var(--accent-indigo)";
+        btn.style.color = "white";
+        panel.style.display = "block";
+
+        if (btn.id === "fleet-tab-console") renderFleetConsole();
+        if (btn.id === "fleet-tab-investors") renderInvestorAccounts();
+        if (btn.id === "fleet-tab-custom-jobs") renderCustomJobs();
+        if (btn.id === "fleet-tab-payoffs") renderPayoffHistory();
+      };
+    });
+
+    // Custom Job Modal open button
+    const addCustomBtn = document.getElementById("add-custom-job-btn");
+    if (addCustomBtn) {
+      addCustomBtn.onclick = () => openCustomJobModal();
+    }
+
+    // Custom Job Modal close button
+    const closeCustomModalBtn = document.getElementById("close-custom-job-modal-btn");
+    if (closeCustomModalBtn) {
+      closeCustomModalBtn.onclick = () => {
+        const overlay = document.getElementById("custom-job-modal-overlay");
+        if (overlay) overlay.classList.remove("open");
+      };
+    }
+
+    // Custom Job Form profit auto-preview
+    const costInput = document.getElementById("custom-job-cost");
+    const priceInput = document.getElementById("custom-job-price");
+    const profitPreview = document.getElementById("custom-job-profit-preview");
+
+    const updateProfitPreview = () => {
+      const c = parseFloat(costInput.value) || 0;
+      const p = parseFloat(priceInput.value) || 0;
+      const prof = p - c;
+      if (profitPreview) profitPreview.textContent = `$${prof.toFixed(2)}`;
+    };
+
+    if (costInput) costInput.oninput = updateProfitPreview;
+    if (priceInput) priceInput.oninput = updateProfitPreview;
+
+    // Custom Job Form submit handler
+    const customJobForm = document.getElementById("custom-job-crud-form");
+    if (customJobForm) {
+      customJobForm.onsubmit = (e) => {
+        e.preventDefault();
+        const clientName = document.getElementById("custom-job-client").value.trim();
+        const jobTitle = document.getElementById("custom-job-title").value.trim();
+        const printerId = document.getElementById("custom-job-printer").value;
+        const durationHours = parseFloat(document.getElementById("custom-job-hours").value) || 0;
+        const cost = parseFloat(document.getElementById("custom-job-cost").value) || 0;
+        const price = parseFloat(document.getElementById("custom-job-price").value) || 0;
+
+        DB.addCustomJob({ clientName, jobTitle, printerId, durationHours, cost, price });
+
+        const overlay = document.getElementById("custom-job-modal-overlay");
+        if (overlay) overlay.classList.remove("open");
+
+        customJobForm.reset();
+        renderCustomJobs();
+        renderFleetConsole();
+        updateOverviewStats();
+
+        showAppAlert(`On-demand custom job "${jobTitle}" saved! $${price.toFixed(2)} added to revenue analytics.`, "Custom Job Saved", "🛠️");
+      };
+    }
+
+    // Dispatch Modal close & submit handlers
+    const closeDispatchBtn = document.getElementById("close-dispatch-modal-btn");
+    if (closeDispatchBtn) {
+      closeDispatchBtn.onclick = () => {
+        const overlay = document.getElementById("dispatch-order-modal-overlay");
+        if (overlay) overlay.classList.remove("open");
+      };
+    }
+
+    const dispatchForm = document.getElementById("dispatch-order-form");
+    if (dispatchForm) {
+      dispatchForm.onsubmit = (e) => {
+        e.preventDefault();
+        const orderId = document.getElementById("dispatch-target-order-id").value;
+        const selectedRadio = dispatchForm.querySelector('input[name="dispatch_printer_choice"]:checked');
+
+        if (!selectedRadio) {
+          showAppAlert("Please select a printer to dispatch the job!", "Select Printer", "⚠️");
+          return;
+        }
+
+        const printerId = selectedRadio.value;
+        DB.dispatchOrderToPrinter(orderId, printerId);
+
+        const overlay = document.getElementById("dispatch-order-modal-overlay");
+        if (overlay) overlay.classList.remove("open");
+
+        renderDashboardOrders();
+        renderFleetConsole();
+        updateOverviewStats();
+
+        const printer = DB.getPrinterById(printerId);
+        const printerName = printer ? printer.name : printerId;
+
+        showAppAlert(`Order #${orderId} dispatched to printer "${printerName}"! Printer timer started.`, "Order Dispatched", "🚀");
+      };
+    }
+
+    initFleetFormListeners();
+  }
+
+  function renderInvestorPortal() {
+    if (!DOM.investorPortalPage) return;
+
+    const email = (sessionStorage.getItem("currentInvestorEmail") || "").trim().toLowerCase();
+    const investor = DB.getInvestorByEmail(email);
+    const printers = DB.getPrintersForInvestor(email);
+
+    const welcomeEl = document.getElementById("investor-welcome-name");
+    if (welcomeEl) {
+      welcomeEl.textContent = investor ? `Welcome back, ${investor.name} (${investor.email})` : `Welcome back, ${email}`;
+    }
+
+    let totalUnpaidHours = 0;
+    let totalUnpaidEarnings = 0;
+    let totalLifetimePaid = 0;
+
+    printers.forEach(p => {
+      const unpaidHrs = p.unpaidHours || 0;
+      const rate = p.hourlyRate || 0;
+      totalUnpaidHours += unpaidHrs;
+      totalUnpaidEarnings += unpaidHrs * rate;
+
+      if (p.payoffHistory && p.payoffHistory.length > 0) {
+        p.payoffHistory.forEach(pay => {
+          totalLifetimePaid += pay.amountPaid || 0;
+        });
+      }
+    });
+
+    const statPrintersEl = document.getElementById("inv-stat-printers");
+    const statHoursEl = document.getElementById("inv-stat-unpaid-hours");
+    const statEarningsEl = document.getElementById("inv-stat-unpaid-earnings");
+    const statPaidEl = document.getElementById("inv-stat-lifetime-paid");
+
+    if (statPrintersEl) statPrintersEl.textContent = printers.length;
+    if (statHoursEl) statHoursEl.textContent = `${totalUnpaidHours.toFixed(1)} hrs`;
+    if (statEarningsEl) statEarningsEl.textContent = `$${totalUnpaidEarnings.toFixed(2)}`;
+    if (statPaidEl) statPaidEl.textContent = `$${totalLifetimePaid.toFixed(2)}`;
+
+    const gridEl = document.getElementById("investor-printers-grid");
+    if (gridEl) {
+      if (printers.length === 0) {
+        gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem 0;">No hardware 3D printers currently assigned to your account. Please contact the superadmin to assign your hardware.</div>`;
+      } else {
+        gridEl.innerHTML = printers.map(p => {
+          const rate = p.hourlyRate || 0;
+          const cost = p.costPerHour || 0;
+          const unpaidHrs = p.unpaidHours || 0;
+
+          const totalGained = parseFloat((unpaidHrs * rate).toFixed(2));
+          const totalCost = parseFloat((unpaidHrs * cost).toFixed(2));
+          const profit = parseFloat((totalGained - totalCost).toFixed(2));
+
+          let currentSessionSec = p.accumulatedSessionSeconds || 0;
+          if (p.status === "Printing" && p.currentSessionStart) {
+            currentSessionSec += Math.floor((Date.now() - p.currentSessionStart) / 1000);
+          }
+          const timecodeDisplay = formatSecondsToTimecode(currentSessionSec);
+
+          let badgeBg = "rgba(107, 114, 128, 0.15)";
+          let badgeColor = "var(--text-muted)";
+          if (p.status === "Printing") {
+            badgeBg = "rgba(16, 185, 129, 0.15)";
+            badgeColor = "var(--accent-green)";
+          } else if (p.status === "Paused") {
+            badgeBg = "rgba(217, 119, 6, 0.15)";
+            badgeColor = "var(--accent-gold)";
+          }
+
+          return `
+            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-radius: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <h3 style="font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.2rem;">${p.name}</h3>
+                  <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-display);">Serial #: ${p.serialNumber}</span>
+                </div>
+                <span style="padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: ${badgeBg}; color: ${badgeColor};">
+                  ${p.status === 'Printing' ? '⚡ PRINTING' : (p.status === 'Paused' ? '⏸️ PAUSED' : '💤 IDLE')}
+                </span>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.05); padding: 0.8rem; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center;">
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.2rem;">Live Session Active Timecode</div>
+                <div id="inv-timecode-${p.id}" style="font-family: monospace; font-size: 1.6rem; font-weight: 800; color: ${p.status === 'Printing' ? 'var(--accent-green)' : 'var(--text-main)'}; letter-spacing: 2px;">
+                  ${timecodeDisplay}
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 0.85rem;">
+                <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                  <span class="text-muted" style="font-size: 0.75rem; display: block;">Hourly Rate:</span>
+                  <strong style="color: var(--accent-indigo);">$${rate.toFixed(2)} / hr</strong>
+                </div>
+                <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                  <span class="text-muted" style="font-size: 0.75rem; display: block;">Unpaid Hours:</span>
+                  <strong>${unpaidHrs.toFixed(1)} hrs</strong>
+                </div>
+                <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                  <span class="text-muted" style="font-size: 0.75rem; display: block;">Total Gained:</span>
+                  <strong style="color: var(--accent-green);">$${totalGained.toFixed(2)}</strong>
+                </div>
+                <div style="background: var(--bg-card); padding: 0.6rem 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                  <span class="text-muted" style="font-size: 0.75rem; display: block;">Cost & Net Profit:</span>
+                  <span style="font-size: 0.8rem;">Cost: $${totalCost.toFixed(2)} | <strong style="color: var(--accent-indigo);">Net: $${profit.toFixed(2)}</strong></span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
+    const sessionsTbody = document.getElementById("investor-sessions-tbody");
+    if (sessionsTbody) {
+      const allSessions = [];
+      printers.forEach(p => {
+        if (p.sessions) {
+          p.sessions.forEach(s => {
+            allSessions.push({ ...s, printerName: p.name });
+          });
+        }
+      });
+      allSessions.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+
+      if (allSessions.length === 0) {
+        sessionsTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No past printing sessions logged yet.</td></tr>`;
+      } else {
+        sessionsTbody.innerHTML = allSessions.map(s => {
+          const dateStr = new Date(s.endDate).toLocaleString();
+          const statusHtml = s.payoffId
+            ? `<span style="color: var(--accent-green); font-weight: 600; font-size: 0.8rem;">Paid Out ✓</span>`
+            : `<span style="color: var(--accent-gold); font-weight: 600; font-size: 0.8rem;">Unpaid / Pending</span>`;
+
+          return `
+            <tr style="border-bottom: 1px solid var(--glass-border);">
+              <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">${dateStr}</td>
+              <td style="padding: 0.8rem 0.6rem; font-weight: 600;">${s.printerName}</td>
+              <td style="padding: 0.8rem 0.6rem;">${s.hours.toFixed(2)} hrs</td>
+              <td style="padding: 0.8rem 0.6rem;">$${s.rate.toFixed(2)}/hr</td>
+              <td style="padding: 0.8rem 0.6rem; font-weight: 700; color: var(--accent-green);">$${s.earnings.toFixed(2)}</td>
+              <td style="padding: 0.8rem 0.6rem;">${statusHtml}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    const payoffsTbody = document.getElementById("investor-payoffs-tbody");
+    if (payoffsTbody) {
+      const allPayoffs = [];
+      printers.forEach(p => {
+        if (p.payoffHistory) {
+          p.payoffHistory.forEach(pay => {
+            allPayoffs.push({ ...pay, printerName: p.name, serialNumber: p.serialNumber });
+          });
+        }
+      });
+      allPayoffs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (allPayoffs.length === 0) {
+        payoffsTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No settled payoff receipts logged yet.</td></tr>`;
+      } else {
+        payoffsTbody.innerHTML = allPayoffs.map(pay => {
+          const dateStr = new Date(pay.date).toLocaleString();
+          return `
+            <tr style="border-bottom: 1px solid var(--glass-border);">
+              <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;">${dateStr}</td>
+              <td style="padding: 0.8rem 0.6rem; font-family: var(--font-display); font-size: 0.82rem;">${pay.id}</td>
+              <td style="padding: 0.8rem 0.6rem; font-size: 0.85rem;"><strong>${pay.printerName}</strong> <span class="text-muted">(${pay.serialNumber})</span></td>
+              <td style="padding: 0.8rem 0.6rem; font-weight: 600;">${pay.hoursPaid.toFixed(1)} hrs</td>
+              <td style="padding: 0.8rem 0.6rem;">$${pay.hourlyRate.toFixed(2)}/hr</td>
+              <td style="padding: 0.8rem 0.6rem; font-weight: 800; color: var(--accent-green);">$${pay.amountPaid.toFixed(2)}</td>
+              <td style="padding: 0.8rem 0.6rem;"><span style="color: var(--accent-green); font-size: 0.8rem; font-weight: 600;">Settled ✓</span></td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    const tabSessionsBtn = document.getElementById("inv-tab-sessions");
+    const tabPayoffsBtn = document.getElementById("inv-tab-payoffs");
+    const panelSessions = document.getElementById("inv-panel-sessions");
+    const panelPayoffs = document.getElementById("inv-panel-payoffs");
+
+    if (tabSessionsBtn && tabPayoffsBtn && panelSessions && panelPayoffs) {
+      tabSessionsBtn.onclick = () => {
+        tabSessionsBtn.classList.add("active");
+        tabSessionsBtn.style.background = "var(--accent-indigo)";
+        tabSessionsBtn.style.color = "white";
+
+        tabPayoffsBtn.classList.remove("active");
+        tabPayoffsBtn.style.background = "transparent";
+        tabPayoffsBtn.style.color = "var(--text-muted)";
+
+        panelSessions.style.display = "block";
+        panelPayoffs.style.display = "none";
+      };
+
+      tabPayoffsBtn.onclick = () => {
+        tabPayoffsBtn.classList.add("active");
+        tabPayoffsBtn.style.background = "var(--accent-indigo)";
+        tabPayoffsBtn.style.color = "white";
+
+        tabSessionsBtn.classList.remove("active");
+        tabSessionsBtn.style.background = "transparent";
+        tabSessionsBtn.style.color = "var(--text-muted)";
+
+        panelPayoffs.style.display = "block";
+        panelSessions.style.display = "none";
+      };
+    }
+
+    if (DOM.investorLogoutBtn) {
+      DOM.investorLogoutBtn.onclick = () => {
+        state.isInvestorLoggedIn = false;
+        sessionStorage.removeItem("isInvestorLoggedIn");
+        sessionStorage.removeItem("currentInvestorEmail");
+        changePage("store");
+        if (DOM.navHome) DOM.navHome.classList.add("active");
+        showAppAlert("You have logged out of the Investor Portal.", "Investor Logged Out", "🚪");
+      };
+    }
+  }
+
+  // ==========================================
+  // FINANCIAL ANALYTICS & PROFIT HISTOGRAM MODULE
+  // ==========================================
+
+  const finState = {
+    period: 'all', // 'all', 'year', 'month', 'week', 'custom'
+    startDate: null,
+    endDate: null,
+    granularity: 'weekly', // 'daily', 'weekly', 'monthly'
+    listenersBound: false
+  };
+
+  function renderFinanceDashboard() {
+    initFinanceFilterListeners();
+
+    const orders = DB.getOrders();
+    const customJobs = DB.getCustomJobs();
+    const printers = DB.getPrinters();
+
+    // 1. Gather all investor payoff receipts as expenses
+    const payoffs = [];
+    printers.forEach(p => {
+      if (p.payoffHistory) {
+        p.payoffHistory.forEach(pay => {
+          payoffs.push({ ...pay, printerName: p.name });
+        });
+      }
+    });
+
+    // 2. Filter data by active period filter
+    const now = new Date();
+
+    const filterByDate = (dateStr) => {
+      if (!dateStr) return true;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return true;
+
+      if (finState.period === 'year') {
+        return d.getFullYear() === now.getFullYear();
+      } else if (finState.period === 'month') {
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      } else if (finState.period === 'week') {
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return d >= oneWeekAgo && d <= now;
+      } else if (finState.period === 'custom') {
+        if (finState.startDate && d < new Date(finState.startDate + 'T00:00:00')) return false;
+        if (finState.endDate && d > new Date(finState.endDate + 'T23:59:59')) return false;
+        return true;
+      }
+      return true; // 'all'
+    };
+
+    const filteredOrders = orders.filter(o => {
+      const delStatus = (o.deliveryStatus || o.status || "").toLowerCase();
+      if (delStatus === 'cancelled') return false;
+      return filterByDate(o.createdAt || o.datePlaced);
+    });
+
+    const filteredCustomJobs = customJobs.filter(j => filterByDate(j.date));
+    const filteredPayoffs = payoffs.filter(p => filterByDate(p.date));
+
+    // 3. Compute High-Level Financial Metrics
+    let storefrontRevenue = 0;
+    let storefrontCost = 0;
+
+    filteredOrders.forEach(o => {
+      const rev = (o.totals && o.totals.total) ? o.totals.total : 0;
+      const cost = o.costAmount || (rev * 0.3);
+      storefrontRevenue += rev;
+      storefrontCost += cost;
+    });
+
+    let customJobsRevenue = 0;
+    let customJobsCost = 0;
+
+    filteredCustomJobs.forEach(j => {
+      customJobsRevenue += (j.price || 0);
+      customJobsCost += (j.cost || 0);
+    });
+
+    let payoffExpenses = 0;
+    filteredPayoffs.forEach(p => {
+      payoffExpenses += (p.amountPaid || 0);
+    });
+
+    const totalRevenue = storefrontRevenue + customJobsRevenue;
+    const totalCosts = storefrontCost + customJobsCost + payoffExpenses;
+    const netProfit = totalRevenue - totalCosts;
+    const marginPercent = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0;
+
+    const totalTransactionsCount = filteredOrders.length + filteredCustomJobs.length;
+    const avgProfitPerOrder = totalTransactionsCount > 0 ? (netProfit / totalTransactionsCount) : 0;
+    const avgRevenuePerOrder = totalTransactionsCount > 0 ? (totalRevenue / totalTransactionsCount) : 0;
+
+    // Update KPI Cards UI
+    const kpiRev = document.getElementById("fin-kpi-revenue");
+    const kpiOrders = document.getElementById("fin-kpi-orders-count");
+    const kpiCosts = document.getElementById("fin-kpi-costs");
+    const kpiCogsBreakdown = document.getElementById("fin-kpi-cogs-breakdown");
+    const kpiProfit = document.getElementById("fin-kpi-profit");
+    const kpiMargin = document.getElementById("fin-kpi-margin-percent");
+    const kpiAvgProfit = document.getElementById("fin-kpi-avg-profit");
+    const kpiAvgRev = document.getElementById("fin-kpi-avg-revenue");
+
+    if (kpiRev) kpiRev.textContent = `$${totalRevenue.toFixed(2)}`;
+    if (kpiOrders) kpiOrders.textContent = `${totalTransactionsCount} Orders & Custom Jobs`;
+    if (kpiCosts) kpiCosts.textContent = `$${totalCosts.toFixed(2)}`;
+    if (kpiCogsBreakdown) kpiCogsBreakdown.textContent = `COGS: $${(storefrontCost + customJobsCost).toFixed(2)} | Payoffs: $${payoffExpenses.toFixed(2)}`;
+    if (kpiProfit) {
+      kpiProfit.textContent = `$${netProfit.toFixed(2)}`;
+      kpiProfit.style.color = netProfit >= 0 ? "var(--accent-green)" : "var(--accent-red)";
+    }
+    if (kpiMargin) kpiMargin.textContent = `Margin: ${marginPercent.toFixed(1)}%`;
+    if (kpiAvgProfit) kpiAvgProfit.textContent = `$${avgProfitPerOrder.toFixed(2)}`;
+    if (kpiAvgRev) kpiAvgRev.textContent = `Avg Rev: $${avgRevenuePerOrder.toFixed(2)}`;
+
+    // 4. Render Breakdown Tables
+    renderFinanceStreamsTable(storefrontRevenue, storefrontCost, customJobsRevenue, customJobsCost, payoffExpenses, totalRevenue, netProfit, filteredOrders.length, filteredCustomJobs.length);
+    renderFinanceTopPerformersTable(filteredOrders, filteredCustomJobs);
+
+    // 5. Build Grouped Buckets for Histogram Chart
+    renderFinanceHistogramChart(filteredOrders, filteredCustomJobs, filteredPayoffs);
+  }
+
+  function renderFinanceStreamsTable(sfRev, sfCost, cjRev, cjCost, payCost, totRev, totProfit, sfCount, cjCount) {
+    const tbody = document.getElementById("fin-streams-tbody");
+    if (!tbody) return;
+
+    const sfProfit = sfRev - sfCost;
+    const cjProfit = cjRev - cjCost;
+    const sfShare = totRev > 0 ? ((sfRev / totRev) * 100).toFixed(1) : "0.0";
+    const cjShare = totRev > 0 ? ((cjRev / totRev) * 100).toFixed(1) : "0.0";
+
+    tbody.innerHTML = `
+      <tr style="border-bottom: 1px solid var(--glass-border);">
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600;">🛍️ Storefront Catalog Orders</td>
+        <td style="padding: 0.75rem 0.6rem;">${sfCount} orders</td>
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-indigo);">$${sfRev.toFixed(2)}</td>
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-green);">$${sfProfit.toFixed(2)}</td>
+        <td style="padding: 0.75rem 0.6rem; text-align: right; font-weight: 600;">${sfShare}%</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--glass-border);">
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600;">🛠️ On-Demand Custom Jobs</td>
+        <td style="padding: 0.75rem 0.6rem;">${cjCount} jobs</td>
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-indigo);">$${cjRev.toFixed(2)}</td>
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-green);">$${cjProfit.toFixed(2)}</td>
+        <td style="padding: 0.75rem 0.6rem; text-align: right; font-weight: 600;">${cjShare}%</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--glass-border);">
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-red);">💸 Investor Hardware Payouts</td>
+        <td style="padding: 0.75rem 0.6rem;">-</td>
+        <td style="padding: 0.75rem 0.6rem; color: var(--text-muted);">$0.00</td>
+        <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--accent-red);">-$${payCost.toFixed(2)}</td>
+        <td style="padding: 0.75rem 0.6rem; text-align: right; color: var(--text-muted);">-</td>
+      </tr>
+      <tr style="background: rgba(79, 70, 229, 0.08); font-weight: 700;">
+        <td style="padding: 0.8rem 0.6rem;">📊 Net Financial Total</td>
+        <td style="padding: 0.8rem 0.6rem;">${sfCount + cjCount} total</td>
+        <td style="padding: 0.8rem 0.6rem; color: var(--accent-indigo);">$${totRev.toFixed(2)}</td>
+        <td style="padding: 0.8rem 0.6rem; color: var(--accent-green);">$${totProfit.toFixed(2)}</td>
+        <td style="padding: 0.8rem 0.6rem; text-align: right; color: var(--accent-indigo);">100.0%</td>
+      </tr>
+    `;
+  }
+
+  function renderFinanceTopPerformersTable(orders, customJobs) {
+    const tbody = document.getElementById("fin-performers-tbody");
+    if (!tbody) return;
+
+    const performersMap = {};
+
+    orders.forEach(o => {
+      if (o.items) {
+        o.items.forEach(item => {
+          const key = item.productId || item.name;
+          if (!performersMap[key]) {
+            performersMap[key] = {
+              name: item.name,
+              type: "Catalog Product",
+              qty: 0,
+              revenue: 0,
+              cost: 0,
+              profit: 0
+            };
+          }
+          const itemQty = item.qty || 1;
+          const itemPrice = item.price || 0;
+          const itemCost = item.cost || (itemPrice * 0.3);
+
+          performersMap[key].qty += itemQty;
+          performersMap[key].revenue += itemPrice * itemQty;
+          performersMap[key].cost += itemCost * itemQty;
+          performersMap[key].profit += (itemPrice - itemCost) * itemQty;
+        });
+      }
+    });
+
+    customJobs.forEach(j => {
+      const key = `custom-${j.id}`;
+      performersMap[key] = {
+        name: j.jobTitle,
+        type: "Custom Print Job",
+        qty: `${j.durationHours} hrs`,
+        revenue: j.price || 0,
+        cost: j.cost || 0,
+        profit: j.profit || 0
+      };
+    });
+
+    const list = Object.values(performersMap);
+    list.sort((a, b) => b.profit - a.profit);
+    const topList = list.slice(0, 5);
+
+    if (topList.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No performance data recorded for this timeframe.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = topList.map(item => {
+      const margin = item.revenue > 0 ? ((item.profit / item.revenue) * 100).toFixed(1) : "0.0";
+      return `
+        <tr style="border-bottom: 1px solid var(--glass-border);">
+          <td style="padding: 0.75rem 0.6rem; font-weight: 600;">${item.name}</td>
+          <td style="padding: 0.75rem 0.6rem;"><span style="font-size: 0.75rem; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 10px; color: var(--text-muted);">${item.type}</span></td>
+          <td style="padding: 0.75rem 0.6rem;">${item.qty}</td>
+          <td style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--accent-green);">$${item.profit.toFixed(2)}</td>
+          <td style="padding: 0.75rem 0.6rem; text-align: right; font-weight: 600; color: var(--accent-indigo);">${margin}%</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderFinanceHistogramChart(orders, customJobs, payoffs) {
+    const canvas = document.getElementById("fin-histogram-canvas");
+    const container = document.getElementById("fin-histogram-container");
+    const tooltip = document.getElementById("fin-canvas-tooltip");
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+
+    const rect = container.getBoundingClientRect();
+    const width = rect.width || 600;
+    const height = 320;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const bucketsMap = {};
+
+    const getBucketKey = (dateObj) => {
+      if (!dateObj || isNaN(dateObj.getTime())) return "Unknown";
+      if (finState.granularity === 'daily') {
+        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (finState.granularity === 'monthly') {
+        return dateObj.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      } else {
+        const d = new Date(dateObj);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d.setDate(diff));
+        return `Wk ${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      }
+    };
+
+    const registerItemInBucket = (dateStr, revenue, cost) => {
+      if (!dateStr) return;
+      const dateObj = new Date(dateStr);
+      const key = getBucketKey(dateObj);
+      if (!bucketsMap[key]) {
+        bucketsMap[key] = {
+          label: key,
+          timestamp: dateObj.getTime(),
+          ordersCount: 0,
+          revenue: 0,
+          costs: 0,
+          profit: 0
+        };
+      }
+      bucketsMap[key].ordersCount += 1;
+      bucketsMap[key].revenue += revenue;
+      bucketsMap[key].costs += cost;
+      bucketsMap[key].profit += (revenue - cost);
+    };
+
+    orders.forEach(o => {
+      const rev = (o.totals && o.totals.total) ? o.totals.total : 0;
+      const cost = o.costAmount || (rev * 0.3);
+      registerItemInBucket(o.createdAt || o.datePlaced, rev, cost);
+    });
+
+    customJobs.forEach(j => {
+      registerItemInBucket(j.date, j.price || 0, j.cost || 0);
+    });
+
+    payoffs.forEach(p => {
+      if (!p.date) return;
+      const dateObj = new Date(p.date);
+      const key = getBucketKey(dateObj);
+      if (!bucketsMap[key]) {
+        bucketsMap[key] = {
+          label: key,
+          timestamp: dateObj.getTime(),
+          ordersCount: 0,
+          revenue: 0,
+          costs: 0,
+          profit: 0
+        };
+      }
+      bucketsMap[key].costs += (p.amountPaid || 0);
+      bucketsMap[key].profit -= (p.amountPaid || 0);
+    });
+
+    let buckets = Object.values(bucketsMap);
+    buckets.sort((a, b) => a.timestamp - b.timestamp);
+
+    if (buckets.length === 0) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("No financial data records available for the selected timeframe.", width / 2, height / 2);
+      return;
+    }
+
+    const paddingLeft = 50;
+    const paddingRight = 45;
+    const paddingTop = 30;
+    const paddingBottom = 40;
+
+    const chartW = width - paddingLeft - paddingRight;
+    const chartH = height - paddingTop - paddingBottom;
+
+    const maxProfit = Math.max(...buckets.map(b => Math.max(b.profit, b.revenue)), 50);
+    const maxOrders = Math.max(...buckets.map(b => b.ordersCount), 5);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
+    ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
+    ctx.font = "11px system-ui, sans-serif";
+
+    const numGridLines = 4;
+    for (let i = 0; i <= numGridLines; i++) {
+      const y = paddingTop + (chartH / numGridLines) * i;
+      const valCurrency = Math.round(maxProfit * (1 - i / numGridLines));
+      const valCount = Math.round(maxOrders * (1 - i / numGridLines));
+
+      ctx.beginPath();
+      ctx.moveTo(paddingLeft, y);
+      ctx.lineTo(width - paddingRight, y);
+      ctx.stroke();
+
+      ctx.textAlign = "right";
+      ctx.fillText(`$${valCurrency}`, paddingLeft - 8, y + 4);
+
+      ctx.textAlign = "left";
+      ctx.fillText(`${valCount}`, width - paddingRight + 8, y + 4);
+    }
+
+    const barGroupWidth = chartW / buckets.length;
+    const barWidth = Math.max(Math.min(barGroupWidth * 0.32, 28), 6);
+    const barGap = 4;
+
+    const barPositions = [];
+
+    buckets.forEach((b, idx) => {
+      const groupCenterX = paddingLeft + barGroupWidth * idx + barGroupWidth / 2;
+
+      const orderBarX = groupCenterX - barWidth - barGap / 2;
+      const profitBarX = groupCenterX + barGap / 2;
+
+      const orderH = (b.ordersCount / maxOrders) * chartH;
+      const orderY = paddingTop + chartH - orderH;
+
+      const profitH = Math.max((Math.max(b.profit, 0) / maxProfit) * chartH, 0);
+      const profitY = paddingTop + chartH - profitH;
+
+      // Draw Orders Bar
+      const gradOrder = ctx.createLinearGradient(0, orderY, 0, paddingTop + chartH);
+      gradOrder.addColorStop(0, "#818cf8");
+      gradOrder.addColorStop(1, "#4f46e5");
+      ctx.fillStyle = gradOrder;
+
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(orderBarX, orderY, barWidth, orderH, [4, 4, 0, 0]);
+      else ctx.rect(orderBarX, orderY, barWidth, orderH);
+      ctx.fill();
+
+      // Draw Net Profit Bar
+      const gradProfit = ctx.createLinearGradient(0, profitY, 0, paddingTop + chartH);
+      gradProfit.addColorStop(0, "#34d399");
+      gradProfit.addColorStop(1, "#059669");
+      ctx.fillStyle = gradProfit;
+
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(profitBarX, profitY, barWidth, profitH, [4, 4, 0, 0]);
+      else ctx.rect(profitBarX, profitY, barWidth, profitH);
+      ctx.fill();
+
+      // X-Axis Label
+      ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
+      ctx.textAlign = "center";
+      ctx.fillText(b.label, groupCenterX, height - 12);
+
+      barPositions.push({
+        bucket: b,
+        centerX: groupCenterX,
+        minX: groupCenterX - barGroupWidth / 2,
+        maxX: groupCenterX + barGroupWidth / 2
+      });
+    });
+
+    // Draw Gross Revenue Line Overlay
+    ctx.beginPath();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#f59e0b";
+
+    buckets.forEach((b, idx) => {
+      const groupCenterX = paddingLeft + barGroupWidth * idx + barGroupWidth / 2;
+      const revH = (b.revenue / maxProfit) * chartH;
+      const revY = paddingTop + chartH - revH;
+
+      if (idx === 0) {
+        ctx.moveTo(groupCenterX, revY);
+      } else {
+        ctx.lineTo(groupCenterX, revY);
+      }
+    });
+    ctx.stroke();
+
+    // Point Nodes
+    buckets.forEach((b, idx) => {
+      const groupCenterX = paddingLeft + barGroupWidth * idx + barGroupWidth / 2;
+      const revH = (b.revenue / maxProfit) * chartH;
+      const revY = paddingTop + chartH - revH;
+
+      ctx.beginPath();
+      ctx.arc(groupCenterX, revY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#f59e0b";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+    });
+
+    // Mouse Move Hover Tooltip
+    canvas.onmousemove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+
+      const hit = barPositions.find(p => mouseX >= p.minX && mouseX <= p.maxX);
+
+      if (hit && tooltip) {
+        const b = hit.bucket;
+        tooltip.style.display = "block";
+        tooltip.style.left = `${Math.min(hit.centerX, width - 190)}px`;
+        tooltip.style.top = `20px`;
+
+        tooltip.innerHTML = `
+          <div style="font-weight: 700; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; margin-bottom: 4px;">📅 ${b.label}</div>
+          <div>📦 Volume: <strong>${b.ordersCount} Orders / Jobs</strong></div>
+          <div>💵 Gross Revenue: <strong style="color:#f59e0b;">$${b.revenue.toFixed(2)}</strong></div>
+          <div>📉 COGS & Costs: <strong style="color:#f87171;">$${b.costs.toFixed(2)}</strong></div>
+          <div>📈 Net Profit: <strong style="color:#34d399;">$${b.profit.toFixed(2)}</strong></div>
+        `;
+      } else if (tooltip) {
+        tooltip.style.display = "none";
+      }
+    };
+
+    canvas.onmouseleave = () => {
+      if (tooltip) tooltip.style.display = "none";
+    };
+  }
+
+  function initFinanceFilterListeners() {
+    if (finState.listenersBound) return;
+    finState.listenersBound = true;
+
+    const pills = document.querySelectorAll(".fin-pill");
+    const customContainer = document.getElementById("fin-custom-date-container");
+    const applyBtn = document.getElementById("fin-apply-custom-btn");
+    const startDateInput = document.getElementById("fin-start-date");
+    const endDateInput = document.getElementById("fin-end-date");
+    const granularitySelect = document.getElementById("fin-granularity-select");
+    const exportBtn = document.getElementById("export-finance-report-btn");
+
+    pills.forEach(pill => {
+      pill.addEventListener("click", () => {
+        pills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+
+        const period = pill.dataset.period;
+        finState.period = period;
+
+        if (period === 'custom') {
+          if (customContainer) customContainer.style.display = "flex";
+        } else {
+          if (customContainer) customContainer.style.display = "none";
+          renderFinanceDashboard();
+        }
+      });
+    });
+
+    if (applyBtn) {
+      applyBtn.addEventListener("click", () => {
+        if (startDateInput) finState.startDate = startDateInput.value;
+        if (endDateInput) finState.endDate = endDateInput.value;
+        renderFinanceDashboard();
+      });
+    }
+
+    if (granularitySelect) {
+      granularitySelect.addEventListener("change", (e) => {
+        finState.granularity = e.target.value;
+        renderFinanceDashboard();
+      });
+    }
+
+    if (exportBtn) {
+      exportBtn.onclick = () => {
+        exportFinanceReportCSV();
+      };
+    }
+  }
+
+  function exportFinanceReportCSV() {
+    const orders = DB.getOrders();
+    const customJobs = DB.getCustomJobs();
+
+    let csvContent = "data:text/csv;charset=utf-8,ID,Type,Date,Client/Customer,Revenue ($),Cost ($),Net Profit ($),Status\n";
+
+    orders.forEach(o => {
+      const rev = (o.totals && o.totals.total) ? o.totals.total : 0;
+      const cost = o.costAmount || (rev * 0.3);
+      const profit = rev - cost;
+      const cust = `${o.customer.firstName} ${o.customer.lastName}`.replace(/,/g, '');
+      csvContent += `${o.id},Storefront Order,${o.datePlaced || o.createdAt},${cust},${rev.toFixed(2)},${cost.toFixed(2)},${profit.toFixed(2)},${o.deliveryStatus || 'Completed'}\n`;
+    });
+
+    customJobs.forEach(j => {
+      const client = (j.clientName || 'Client').replace(/,/g, '');
+      csvContent += `${j.id},Custom Print Job,${j.date},${client},${(j.price || 0).toFixed(2)},${(j.cost || 0).toFixed(2)},${(j.profit || 0).toFixed(2)},${j.status}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `PixelPop_Financial_Report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showAppAlert("Financial CSV report downloaded successfully!", "Report Exported", "📊");
+  }
+
   // Dashboard Sidebar nav links
   DOM.dbMenuItems.forEach(item => {
     item.addEventListener("click", (e) => {
@@ -2698,7 +4315,14 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
 
       e.currentTarget.classList.add("active");
       const targetSection = e.currentTarget.dataset.target;
-      document.getElementById(targetSection).classList.add("active");
+      const targetEl = document.getElementById(targetSection);
+      if (targetEl) targetEl.classList.add("active");
+
+      if (targetSection === "db-fleet") {
+        initFleetDashboard();
+      } else if (targetSection === "db-finance") {
+        renderFinanceDashboard();
+      }
     });
   });
 
@@ -3199,22 +4823,140 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     });
   }
 
+  // Auth Tab Switcher (Log In vs Sign Up)
+  if (DOM.authTabLogin && DOM.authTabSignup) {
+    DOM.authTabLogin.addEventListener("click", () => {
+      DOM.authTabLogin.classList.add("active");
+      DOM.authTabLogin.style.background = "var(--bg-primary)";
+      DOM.authTabLogin.style.color = "var(--accent-indigo)";
+      DOM.authTabLogin.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+
+      DOM.authTabSignup.classList.remove("active");
+      DOM.authTabSignup.style.background = "transparent";
+      DOM.authTabSignup.style.color = "var(--text-muted)";
+      DOM.authTabSignup.style.boxShadow = "none";
+
+      DOM.adminLoginPanel.style.display = "block";
+      DOM.adminSignupPanel.style.display = "none";
+      if (DOM.loginErrorMsg) DOM.loginErrorMsg.style.display = "none";
+    });
+
+    DOM.authTabSignup.addEventListener("click", () => {
+      DOM.authTabSignup.classList.add("active");
+      DOM.authTabSignup.style.background = "var(--bg-primary)";
+      DOM.authTabSignup.style.color = "var(--accent-indigo)";
+      DOM.authTabSignup.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+
+      DOM.authTabLogin.classList.remove("active");
+      DOM.authTabLogin.style.background = "transparent";
+      DOM.authTabLogin.style.color = "var(--text-muted)";
+      DOM.authTabLogin.style.boxShadow = "none";
+
+      DOM.adminLoginPanel.style.display = "none";
+      DOM.adminSignupPanel.style.display = "block";
+      if (DOM.signupErrorMsg) DOM.signupErrorMsg.style.display = "none";
+      if (DOM.signupSuccessMsg) DOM.signupSuccessMsg.style.display = "none";
+    });
+  }
+
+  // Admin / Investor Log In Submission
   if (DOM.adminLoginForm) {
     DOM.adminLoginForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const email = DOM.adminEmailInput.value.trim();
+      const email = DOM.adminEmailInput.value.trim().toLowerCase();
       const password = DOM.adminPasswordInput.value;
 
-      if (email === "hassanshamso12@gmail.com" && password === "11223311") {
+      // 1. Check Superadmin login
+      const account = DB.getAdminAccount(email);
+      const isAllowedAdmin = DB.isEmailAllowedAsAdmin(email);
+
+      if (account && account.password === password) {
         state.isAdminLoggedIn = true;
         sessionStorage.setItem("isAdminLoggedIn", "true");
-        DOM.loginErrorMsg.style.display = "none";
+        sessionStorage.setItem("currentAdminEmail", email);
+        if (DOM.loginErrorMsg) DOM.loginErrorMsg.style.display = "none";
         DOM.adminEmailInput.value = "";
         DOM.adminPasswordInput.value = "";
         changePage("dashboard");
-      } else {
-        DOM.loginErrorMsg.style.display = "block";
+        initDashboard();
+        return;
       }
+
+      // 2. Check Investor user login
+      const investor = DB.getInvestorByEmail(email);
+      if (investor && investor.password === password) {
+        state.isInvestorLoggedIn = true;
+        sessionStorage.setItem("isInvestorLoggedIn", "true");
+        sessionStorage.setItem("currentInvestorEmail", investor.email);
+        if (DOM.loginErrorMsg) DOM.loginErrorMsg.style.display = "none";
+        DOM.adminEmailInput.value = "";
+        DOM.adminPasswordInput.value = "";
+        changePage("investor-portal");
+        renderInvestorPortal();
+        return;
+      }
+
+      // 3. Fallback error message
+      if (isAllowedAdmin && !account) {
+        if (DOM.loginErrorMsg) {
+          DOM.loginErrorMsg.innerHTML = "💡 Your email is authorized! Please click the <strong>'Sign Up'</strong> tab above to set your password.";
+          DOM.loginErrorMsg.style.display = "block";
+        }
+      } else {
+        if (DOM.loginErrorMsg) {
+          DOM.loginErrorMsg.innerHTML = "❌ Invalid email or password.";
+          DOM.loginErrorMsg.style.display = "block";
+        }
+      }
+    });
+  }
+
+  // Admin Sign Up Submission
+  if (DOM.adminSignupForm) {
+    DOM.adminSignupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = DOM.adminSignupEmail.value.trim().toLowerCase();
+      const password = DOM.adminSignupPassword.value;
+      const confirmPassword = DOM.adminSignupConfirmPassword.value;
+
+      if (DOM.signupErrorMsg) DOM.signupErrorMsg.style.display = "none";
+      if (DOM.signupSuccessMsg) DOM.signupSuccessMsg.style.display = "none";
+
+      if (password !== confirmPassword) {
+        if (DOM.signupErrorText) DOM.signupErrorText.textContent = "Passwords do not match. Please verify your passwords.";
+        if (DOM.signupErrorMsg) DOM.signupErrorMsg.style.display = "block";
+        return;
+      }
+
+      // Check if email was pre-registered from the dashboard
+      const isAllowed = DB.isEmailAllowedAsAdmin(email);
+      if (!isAllowed) {
+        if (DOM.signupErrorText) DOM.signupErrorText.textContent = "This email is not yet registered by the administrator. Please contact your admin to register your email from the dashboard first.";
+        if (DOM.signupErrorMsg) DOM.signupErrorMsg.style.display = "block";
+        return;
+      }
+
+      // Create & Save Admin Account
+      DB.registerAdminAccount(email, password);
+
+      if (DOM.signupSuccessMsg) {
+        DOM.signupSuccessMsg.textContent = "✅ Account created successfully! Logging you in...";
+        DOM.signupSuccessMsg.style.display = "block";
+      }
+
+      setTimeout(() => {
+        state.isAdminLoggedIn = true;
+        sessionStorage.setItem("isAdminLoggedIn", "true");
+        sessionStorage.setItem("currentAdminEmail", email);
+
+        DOM.adminSignupEmail.value = "";
+        DOM.adminSignupPassword.value = "";
+        DOM.adminSignupConfirmPassword.value = "";
+
+        changePage("dashboard");
+        initDashboard();
+        showAppAlert(`Welcome aboard, ${email}! Your admin account is now active.`, "Sign Up Successful", "🎉");
+      }, 900);
     });
   }
 
@@ -4984,6 +6726,7 @@ function showAppConfirm(message, title = "Confirm Action", icon = "⚠️") {
     initMobileNavigationDrawer();
     bindPriceAdviceEvents();
     initUnderConstructionOverlay();
+    initLivePrinterTicker();
 
   // UNDER CONSTRUCTION OVERLAY & 10-TAP SECRET LOGO UNLOCK LOGIC
   function initUnderConstructionOverlay() {
